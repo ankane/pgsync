@@ -1,0 +1,27 @@
+# source database URL
+# database URLs take the format of:
+#   postgres://user:password@host:port/dbname
+# we recommend a command which outputs a database URL
+# so sensitive information is not included in this file
+from: $(heroku config:get DATABASE_URL)
+
+# destination database URL
+to: postgres://localhost:5432/myapp_development
+
+# exclude tables
+# exclude:
+#   - schema_migrations
+
+# define groups
+# groups:
+#   group1:
+#     - table1
+#     - table2
+
+# protect sensitive information
+data_rules:
+  email: unique_email
+  phone: unique_phone
+  last_name: random_letter
+  birthday: random_date
+  encrypted_*: null
