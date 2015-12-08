@@ -91,7 +91,7 @@ And run:
 pgsync groups group1,group2
 ```
 
-## Senstive Information
+## Sensitive Information
 
 Prevent sensitive information - like passwords and email addresses - from leaving the remote server.
 
