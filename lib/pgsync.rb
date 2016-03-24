@@ -228,6 +228,9 @@ module PgSync
         command = source[2..-2]
         # puts "Running #{command}"
         source = `#{command}`.chomp
+        unless $?.success?
+          abort "Command exited with non-zero status:\n#{command}"
+        end
       end
       source
     end
