@@ -14,7 +14,7 @@ And in your project directory, run:
 pgsync setup
 ```
 
-This creates a `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information).
+This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information).
 
 ## How to Use
 
@@ -133,7 +133,7 @@ To use with multiple databases, run:
 pgsync setup db2
 ```
 
-This creates `.pgsync-db2.yml` for you to edit. Specify the database in commands with:
+This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:
 
 ```sh
 pgsync --db db2
