@@ -225,7 +225,9 @@ module PgSync
 
     def parse_source(source)
       if source && source[0..1] == "$(" && source[-1] == ")"
-        source = `#{source[2..-2]}`.chomp
+        command = source[2..-2]
+        # puts "Running #{command}"
+        source = `#{command}`.chomp
       end
       source
     end
