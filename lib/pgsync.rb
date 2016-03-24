@@ -24,6 +24,8 @@ module PgSync
         else
           @options[:config] || ".pgsync.yml"
         end
+      @config_file = search_tree(@config_file)
+      abort "Config not found" unless @config_file
       @mutex = MultiProcessing::Mutex.new
     end
 
@@ -211,17 +213,12 @@ module PgSync
       abort e.message
     end
 
-    # TODO look down path
     def config
       @config ||= begin
-        if File.exist?(config_file)
-          begin
-            YAML.load_file(config_file) || {}
-          rescue Psych::SyntaxError => e
-            raise PgSync::Error, e.message
-          end
-        else
-          {}
+        begin
+          YAML.load_file(config_file) || {}
+        rescue Psych::SyntaxError => e
+          raise PgSync::Error, e.message
         end
       end
     end
@@ -366,6 +363,19 @@ module PgSync
       uri = uri.dup
       uri.query = nil
       uri.to_s
+    end
+
+    def search_tree(file)
+      path = Dir.pwd
+      # prevent infinite loop
+      20.times do
+        absolute_file = File.join(path, file)
+        if File.exist?(absolute_file)
+          break absolute_file
+        end
+        path = File.dirname(path)
+        break if path == "/"
+      end
     end
 
     def abort(message)
