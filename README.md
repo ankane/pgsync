@@ -125,7 +125,7 @@ Options for replacement are:
 - random_ip
 - untouched
 
-## Multiple Databases [mater]
+## Multiple Databases
 
 To use with multiple databases, run:
 
