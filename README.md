@@ -125,6 +125,20 @@ Options for replacement are:
 - random_ip
 - untouched
 
+## Multiple Databases [mater]
+
+To use with multiple databases, run:
+
+```sh
+pgsync setup db2
+```
+
+This creates `.pgsync-db2.yml` for you to edit. Specify the database in commands with:
+
+```sh
+pgsync --db db2
+```
+
 ## Safety
 
 To keep you from accidentally overwriting production, the destination is limited to `localhost` or `127.0.0.1` by default.

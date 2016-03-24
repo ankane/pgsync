@@ -13,10 +13,17 @@ module PgSync
   class Rollback < StandardError; end
 
   class Client
+    attr_reader :config_file
+
     def initialize(args)
       $stdout.sync = true
       @arguments, @options = parse_args(args)
-      @config_file = @options[:config]
+      @config_file =
+        if @options[:db]
+          db_config_file(@options[:db])
+        else
+          @options[:config] || ".pgsync.yml"
+        end
       @mutex = MultiProcessing::Mutex.new
     end
 
@@ -31,7 +38,7 @@ module PgSync
       command = args[0]
 
       if command == "setup"
-        setup
+        setup(db_config_file(args[1]) || config_file)
       else
         source = parse_source(opts[:from])
         abort "No source" unless source
@@ -186,7 +193,8 @@ module PgSync
         o.string "--to", "destination"
         o.string "--where", "where"
         o.string "--exclude", "exclude tables"
-        o.string "--config", "config file", default: ".pgsync.yml"
+        o.string "--config", "config file"
+        o.string "--db", "database"
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
         o.on "-v", "--version", "print the version" do
@@ -206,9 +214,9 @@ module PgSync
     # TODO look down path
     def config
       @config ||= begin
-        if File.exist?(@config_file)
+        if File.exist?(config_file)
           begin
-            YAML.load_file(@config_file) || {}
+            YAML.load_file(config_file) || {}
           rescue Psych::SyntaxError => e
             raise PgSync::Error, e.message
           end
@@ -225,13 +233,18 @@ module PgSync
       source
     end
 
-    def setup
-      if File.exist?(@config_file)
-        abort "#{@config_file} exists."
+    def setup(config_file)
+      if File.exist?(config_file)
+        abort "#{config_file} exists."
       else
-        FileUtils.cp(File.dirname(__FILE__) + "/../config.yml", @config_file)
-        puts "#{@config_file} created. Add your database credentials."
+        FileUtils.cp(File.dirname(__FILE__) + "/../config.yml", config_file)
+        puts "#{config_file} created. Add your database credentials."
       end
+    end
+
+    def db_config_file(db)
+      return unless db
+      ".pgsync-#{db}.yml"
     end
 
     def with_connection(uri, timeout: 0)
