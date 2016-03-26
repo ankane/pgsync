@@ -150,25 +150,16 @@ module PgSync
                       seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
                     end
 
-                    # use transaction to revert statement timeout
-                    begin
-                      from_connection.transaction do |fconn|
-                        fconn.exec("SET statement_timeout = 0")
-                        to_connection.exec("TRUNCATE #{table} CASCADE")
-                        to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                          fconn.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{where}) TO STDOUT" do
-                            while row = fconn.get_copy_data
-                              to_connection.put_copy_data(row)
-                            end
-                          end
+                    to_connection.exec("TRUNCATE #{table} CASCADE")
+                    to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                      from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{where}) TO STDOUT" do
+                        while row = from_connection.get_copy_data
+                          to_connection.put_copy_data(row)
                         end
-                        seq_values.each do |seq, value|
-                          to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
-                        end
-                        raise PgSync::Rollback
                       end
-                    rescue PgSync::Rollback
-                      # success
+                    end
+                    seq_values.each do |seq, value|
+                      to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
                     end
                   end
                 end
