@@ -5,4 +5,6 @@ begin
   PgSync::Client.new(ARGV).perform
 rescue PgSync::Error => e
   abort e.message
+rescue Interrupt => e
+  # do nothing
 end
