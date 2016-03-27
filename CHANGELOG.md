@@ -1,3 +1,7 @@
+# 0.2.1
+
+- Do not require config file
+
 # 0.2.0
 
 - Fixed idle transaction timeout errors - respects `statement_timeout` as a result
