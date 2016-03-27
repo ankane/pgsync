@@ -57,14 +57,14 @@ module PgSync
         if args[0] == "schema"
           time =
             benchmark do
-              puts "* Dumping schema"
+              log "* Dumping schema"
               tables = to_arr(args[1]).map { |t| "-t #{t}" }.join(" ")
               dump_command = "pg_dump --verbose --schema-only --no-owner --no-acl --clean #{tables} #{to_url(source_uri)}"
               restore_command = "psql -q -d #{to_url(destination_uri)}"
               system("#{dump_command} | #{restore_command}")
             end
 
-          puts "* DONE (#{time.round(1)}s)"
+          log "* DONE (#{time.round(1)}s)"
         else
           from_uri = source_uri
           to_uri = destination_uri
@@ -127,51 +127,51 @@ module PgSync
                     where = opts[:where]
 
                     @mutex.synchronize do
-                      puts "* Syncing #{table}"
+                      log "* Syncing #{table}"
                       if where
-                        puts "    #{where}"
+                        log "    #{where}"
                         where = " WHERE #{opts[:where]}"
                       end
-                      puts "EXTRA COLUMNS: #{extra_fields}" if extra_fields.any?
-                      puts "MISSING COLUMNS: #{missing_fields}" if missing_fields.any?
-                      puts "EXTRA SEQUENCES: #{extra_sequences}" if extra_sequences.any?
-                      puts "MISSING SEQUENCES: #{missing_sequences}" if missing_sequences.any?
+                      log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+                      log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+                      log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+                      log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
                     end
 
-                    if shared_fields.empty?
-                      abort "No fields to copy: #{table}"
-                    end
+                    if shared_fields.any?
+                      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
+                      fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
 
-                    copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
-                    fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
+                      seq_values = {}
+                      shared_sequences.each do |seq|
+                        seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
+                      end
 
-                    seq_values = {}
-                    shared_sequences.each do |seq|
-                      seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
-                    end
-
-                    to_connection.exec("TRUNCATE #{table} CASCADE")
-                    to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                      from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{where}) TO STDOUT" do
-                        while row = from_connection.get_copy_data
-                          to_connection.put_copy_data(row)
+                      to_connection.exec("TRUNCATE #{table} CASCADE")
+                      to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                        from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{where}) TO STDOUT" do
+                          while row = from_connection.get_copy_data
+                            to_connection.put_copy_data(row)
+                          end
                         end
                       end
-                    end
-                    seq_values.each do |seq, value|
-                      to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                      seq_values.each do |seq, value|
+                        to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                      end
+                    else
+                      log "    No fields to copy: #{table}"
                     end
                   end
                 end
               end
 
             @mutex.synchronize do
-              puts "* DONE #{table} (#{time.round(1)}s)"
+              log "* DONE #{table} (#{time.round(1)}s)"
             end
           end
 
           time = Time.now - start_time
-          puts "Completed in #{time.round(1)}s"
+          log "Completed in #{time.round(1)}s"
         end
       end
       true
@@ -191,11 +191,11 @@ module PgSync
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
         o.on "-v", "--version", "print the version" do
-          puts PgSync::VERSION
+          log PgSync::VERSION
           exit
         end
         o.on "-h", "--help", "prints help" do
-          puts o
+          log o
           exit
         end
       end
@@ -217,7 +217,7 @@ module PgSync
     def parse_source(source)
       if source && source[0..1] == "$(" && source[-1] == ")"
         command = source[2..-2]
-        # puts "Running #{command}"
+        # log "Running #{command}"
         source = `#{command}`.chomp
         unless $?.success?
           abort "Command exited with non-zero status:\n#{command}"
@@ -231,7 +231,7 @@ module PgSync
         abort "#{config_file} exists."
       else
         FileUtils.cp(File.dirname(__FILE__) + "/../config.yml", config_file)
-        puts "#{config_file} created. Add your database credentials."
+        log "#{config_file} created. Add your database credentials."
       end
     end
 
@@ -256,7 +256,7 @@ module PgSync
         conn.close
       end
     rescue PG::ConnectionBad => e
-      puts
+      log
       abort e.message
     end
 
@@ -352,7 +352,7 @@ module PgSync
     end
 
     def print_uri(prefix, uri)
-      puts "#{prefix}: #{uri.path.sub(/\A\//, '')} on #{uri.host}:#{uri.port}"
+      log "#{prefix}: #{uri.path.sub(/\A\//, '')} on #{uri.host}:#{uri.port}"
     end
 
     def to_url(uri)
@@ -376,6 +376,10 @@ module PgSync
 
     def abort(message)
       raise PgSync::Error, message
+    end
+
+    def log(message)
+      $stderr.puts message
     end
 
     def sequences(conn, table, columns)
