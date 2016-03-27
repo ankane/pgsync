@@ -13,19 +13,9 @@ module PgSync
   class Rollback < StandardError; end
 
   class Client
-    attr_reader :config_file
-
     def initialize(args)
       $stdout.sync = true
       @arguments, @options = parse_args(args)
-      @config_file =
-        if @options[:db]
-          db_config_file(@options[:db])
-        else
-          @options[:config] || ".pgsync.yml"
-        end
-      @config_file = search_tree(@config_file)
-      abort "Config not found" unless @config_file
       @mutex = MultiProcessing::Mutex.new
     end
 
@@ -136,6 +126,10 @@ module PgSync
                       log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
                       log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
                       log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+
+                      if shared_fields.empty?
+                        log "    No fields to copy"
+                      end
                     end
 
                     if shared_fields.any?
@@ -158,8 +152,6 @@ module PgSync
                       seq_values.each do |seq, value|
                         to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
                       end
-                    else
-                      log "    No fields to copy: #{table}"
                     end
                   end
                 end
@@ -206,10 +198,14 @@ module PgSync
 
     def config
       @config ||= begin
-        begin
-          YAML.load_file(config_file) || {}
-        rescue Psych::SyntaxError => e
-          raise PgSync::Error, e.message
+        if config_file
+          begin
+            YAML.load_file(config_file) || {}
+          rescue Psych::SyntaxError => e
+            raise PgSync::Error, e.message
+          end
+        else
+          {}
         end
       end
     end
@@ -372,6 +368,19 @@ module PgSync
         path = File.dirname(path)
         break if path == "/"
       end
+    end
+
+    def config_file
+      return @config_file if instance_variable_get(:@config_file)
+
+      @config_file =
+        search_tree(
+          if @options[:db]
+            db_config_file(@options[:db])
+          else
+            @options[:config] || ".pgsync.yml"
+          end
+        )
     end
 
     def abort(message)
