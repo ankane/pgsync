@@ -1,23 +1,32 @@
 require_relative "test_helper"
+require "shellwords"
 
 class PgSyncTest < Minitest::Test
   def test_no_source
-    error = assert_raises(PgSync::Error) { PgSync::Client.new([]).perform }
-    assert_equal "No source", error.message
+    assert_error "No source", ""
   end
 
   def test_no_destination
-    error = assert_raises(PgSync::Error) { PgSync::Client.new(["--from", "db1"]).perform }
-    assert_equal "No destination", error.message
+    assert_error "No destination", "--from db1"
   end
 
   def test_source_command_error
-    error = assert_raises(PgSync::Error) { PgSync::Client.new(["--from", "$(exit 1)"]).perform }
-    assert_equal "Command exited with non-zero status:\nexit 1", error.message
+    assert_error "Command exited with non-zero status:\nexit 1", "--from '$(exit 1)'"
   end
 
   def test_destination_danger
-    error = assert_raises(PgSync::Error) { PgSync::Client.new(["--from", "db1", "--to", "postgres://hostname/db2"]).perform }
-    assert_match /Danger!/, error.message
+    assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from db1 --to postgres://hostname/db2"
+  end
+
+  def test_nonexistent_source
+    assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to db2"
+  end
+
+  def assert_error(message, args)
+    error = nil
+    out, err = capture_io do
+      error = assert_raises(PgSync::Error) { PgSync::Client.new(Shellwords.split(args)).perform }
+    end
+    assert_equal message, error.message
   end
 end
