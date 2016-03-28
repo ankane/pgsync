@@ -1,3 +1,7 @@
+# 0.2.2
+
+- Added `--debug` option
+
 # 0.2.1
 
 - Do not require config file
