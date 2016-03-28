@@ -372,7 +372,7 @@ module PgSync
     end
 
     def config_file
-      return @config_file if instance_variable_get(:@config_file)
+      return @config_file if instance_variable_defined?(:@config_file)
 
       @config_file =
         search_tree(
