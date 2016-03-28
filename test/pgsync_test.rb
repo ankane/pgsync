@@ -22,6 +22,10 @@ class PgSyncTest < Minitest::Test
     assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to db2"
   end
 
+  def test_nonexistent_destination
+    assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_db1 --to db2"
+  end
+
   def assert_error(message, args)
     error = nil
     out, err = capture_io do
