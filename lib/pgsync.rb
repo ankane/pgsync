@@ -95,7 +95,7 @@ module PgSync
             end
           end
 
-          Parallel.each(tables) do |table|
+          in_parallel(tables) do |table|
             time =
               benchmark do
                 with_connection(from_uri) do |from_connection|
@@ -182,6 +182,7 @@ module PgSync
         o.string "--db", "database"
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
+        o.boolean "--debug", "debug", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           exit
@@ -393,6 +394,14 @@ module PgSync
 
     def sequences(conn, table, columns)
       conn.exec("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape(table)}, #{escape(f)}) AS #{f}" }.join(", ")}").to_a[0].values.compact
+    end
+
+    def in_parallel(tables, &block)
+      if @options[:debug]
+        tables.each(&block)
+      else
+        Parallel.each(tables, &block)
+      end
     end
   end
 end
