@@ -388,7 +388,7 @@ module PgSync
       raise PgSync::Error, message
     end
 
-    def log(message)
+    def log(message = nil)
       $stderr.puts message
     end
 

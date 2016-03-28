@@ -15,4 +15,9 @@ class PgSyncTest < Minitest::Test
     error = assert_raises(PgSync::Error) { PgSync::Client.new(["--from", "$(exit 1)"]).perform }
     assert_equal "Command exited with non-zero status:\nexit 1", error.message
   end
+
+  def test_destination_danger
+    error = assert_raises(PgSync::Error) { PgSync::Client.new(["--from", "db1", "--to", "postgres://hostname/db2"]).perform }
+    assert_match /Danger!/, error.message
+  end
 end
