@@ -26,11 +26,22 @@ class PgSyncTest < Minitest::Test
     assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_db1 --to db2"
   end
 
+  def test_version
+    assert_output PgSync::VERSION, "-v"
+  end
+
   def assert_error(message, args)
     error = nil
-    out, err = capture_io do
+    capture_io do
       error = assert_raises(PgSync::Error) { PgSync::Client.new(Shellwords.split(args)).perform }
     end
     assert_equal message, error.message
+  end
+
+  def assert_output(message, args)
+    _, err = capture_io do
+      PgSync::Client.new(Shellwords.split("#{args} --debug")).perform
+    end
+    assert_equal "#{message}\n", err
   end
 end

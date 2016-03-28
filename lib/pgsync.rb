@@ -15,12 +15,15 @@ module PgSync
   class Client
     def initialize(args)
       $stdout.sync = true
+      @exit = false
       @arguments, @options = parse_args(args)
       @mutex = MultiProcessing::Mutex.new
     end
 
     # TODO clean up this mess
     def perform
+      return if @exit
+
       start_time = Time.now
 
       args, opts = @arguments, @options
@@ -185,11 +188,11 @@ module PgSync
         o.boolean "--debug", "debug", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
-          exit
+          @exit = true
         end
         o.on "-h", "--help", "prints help" do
           log o
-          exit
+          @exit = true
         end
       end
       [opts.arguments, opts.to_hash]
