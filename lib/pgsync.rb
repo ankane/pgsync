@@ -213,7 +213,7 @@ module PgSync
           {}
         end
       end
-      abort "No database" unless @config[@options[:db]]
+      abort "No database entry found for #{@options[:db]}" unless @config[@options[:db]]
       @config[@options[:db]]
     end
 
