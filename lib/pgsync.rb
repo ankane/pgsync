@@ -27,12 +27,9 @@ module PgSync
       start_time = Time.now
 
       args, opts = @arguments, @options
-      db = @options[:db]
-
-      abort "No database" unless config[db]
 
       [:to, :from, :to_safe, :exclude].each do |opt|
-        opts[opt] ||= config[db][opt.to_s]
+        opts[opt] ||= config[opt.to_s]
       end
       command = args[0]
 
@@ -216,6 +213,8 @@ module PgSync
           {}
         end
       end
+      abort "No database" unless @config[@options[:db]]
+      @config[@options[:db]]
     end
 
     def parse_source(source)
