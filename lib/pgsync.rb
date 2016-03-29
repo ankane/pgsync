@@ -27,13 +27,14 @@ module PgSync
       start_time = Time.now
 
       args, opts = @arguments, @options
+
       [:to, :from, :to_safe, :exclude].each do |opt|
         opts[opt] ||= config[opt.to_s]
       end
       command = args[0]
 
       if command == "setup"
-        setup(db_config_file(args[1]) || config_file)
+        setup(config_file)
       else
         source = parse_source(opts[:from])
         abort "No source" unless source
@@ -182,7 +183,7 @@ module PgSync
         o.string "--where", "where"
         o.string "--exclude", "exclude tables"
         o.string "--config", "config file"
-        o.string "--db", "database"
+        o.string "--db", "database", default: 'default'
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
@@ -212,6 +213,8 @@ module PgSync
           {}
         end
       end
+      abort "No database entry found for #{@options[:db]}" unless @config[@options[:db]]
+      @config[@options[:db]]
     end
 
     def parse_source(source)
@@ -233,11 +236,6 @@ module PgSync
         FileUtils.cp(File.dirname(__FILE__) + "/../config.yml", config_file)
         log "#{config_file} created. Add your database credentials."
       end
-    end
-
-    def db_config_file(db)
-      return unless db
-      ".pgsync-#{db}.yml"
     end
 
     def with_connection(uri, timeout: 0)
@@ -376,15 +374,7 @@ module PgSync
 
     def config_file
       return @config_file if instance_variable_defined?(:@config_file)
-
-      @config_file =
-        search_tree(
-          if @options[:db]
-            db_config_file(@options[:db])
-          else
-            @options[:config] || ".pgsync.yml"
-          end
-        )
+      @config_file = search_tree(@options[:config] || ".pgsync.yml")
     end
 
     def abort(message)

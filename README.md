@@ -127,16 +127,12 @@ Options for replacement are:
 
 ## Multiple Databases
 
-To use with multiple databases, run:
+To use with multiple databases, edit your config file and add another entry:
 
 ```sh
-pgsync setup db2
-```
-
-This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:
-
-```sh
-pgsync --db db2
+another_db:
+  from: $(heroku config:get ANOTHER_DATABASE_URL)
+  to: postgres://localhost:5432/myanotherapp_development
 ```
 
 ## Safety
