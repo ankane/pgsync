@@ -240,16 +240,20 @@ module PgSync
       ".pgsync-#{db}.yml"
     end
 
+    # borrowed from
+    # ActiveRecord::ConnectionAdapters::ConnectionSpecification::ConnectionUrlResolver
     def with_connection(uri, timeout: 0)
-      conn =
-        PG::Connection.new(
+      uri_parser = URI::Parser.new
+      config = {
           host: uri.host,
           port: uri.port,
           dbname: uri.path.sub(/\A\//, ""),
           user: uri.user,
           password: uri.password,
           connect_timeout: timeout
-        )
+      }.reject { |_, value| value.to_s.empty? }
+      config.map { |key, value| config[key] = uri_parser.unescape(value) if value.is_a?(String) }
+      conn = PG::Connection.new(config)
       begin
         yield conn
       ensure

@@ -1,3 +1,7 @@
+# 0.2.3 [unreleased]
+
+- Fixed `no PostgreSQL user name specified in startup packet`
+
 # 0.2.2
 
 - Added `--debug` option
