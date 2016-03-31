@@ -1,3 +1,7 @@
+# 0.2.4 [unreleased]
+
+- Added `--limit` option
+
 # 0.2.3
 
 - Fixed `no PostgreSQL user name specified in startup packet`

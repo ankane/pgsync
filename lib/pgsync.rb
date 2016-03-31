@@ -118,12 +118,18 @@ module PgSync
                     missing_sequences = from_sequences - to_sequences
 
                     where = opts[:where]
+                    limit = opts[:limit]
+                    sql_clause = String.new
 
                     @mutex.synchronize do
                       log "* Syncing #{table}"
                       if where
                         log "    #{where}"
-                        where = " WHERE #{opts[:where]}"
+                        sql_clause << " WHERE #{opts[:where]}"
+                      end
+                      if limit
+                        log "    LIMIT #{limit}"
+                        sql_clause << " LIMIT #{limit}"
                       end
                       log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
                       log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
@@ -146,7 +152,7 @@ module PgSync
 
                       to_connection.exec("TRUNCATE #{table} CASCADE")
                       to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                        from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{where}) TO STDOUT" do
+                        from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT" do
                           while row = from_connection.get_copy_data
                             to_connection.put_copy_data(row)
                           end
@@ -189,6 +195,7 @@ Options:}
         o.string "--from", "source"
         o.string "--to", "destination"
         o.string "--where", "where"
+        o.integer "--limit", "limit"
         o.string "--exclude", "exclude tables"
         o.string "--config", "config file"
         o.string "--db", "database"
