@@ -1,5 +1,6 @@
 # 0.2.4 [unreleased]
 
+- Added `--list` option for groups and tables
 - Added `--limit` option
 
 # 0.2.3

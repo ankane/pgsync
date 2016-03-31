@@ -98,81 +98,89 @@ module PgSync
             end
           end
 
-          in_parallel(tables) do |table|
-            time =
-              benchmark do
-                with_connection(from_uri) do |from_connection|
-                  with_connection(to_uri) do |to_connection|
-                    bad_fields = config["data_rules"]
+          if opts[:list]
+            if args[0] == "groups"
+              pretty_list (config["groups"] || {}).keys
+            else
+              pretty_list tables
+            end
+          else
+            in_parallel(tables) do |table|
+              time =
+                benchmark do
+                  with_connection(from_uri) do |from_connection|
+                    with_connection(to_uri) do |to_connection|
+                      bad_fields = config["data_rules"]
 
-                    from_fields = columns(from_connection, table, "public")
-                    to_fields = columns(to_connection, table, "public")
-                    shared_fields = to_fields & from_fields
-                    extra_fields = to_fields - from_fields
-                    missing_fields = from_fields - to_fields
+                      from_fields = columns(from_connection, table, "public")
+                      to_fields = columns(to_connection, table, "public")
+                      shared_fields = to_fields & from_fields
+                      extra_fields = to_fields - from_fields
+                      missing_fields = from_fields - to_fields
 
-                    from_sequences = sequences(from_connection, table, shared_fields)
-                    to_sequences = sequences(to_connection, table, shared_fields)
-                    shared_sequences = to_sequences & from_sequences
-                    extra_sequences = to_sequences - from_sequences
-                    missing_sequences = from_sequences - to_sequences
+                      from_sequences = sequences(from_connection, table, shared_fields)
+                      to_sequences = sequences(to_connection, table, shared_fields)
+                      shared_sequences = to_sequences & from_sequences
+                      extra_sequences = to_sequences - from_sequences
+                      missing_sequences = from_sequences - to_sequences
 
-                    where = opts[:where]
-                    limit = opts[:limit]
-                    sql_clause = String.new
+                      where = opts[:where]
+                      limit = opts[:limit]
+                      sql_clause = String.new
 
-                    @mutex.synchronize do
-                      log "* Syncing #{table}"
-                      if where
-                        log "    #{where}"
-                        sql_clause << " WHERE #{opts[:where]}"
-                      end
-                      if limit
-                        log "    LIMIT #{limit}"
-                        sql_clause << " LIMIT #{limit}"
-                      end
-                      log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
-                      log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
-                      log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
-                      log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+                      @mutex.synchronize do
+                        log "* Syncing #{table}"
+                        if where
+                          log "    #{where}"
+                          sql_clause << " WHERE #{opts[:where]}"
+                        end
+                        if limit
+                          log "    LIMIT #{limit}"
+                          sql_clause << " LIMIT #{limit}"
+                        end
+                        log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+                        log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+                        log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+                        log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
 
-                      if shared_fields.empty?
-                        log "    No fields to copy"
-                      end
-                    end
-
-                    if shared_fields.any?
-                      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
-                      fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
-
-                      seq_values = {}
-                      shared_sequences.each do |seq|
-                        seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
-                      end
-
-                      to_connection.exec("TRUNCATE #{table} CASCADE")
-                      to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                        from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT" do
-                          while row = from_connection.get_copy_data
-                            to_connection.put_copy_data(row)
-                          end
+                        if shared_fields.empty?
+                          log "    No fields to copy"
                         end
                       end
-                      seq_values.each do |seq, value|
-                        to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+
+                      if shared_fields.any?
+                        copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
+                        fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
+
+                        seq_values = {}
+                        shared_sequences.each do |seq|
+                          seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
+                        end
+
+                        to_connection.exec("TRUNCATE #{table} CASCADE")
+                        to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                          from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT" do
+                            while row = from_connection.get_copy_data
+                              to_connection.put_copy_data(row)
+                            end
+                          end
+                        end
+                        seq_values.each do |seq, value|
+                          to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                        end
                       end
                     end
                   end
                 end
+
+              @mutex.synchronize do
+                log "* DONE #{table} (#{time.round(1)}s)"
               end
-
-            @mutex.synchronize do
-              log "* DONE #{table} (#{time.round(1)}s)"
             end
-          end
 
-          time = Time.now - start_time
-          log "Completed in #{time.round(1)}s"
+            time = Time.now - start_time
+            log "Completed in #{time.round(1)}s"
+          end
         end
       end
       true
@@ -202,6 +210,7 @@ Options:}
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
+        o.boolean "--list", "list", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
@@ -424,6 +433,12 @@ Options:}
         tables.each(&block)
       else
         Parallel.each(tables, &block)
+      end
+    end
+
+    def pretty_list(items)
+      items.each do |item|
+        log item
       end
     end
   end
