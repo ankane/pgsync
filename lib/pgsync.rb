@@ -176,7 +176,16 @@ module PgSync
 
     def parse_args(args)
       opts = Slop.parse(args) do |o|
-        o.banner = "usage: pgsync [options]"
+        o.banner = %{Usage:
+    pgsync [command] [options]
+
+Commands:
+    tables
+    groups
+    schema
+    setup
+
+Options:}
         o.string "--from", "source"
         o.string "--to", "destination"
         o.string "--where", "where"
