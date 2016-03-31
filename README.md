@@ -145,6 +145,21 @@ To keep you from accidentally overwriting production, the destination is limited
 
 To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
+## Upgrading
+
+Run:
+
+```sh
+gem install pgsync
+```
+
+To use master, run:
+
+```sh
+gem install specific_install
+gem specific_install ankane/pgsync
+```
+
 ## Thanks
 
 Inspired by [heroku-pg-transfer](https://github.com/ddollar/heroku-pg-transfer).
