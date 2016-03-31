@@ -1,4 +1,4 @@
-# 0.2.3 [unreleased]
+# 0.2.3
 
 - Fixed `no PostgreSQL user name specified in startup packet`
 
