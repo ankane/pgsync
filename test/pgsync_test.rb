@@ -26,8 +26,12 @@ class PgSyncTest < Minitest::Test
     assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_db1 --to db2"
   end
 
-  def test_sync
-    assert_prints "", "--from pgsync_db1 --to pgsync_db2"
+  def test_missing_column
+    assert_prints "Missing columns: zip_code", "--from pgsync_db1 --to pgsync_db2"
+  end
+
+  def test_extra_column
+    assert_prints "Extra columns: zip_code", "--from pgsync_db2 --to pgsync_db1"
   end
 
   def test_version
