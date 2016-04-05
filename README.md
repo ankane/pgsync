@@ -36,7 +36,7 @@ Fetch specific rows (truncates destination table first)
 pgsync products --where "id < 100"
 ```
 
-To preserve existing rows, use: [master]
+To preserve existing rows, use:
 
 ```sh
 pgsync products --where "id < 100" --preserve

@@ -1,4 +1,4 @@
-# 0.2.4 [unreleased]
+# 0.2.4
 
 - Added `--preserve` option
 - Added `--list` option for groups and tables
