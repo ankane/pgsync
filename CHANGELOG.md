@@ -1,3 +1,7 @@
+# 0.2.5 [unreleased]
+
+- Added `--schema-only` option
+
 # 0.2.4
 
 - Added `--preserve` option

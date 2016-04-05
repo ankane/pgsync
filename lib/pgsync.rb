@@ -55,11 +55,16 @@ module PgSync
         print_uri("From", source_uri)
         print_uri("To", destination_uri)
 
-        if args[0] == "schema"
+        from_uri = source_uri
+        to_uri = destination_uri
+
+        tables = table_list(args, opts, from_uri)
+
+        if args[0] == "schema" || opts[:schema_only]
           time =
             benchmark do
               log "* Dumping schema"
-              tables = to_arr(args[1]).map { |t| "-t #{t}" }.join(" ")
+              tables = tables.map { |t| "-t #{t}" }.join(" ")
               dump_command = "pg_dump --verbose --schema-only --no-owner --no-acl --clean #{tables} #{to_url(source_uri)}"
               restore_command = "psql -q -d #{to_url(destination_uri)}"
               system("#{dump_command} | #{restore_command}")
@@ -67,37 +72,6 @@ module PgSync
 
           log "* DONE (#{time.round(1)}s)"
         else
-          from_uri = source_uri
-          to_uri = destination_uri
-
-          tables =
-            if args[0] == "groups"
-              specified_groups = to_arr(args[1])
-              specified_groups.map do |group|
-                if (tables = config["groups"][group])
-                  tables
-                else
-                  abort "Group not found: #{group}"
-                end
-              end.flatten
-            elsif args[0] == "tables"
-              to_arr(args[1])
-            elsif args[0]
-              to_arr(args[0])
-            else
-              nil
-            end
-
-          with_connection(from_uri, timeout: 3) do |conn|
-            tables ||= self.tables(conn, "public") - to_arr(opts[:exclude])
-
-            tables.each do |table|
-              unless table_exists?(conn, table, "public")
-                abort "Table does not exist in source: #{table}"
-              end
-            end
-          end
-
           with_connection(to_uri, timeout: 3) do |conn|
             tables.each do |table|
               unless table_exists?(conn, table, "public")
@@ -258,6 +232,7 @@ Options:}
         o.boolean "--debug", "debug", default: false
         o.boolean "--list", "list", default: false
         o.boolean "--preserve", "preserve", default: false
+        o.boolean "--schema-only", "schema only", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
@@ -510,6 +485,38 @@ Options:}
       items.each do |item|
         log item
       end
+    end
+
+    def table_list(args, opts, from_uri)
+      tables =
+        if args[0] == "groups"
+          specified_groups = to_arr(args[1])
+          specified_groups.map do |group|
+            if (tables = config["groups"][group])
+              tables
+            else
+              abort "Group not found: #{group}"
+            end
+          end.flatten
+        elsif args[0] == "tables"
+          to_arr(args[1])
+        elsif args[0]
+          to_arr(args[0])
+        else
+          nil
+        end
+
+      with_connection(from_uri, timeout: 3) do |conn|
+        tables ||= self.tables(conn, "public") - to_arr(opts[:exclude])
+
+        tables.each do |table|
+          unless table_exists?(conn, table, "public")
+            abort "Table does not exist in source: #{table}"
+          end
+        end
+      end
+
+      tables
     end
   end
 end
