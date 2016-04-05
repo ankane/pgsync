@@ -2,6 +2,7 @@ require "pgsync/version"
 require "yaml"
 require "slop"
 require "uri"
+require "uri_postgresql"
 require "erb"
 require "pg"
 require "parallel"
@@ -375,8 +376,10 @@ Options:}
 
     def parse_uri(url)
       uri = URI.parse(url)
+      uri.scheme ||= 'postgres'
       uri.host ||= "localhost"
       uri.port ||= 5432
+      uri.path = "/#{uri.path}" if uri.path && uri.path[0] != '/'
       uri
     end
 
