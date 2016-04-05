@@ -34,21 +34,26 @@ class PgSyncTest < Minitest::Test
     assert_prints "Extra columns: zip_code", "--from pgsync_db2 --to pgsync_db1"
   end
 
+  def test_parallel
+    assert_prints "Completed in", "--from pgsync_db1 --to pgsync_db2", debug: false
+  end
+
   def test_version
     assert_prints PgSync::VERSION, "-v"
   end
 
-  def assert_error(message, args)
+  def assert_error(message, args_str)
     error = nil
     capture_io do
-      error = assert_raises(PgSync::Error) { PgSync::Client.new(Shellwords.split(args)).perform }
+      error = assert_raises(PgSync::Error) { PgSync::Client.new(Shellwords.split(args_str)).perform }
     end
     assert_equal message, error.message
   end
 
-  def assert_prints(message, args_str)
+  def assert_prints(message, args_str, debug: true)
     _, err = capture_io do
-      PgSync::Client.new(Shellwords.split("#{args_str} --debug")).perform
+      args_str << " --debug" if debug
+      PgSync::Client.new(Shellwords.split(args_str)).perform
     end
     assert_match message, err
   end
