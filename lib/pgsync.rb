@@ -92,7 +92,7 @@ module PgSync
                 benchmark do
                   with_connection(from_uri) do |from_connection|
                     with_connection(to_uri) do |to_connection|
-                      bad_fields = config["data_rules"]
+                      bad_fields = opts[:no_rules] ? [] : config["data_rules"]
 
                       from_fields = columns(from_connection, table, "public")
                       to_fields = columns(to_connection, table, "public")
@@ -231,8 +231,9 @@ Options:}
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
         o.boolean "--list", "list", default: false
-        o.boolean "--preserve", "preserve", default: false
+        o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
+        o.boolean "--no-rules", "do not apply data rules", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true

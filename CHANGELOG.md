@@ -1,6 +1,7 @@
 # 0.2.5 [unreleased]
 
 - Added `--schema-only` option
+- Added `--no-rules` option
 
 # 0.2.4
 
