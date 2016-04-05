@@ -2,12 +2,18 @@ require "pgsync/version"
 require "yaml"
 require "slop"
 require "uri"
-require "uri_postgresql"
 require "erb"
 require "pg"
 require "parallel"
 require "multiprocessing"
 require "fileutils"
+
+module URI
+  class POSTGRESQL < Generic
+    DEFAULT_PORT = 5432
+  end
+  @@schemes["POSTGRESQL"] = @@schemes["POSTGRES"] = POSTGRESQL
+end
 
 module PgSync
   class Error < StandardError; end
@@ -376,10 +382,10 @@ Options:}
 
     def parse_uri(url)
       uri = URI.parse(url)
-      uri.scheme ||= 'postgres'
+      uri.scheme ||= "postgres"
       uri.host ||= "localhost"
       uri.port ||= 5432
-      uri.path = "/#{uri.path}" if uri.path && uri.path[0] != '/'
+      uri.path = "/#{uri.path}" if uri.path && uri.path[0] != "/"
       uri
     end
 
