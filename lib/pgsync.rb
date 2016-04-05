@@ -7,6 +7,7 @@ require "pg"
 require "parallel"
 require "multiprocessing"
 require "fileutils"
+require "tempfile"
 
 module URI
   class POSTGRESQL < Generic
@@ -164,11 +165,49 @@ module PgSync
                           seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
                         end
 
-                        to_connection.exec("TRUNCATE #{table} CASCADE")
-                        to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                          from_connection.copy_data "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT" do
-                            while row = from_connection.get_copy_data
-                              to_connection.put_copy_data(row)
+                        copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
+                        if opts[:preserve]
+                          primary_key = self.primary_key(from_connection, table, "public")
+                          abort "No primary key" unless primary_key
+
+                          temp_table = "pgsync_#{rand(1_000_000_000)}"
+                          file = Tempfile.new(temp_table)
+                          begin
+                            from_connection.copy_data copy_to_command do
+                              while row = from_connection.get_copy_data
+                                file.write(row)
+                              end
+                            end
+                            file.rewind
+
+                            to_connection.transaction do
+                              # create a temp table
+                              to_connection.exec("CREATE TABLE #{temp_table} AS SELECT * FROM #{table} WITH NO DATA")
+
+                              # load file
+                              to_connection.copy_data "COPY #{temp_table} (#{fields}) FROM STDIN" do
+                                file.each do |row|
+                                  to_connection.put_copy_data(row)
+                                end
+                              end
+
+                              # insert into
+                              to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
+
+                              # delete temp table
+                              to_connection.exec("DROP TABLE #{temp_table}")
+                            end
+                          ensure
+                             file.close
+                             file.unlink
+                          end
+                        else
+                          to_connection.exec("TRUNCATE #{table} CASCADE")
+                          to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                            from_connection.copy_data copy_to_command do
+                              while row = from_connection.get_copy_data
+                                to_connection.put_copy_data(row)
+                              end
                             end
                           end
                         end
@@ -218,6 +257,7 @@ Options:}
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
         o.boolean "--list", "list", default: false
+        o.boolean "--preserve", "preserve", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
@@ -315,6 +355,27 @@ Options:}
     def table_exists?(conn, table, schema)
       query = "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2"
       conn.exec_params(query, [schema, table]).to_a.size > 0
+    end
+
+    # http://stackoverflow.com/a/20537829
+    def primary_key(conn, table, schema)
+      query = <<-SQL
+        SELECT
+          pg_attribute.attname,
+          format_type(pg_attribute.atttypid, pg_attribute.atttypmod)
+        FROM
+          pg_index, pg_class, pg_attribute, pg_namespace
+        WHERE
+          pg_class.oid = $2::regclass AND
+          indrelid = pg_class.oid AND
+          nspname = $1 AND
+          pg_class.relnamespace = pg_namespace.oid AND
+          pg_attribute.attrelid = pg_class.oid AND
+          pg_attribute.attnum = any(pg_index.indkey) AND
+          indisprimary
+      SQL
+      row = conn.exec_params(query, [schema, table]).to_a[0]
+      row && row["attname"]
     end
 
     # TODO better performance
