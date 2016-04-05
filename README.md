@@ -2,6 +2,8 @@
 
 Quickly and securely sync data between environments
 
+:tangerine: Battle-tested at [Instacart](https://www.instacart.com/opensource)
+
 ## Installation
 
 ```sh
