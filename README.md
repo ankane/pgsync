@@ -14,7 +14,7 @@ And in your project directory, run:
 pgsync setup
 ```
 
-This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information).
+This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
 
 ## How to Use
 
