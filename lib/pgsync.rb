@@ -58,7 +58,18 @@ module PgSync
         from_uri = source_uri
         to_uri = destination_uri
 
-        tables = table_list(args, opts, from_uri)
+        table_opts = Hash.new { |hash, key| hash[key] = {} }
+        if args[0] == "related_rows"
+          tables = []
+          related_rows = config["related_rows"][args[1]]
+          abort "Related rows not found" unless related_rows
+          related_rows.each do |table, where|
+            tables << table
+            table_opts[table] = {where: where.gsub!("{id}", args[2]), preserve: true}
+          end
+        else
+          tables = table_list(args, opts, from_uri)
+        end
 
         if args[0] == "schema" || opts[:schema_only]
           time =
@@ -88,7 +99,7 @@ module PgSync
             end
           else
             in_parallel(tables) do |table|
-              sync_table(table, opts, from_uri, to_uri)
+              sync_table(table, opts.merge(table_opts[table]), from_uri, to_uri)
             end
 
             time = Time.now - start_time
