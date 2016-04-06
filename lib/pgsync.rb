@@ -88,114 +88,7 @@ module PgSync
             end
           else
             in_parallel(tables) do |table|
-              time =
-                benchmark do
-                  with_connection(from_uri) do |from_connection|
-                    with_connection(to_uri) do |to_connection|
-                      bad_fields = opts[:no_rules] ? [] : config["data_rules"]
-
-                      from_fields = columns(from_connection, table, "public")
-                      to_fields = columns(to_connection, table, "public")
-                      shared_fields = to_fields & from_fields
-                      extra_fields = to_fields - from_fields
-                      missing_fields = from_fields - to_fields
-
-                      from_sequences = sequences(from_connection, table, shared_fields)
-                      to_sequences = sequences(to_connection, table, shared_fields)
-                      shared_sequences = to_sequences & from_sequences
-                      extra_sequences = to_sequences - from_sequences
-                      missing_sequences = from_sequences - to_sequences
-
-                      where = opts[:where]
-                      limit = opts[:limit]
-                      sql_clause = String.new
-
-                      @mutex.synchronize do
-                        log "* Syncing #{table}"
-                        if where
-                          log "    #{where}"
-                          sql_clause << " WHERE #{opts[:where]}"
-                        end
-                        if limit
-                          log "    LIMIT #{limit}"
-                          sql_clause << " LIMIT #{limit}"
-                        end
-                        log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
-                        log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
-                        log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
-                        log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
-
-                        if shared_fields.empty?
-                          log "    No fields to copy"
-                        end
-                      end
-
-                      if shared_fields.any?
-                        copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
-                        fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
-
-                        seq_values = {}
-                        shared_sequences.each do |seq|
-                          seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
-                        end
-
-                        copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
-                        if opts[:preserve]
-                          primary_key = self.primary_key(from_connection, table, "public")
-                          abort "No primary key" unless primary_key
-
-                          temp_table = "pgsync_#{rand(1_000_000_000)}"
-                          file = Tempfile.new(temp_table)
-                          begin
-                            from_connection.copy_data copy_to_command do
-                              while row = from_connection.get_copy_data
-                                file.write(row)
-                              end
-                            end
-                            file.rewind
-
-                            to_connection.transaction do
-                              # create a temp table
-                              to_connection.exec("CREATE TABLE #{temp_table} AS SELECT * FROM #{table} WITH NO DATA")
-
-                              # load file
-                              to_connection.copy_data "COPY #{temp_table} (#{fields}) FROM STDIN" do
-                                file.each do |row|
-                                  to_connection.put_copy_data(row)
-                                end
-                              end
-
-                              # insert into
-                              to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
-
-                              # delete temp table
-                              to_connection.exec("DROP TABLE #{temp_table}")
-                            end
-                          ensure
-                             file.close
-                             file.unlink
-                          end
-                        else
-                          to_connection.exec("TRUNCATE #{table} CASCADE")
-                          to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                            from_connection.copy_data copy_to_command do
-                              while row = from_connection.get_copy_data
-                                to_connection.put_copy_data(row)
-                              end
-                            end
-                          end
-                        end
-                        seq_values.each do |seq, value|
-                          to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
-                        end
-                      end
-                    end
-                  end
-                end
-
-              @mutex.synchronize do
-                log "* DONE #{table} (#{time.round(1)}s)"
-              end
+              sync_table(table, opts, from_uri, to_uri)
             end
 
             time = Time.now - start_time
@@ -207,6 +100,117 @@ module PgSync
     end
 
     protected
+
+    def sync_table(table, opts, from_uri, to_uri)
+      time =
+        benchmark do
+          with_connection(from_uri) do |from_connection|
+            with_connection(to_uri) do |to_connection|
+              bad_fields = opts[:no_rules] ? [] : config["data_rules"]
+
+              from_fields = columns(from_connection, table, "public")
+              to_fields = columns(to_connection, table, "public")
+              shared_fields = to_fields & from_fields
+              extra_fields = to_fields - from_fields
+              missing_fields = from_fields - to_fields
+
+              from_sequences = sequences(from_connection, table, shared_fields)
+              to_sequences = sequences(to_connection, table, shared_fields)
+              shared_sequences = to_sequences & from_sequences
+              extra_sequences = to_sequences - from_sequences
+              missing_sequences = from_sequences - to_sequences
+
+              where = opts[:where]
+              limit = opts[:limit]
+              sql_clause = String.new
+
+              @mutex.synchronize do
+                log "* Syncing #{table}"
+                if where
+                  log "    #{where}"
+                  sql_clause << " WHERE #{opts[:where]}"
+                end
+                if limit
+                  log "    LIMIT #{limit}"
+                  sql_clause << " LIMIT #{limit}"
+                end
+                log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+                log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+                log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+                log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+
+                if shared_fields.empty?
+                  log "    No fields to copy"
+                end
+              end
+
+              if shared_fields.any?
+                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
+                fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
+
+                seq_values = {}
+                shared_sequences.each do |seq|
+                  seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
+                end
+
+                copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
+                if opts[:preserve]
+                  primary_key = self.primary_key(from_connection, table, "public")
+                  abort "No primary key" unless primary_key
+
+                  temp_table = "pgsync_#{rand(1_000_000_000)}"
+                  file = Tempfile.new(temp_table)
+                  begin
+                    from_connection.copy_data copy_to_command do
+                      while row = from_connection.get_copy_data
+                        file.write(row)
+                      end
+                    end
+                    file.rewind
+
+                    to_connection.transaction do
+                      # create a temp table
+                      to_connection.exec("CREATE TABLE #{temp_table} AS SELECT * FROM #{table} WITH NO DATA")
+
+                      # load file
+                      to_connection.copy_data "COPY #{temp_table} (#{fields}) FROM STDIN" do
+                        file.each do |row|
+                          to_connection.put_copy_data(row)
+                        end
+                      end
+
+                      # insert into
+                      to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
+
+                      # delete temp table
+                      to_connection.exec("DROP TABLE #{temp_table}")
+                    end
+                  ensure
+                     file.close
+                     file.unlink
+                  end
+                else
+                  to_connection.exec("TRUNCATE #{table} CASCADE")
+                  to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                    from_connection.copy_data copy_to_command do
+                      while row = from_connection.get_copy_data
+                        to_connection.put_copy_data(row)
+                      end
+                    end
+                  end
+                end
+                seq_values.each do |seq, value|
+                  to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                end
+              end
+            end
+          end
+        end
+
+      @mutex.synchronize do
+        log "* DONE #{table} (#{time.round(1)}s)"
+      end
+    end
 
     def parse_args(args)
       opts = Slop.parse(args) do |o|
