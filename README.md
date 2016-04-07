@@ -90,13 +90,14 @@ pgsync group1
 
 You can also use groups to sync a specific record and associated records in other tables.
 
-To get user `123` with his or her last 10 orders and favorite store, use:
+To get user `123` with his or her orders, last 10 visits, and favorite store, use:
 
 ```yml
 groups:
   user:
     users: "where id = {id}"
-    orders: "where user_id = {id} order by id desc limit 10"
+    orders: "where user_id = {id}"
+    visits: "where user_id = {id} order by created_at desc limit 10"
     stores: "inner join stores ON stores.id = users.favorite_store_id where users.id = {id}"
 ```
 
