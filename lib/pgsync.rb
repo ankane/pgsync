@@ -257,7 +257,7 @@ Options:}
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
         o.boolean "--list", "list", default: false
-        o.boolean "--overwrite", "overwrite existing rows", default: false
+        o.boolean "--overwrite", "overwrite existing rows", default: false, help: false
         o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
