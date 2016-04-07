@@ -1,6 +1,7 @@
 # 0.2.5 [unreleased]
 
-- `pgsync group1` is now shorthand for `pgsync groups group1`
+- Added `pgsync users "WHERE id = 1`
+- Added `pgsync group1`, shorthand for `pgsync groups group1`
 - Added `--schema-only` option
 - Added `--no-rules` option
 

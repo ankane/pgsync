@@ -99,7 +99,7 @@ module PgSync
             end
           else
             in_parallel(tables) do |table|
-              sync_table(table, opts.merge(table_opts[table]), from_uri, to_uri)
+              sync_table(table, opts.merge(sql: args[1]).merge(table_opts[table]), from_uri, to_uri)
             end
 
             time = Time.now - start_time
@@ -134,6 +134,8 @@ module PgSync
               where = opts[:where]
               limit = opts[:limit]
               sql_clause = String.new
+              sql_clause << " #{opts[:sql]}" if opts[:sql]
+              opts[:preserve] ||= !opts[:sql].nil?
 
               @mutex.synchronize do
                 log "* Syncing #{table}"
@@ -506,7 +508,8 @@ Options:}
     def table_list(args, opts, from_uri)
       tables =
         if args[0] == "groups"
-          specified_groups = to_arr(args[1])
+          args.shift
+          specified_groups = to_arr(args[0])
           specified_groups.map do |group|
             if (tables = config["groups"][group])
               tables
@@ -515,7 +518,8 @@ Options:}
             end
           end.flatten
         elsif args[0] == "tables"
-          to_arr(args[1])
+          args.shift
+          to_arr(args[0])
         elsif args[0]
           # could be a group, table, or mix
           specified_groups = to_arr(args[0])
