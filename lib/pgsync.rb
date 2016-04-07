@@ -40,8 +40,13 @@ module PgSync
       end
       command = args[0]
 
+      # setup hack
+      if opts[:setup]
+        command = "setup"
+        args[1] = args[0]
+      end
       if command == "setup"
-        setup(db_config_file(args[1]) || config_file)
+        setup(db_config_file(args[1]) || config_file || ".pgsync.yml")
       else
         source = parse_source(opts[:from])
         abort "No source" unless source
@@ -243,6 +248,7 @@ Options:}
         o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
+        o.boolean "--setup", "setup", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
