@@ -40,13 +40,23 @@ module PgSync
       end
       command = args[0]
 
-      # setup hack
-      if opts[:setup]
-        command = "setup"
-        args[1] = args[0]
+      case command
+      when "setup"
+        args.shift
+        opts[:setup] = true
+        deprecated "Use `psync --setup` instead"
+      when "tables"
+        args.shift
+        opts[:tables] = args.shift
+        deprecated "Use `pgsync #{opts[:tables]}` instead"
+      when "groups"
+        args.shift
+        opts[:groups] = args.shift
+        deprecated "Use `pgsync #{opts[:groups]}` instead"
       end
-      if command == "setup"
-        setup(db_config_file(args[1]) || config_file || ".pgsync.yml")
+
+      if opts[:setup]
+        setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
       else
         source = parse_source(opts[:from])
         abort "No source" unless source
@@ -229,15 +239,11 @@ module PgSync
     def parse_args(args)
       opts = Slop.parse(args) do |o|
         o.banner = %{Usage:
-    pgsync [command] [options]
-
-Commands:
-    tables
-    groups
-    schema
-    setup
+    pgsync [options]
 
 Options:}
+        o.string "-t", "--tables", "tables"
+        o.string "-g", "--groups", "groups"
         o.string "--from", "source"
         o.string "--to", "destination"
         o.string "--where", "where"
@@ -511,34 +517,38 @@ Options:}
     def table_list(args, opts, from_uri)
       tables = nil
 
-      if args[0] == "groups"
-        tables = Hash.new { |hash, key| hash[key] = {} }
-        specified_groups = to_arr(args[1])
+      if opts[:groups]
+        tables ||= Hash.new { |hash, key| hash[key] = {} }
+        specified_groups = to_arr(opts[:groups])
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
-          if (t = config["goups"][group])
+          if (t = (config["groups"] || {})[group])
             t.each do |table|
               tables[table] = {}
-              tables[table][:sql] = args[2].to_s.gsub("{id}", cast(id)) if args[2]
+              tables[table][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
             end
           else
             abort "Group not found: #{group}"
           end
         end
-      elsif args[0] == "tables"
-        tables = Hash.new { |hash, key| hash[key] = {} }
-        to_arr(args[1]).each do |tag|
+      end
+
+      if opts[:tables]
+        tables ||= Hash.new { |hash, key| hash[key] = {} }
+        to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
           tables[table] = {}
-          tables[table][:sql] = args[2].to_s.gsub("{id}", cast(id)) if args[2]
+          tables[table][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
         end
-      elsif args[0]
+      end
+
+      if args[0]
         # could be a group, table, or mix
-        tables = Hash.new { |hash, key| hash[key] = {} }
+        tables ||= Hash.new { |hash, key| hash[key] = {} }
         specified_groups = to_arr(args[0])
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
-          if (t = config["groups"][group])
+          if (t = (config["groups"] || {})[group])
             t.each do |table|
               sql = nil
               if table.is_a?(Array)
@@ -569,6 +579,10 @@ Options:}
 
     def cast(value)
       value.to_s
+    end
+
+    def deprecated(message)
+      log "[DEPRECATED] #{message}"
     end
   end
 end
