@@ -76,7 +76,9 @@ And run:
 pgsync group1
 ```
 
-You can also sync specific rows:
+You can also use groups to sync a specific record and associated records in other tables.
+
+To get user `123` and his or her orders, use:
 
 ```yml
 groups:
@@ -90,8 +92,6 @@ And run:
 ```sh
 pgsync user:123
 ```
-
-to get rows associated with user `123`.
 
 ### Schema
 
