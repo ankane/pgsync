@@ -514,6 +514,17 @@ Options:}
       end
     end
 
+    def add_tables(tables, t, id, boom)
+      t.each do |table|
+        sql = nil
+        if table.is_a?(Array)
+          table, sql = table
+        end
+        tables[table] = {}
+        tables[table][:sql] = (boom || sql).to_s.gsub("{id}", cast(id)) if boom || sql
+      end
+    end
+
     def table_list(args, opts, from_uri)
       tables = nil
 
@@ -523,10 +534,7 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            t.each do |table|
-              tables[table] = {}
-              tables[table][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
-            end
+            add_tables(tables, t, id, args[1])
           else
             abort "Group not found: #{group}"
           end
@@ -549,14 +557,7 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            t.each do |table|
-              sql = nil
-              if table.is_a?(Array)
-                table, sql = table
-              end
-              tables[table] = {}
-              tables[table][:sql] = (args[1] || sql).to_s.gsub("{id}", cast(id)) if args[1] || sql
-            end
+            add_tables(tables, t, id, args[1])
           else
             tables[group] = {}
             tables[group][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
