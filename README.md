@@ -90,13 +90,13 @@ pgsync group1
 
 You can also use groups to sync a specific record and associated records in other tables.
 
-To get product `123` with its images, last 10 coupons, and store, use:
+To get product `123` with its reviews, last 10 coupons, and store, use:
 
 ```yml
 groups:
   product:
-    users: "where id = {id}"
-    images: "where product_id = {id}"
+    products: "where id = {id}"
+    reviews: "where product_id = {id}"
     coupons: "where product_id = {id} order by created_at desc limit 10"
     stores: "where id in (select store_id from products where id = {id})
 ```
