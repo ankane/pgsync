@@ -35,19 +35,19 @@ pgsync table1,table2
 Sync specific rows (existing rows are overwritten)
 
 ```sh
-pgsync products "WHERE id < 1000"
+pgsync products "where id < 1000"
 ```
 
 You can also preserve existing rows
 
 ```sh
-pgsync products "WHERE id < 1000" --preserve
+pgsync products "where id < 1000" --preserve
 ```
 
 Or truncate them
 
 ```sh
-pgsync products "WHERE id < 1000" --truncate
+pgsync products "where id < 1000" --truncate
 ```
 
 ### Exclude Tables
@@ -95,8 +95,8 @@ To get user `123` and his or her orders, use:
 ```yml
 groups:
   user:
-    users: "WHERE id = {id}"
-    orders: "WHERE user_id = {id}"
+    users: "where id = {id}"
+    orders: "where user_id = {id} limit 10"
 ```
 
 And run:
