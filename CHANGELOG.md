@@ -1,6 +1,7 @@
 # 0.3.2 [unreleased]
 
 - Deprecated `--where` and `--limit`
+- Added `--overwrite` option
 
 # 0.3.1
 
