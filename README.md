@@ -35,19 +35,19 @@ pgsync table1,table2
 Sync specific rows (existing rows are overwritten)
 
 ```sh
-pgsync products "where id < 1000"
+pgsync products "where store_id = 1"
 ```
 
 You can also preserve existing rows
 
 ```sh
-pgsync products "where id < 1000" --preserve
+pgsync products "where store_id = 1" --preserve
 ```
 
 Or truncate them
 
 ```sh
-pgsync products "where id < 1000" --truncate
+pgsync products "where store_id = 1" --truncate
 ```
 
 ### Exclude Tables
@@ -90,21 +90,21 @@ pgsync group1
 
 You can also use groups to sync a specific record and associated records in other tables.
 
-To get user `123` with his or her orders, last 10 visits, and favorite store, use:
+To get product `123` with its images, last 10 coupons, and store, use:
 
 ```yml
 groups:
-  user:
+  product:
     users: "where id = {id}"
-    orders: "where user_id = {id}"
-    visits: "where user_id = {id} order by created_at desc limit 10"
-    stores: "where id in (select favorite_store_id from users where id = {id})
+    images: "where product_id = {id}"
+    coupons: "where product_id = {id} order by created_at desc limit 10"
+    stores: "where id in (select store_id from products where id = {id})
 ```
 
 And run:
 
 ```sh
-pgsync user:123
+pgsync product:123
 ```
 
 ### Schema
