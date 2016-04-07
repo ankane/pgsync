@@ -32,10 +32,22 @@ Sync specific tables
 pgsync table1,table2
 ```
 
-Sync specific rows
+Sync specific rows (existing rows are overwritten)
 
 ```sh
 pgsync products "WHERE id < 1000"
+```
+
+You can also preserve existing rows
+
+```sh
+pgsync products "WHERE id < 1000" --preserve
+```
+
+Or truncate them
+
+```sh
+pgsync products "WHERE id < 1000" --truncate
 ```
 
 ### Exclude Tables
