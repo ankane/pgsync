@@ -58,24 +58,13 @@ module PgSync
         from_uri = source_uri
         to_uri = destination_uri
 
-        table_opts = Hash.new { |hash, key| hash[key] = {} }
-        if args[0] == "related_rows"
-          tables = []
-          related_rows = config["related_rows"][args[1]]
-          abort "Related rows not found" unless related_rows
-          related_rows.each do |table, where|
-            tables << table
-            table_opts[table] = {where: where.gsub!("{id}", args[2]), preserve: true}
-          end
-        else
-          tables = table_list(args, opts, from_uri)
-        end
+        tables = table_list(args, opts, from_uri)
 
         if args[0] == "schema" || opts[:schema_only]
           time =
             benchmark do
               log "* Dumping schema"
-              tables = tables.map { |t| "-t #{t}" }.join(" ")
+              tables = tables.keys.map { |t| "-t #{t}" }.join(" ")
               dump_command = "pg_dump --verbose --schema-only --no-owner --no-acl --clean #{tables} #{to_url(source_uri)}"
               restore_command = "psql -q -d #{to_url(destination_uri)}"
               system("#{dump_command} | #{restore_command}")
@@ -84,7 +73,7 @@ module PgSync
           log "* DONE (#{time.round(1)}s)"
         else
           with_connection(to_uri, timeout: 3) do |conn|
-            tables.each do |table|
+            tables.keys.each do |table|
               unless table_exists?(conn, table, "public")
                 abort "Table does not exist in destination: #{table}"
               end
@@ -95,11 +84,11 @@ module PgSync
             if args[0] == "groups"
               pretty_list (config["groups"] || {}).keys
             else
-              pretty_list tables
+              pretty_list tables.keys
             end
           else
-            in_parallel(tables) do |table|
-              sync_table(table, opts.merge(sql: args[1]).merge(table_opts[table]), from_uri, to_uri)
+            in_parallel(tables) do |table, table_opts|
+              sync_table(table, opts.merge(table_opts), from_uri, to_uri)
             end
 
             time = Time.now - start_time
@@ -134,11 +123,14 @@ module PgSync
               where = opts[:where]
               limit = opts[:limit]
               sql_clause = String.new
-              sql_clause << " #{opts[:sql]}" if opts[:sql]
-              opts[:preserve] ||= !opts[:sql].nil?
 
               @mutex.synchronize do
                 log "* Syncing #{table}"
+                if opts[:sql]
+                  log "    #{opts[:sql]}"
+                  sql_clause << " #{opts[:sql]}"
+                  opts[:preserve] = true
+                end
                 if where
                   log "    #{where}"
                   sql_clause << " WHERE #{opts[:where]}"
@@ -158,7 +150,7 @@ module PgSync
               end
 
               if shared_fields.any?
-                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], f, from_connection)} AS #{escape_identifier(f)}" : escape_identifier(f) }.join(", ")
+                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, from_connection)} AS #{escape_identifier(f)}" : "#{table}.#{escape_identifier(f)}" }.join(", ")
                 fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
 
                 seq_values = {}
@@ -378,7 +370,7 @@ Options:}
     end
 
     # TODO wildcard rules
-    def apply_strategy(rule, column, conn)
+    def apply_strategy(rule, table, column, conn)
       if rule.is_a?(Hash)
         if rule.key?("value")
           escape(rule["value"])
@@ -389,13 +381,13 @@ Options:}
         end
       else
         strategies = {
-          "unique_email" => "'email' || id || '@example.org'",
+          "unique_email" => "'email' || #{table}.id || '@example.org'",
           "untouched" => escape_identifier(column),
-          "unique_phone" => "(id + 1000000000)::text",
+          "unique_phone" => "(#{table}.id + 1000000000)::text",
           "random_int" => "(RAND() * 10)::int",
           "random_date" => "'1970-01-01'",
           "random_time" => "NOW()",
-          "unique_secret" => "'secret' || id",
+          "unique_secret" => "'secret' || #{table}.id",
           "random_ip" => "'127.0.0.1'",
           "random_letter" => "'A'",
           "null" => "NULL",
@@ -506,38 +498,55 @@ Options:}
     end
 
     def table_list(args, opts, from_uri)
-      tables =
-        if args[0] == "groups"
-          args.shift
-          specified_groups = to_arr(args[0])
-          specified_groups.map do |group|
-            if (tables = config["groups"][group])
-              tables
-            else
-              abort "Group not found: #{group}"
+      tables = nil
+
+      if args[0] == "groups"
+        tables = Hash.new { |hash, key| hash[key] = {} }
+        specified_groups = to_arr(args[1])
+        specified_groups.map do |tag|
+          group, id = tag.split(":", 2)
+          if (t = config["goups"][group])
+            t.each do |table|
+              tables[table] = {}
+              tables[table][:sql] = args[2].to_s.gsub("{id}", cast(id)) if args[2]
             end
-          end.flatten
-        elsif args[0] == "tables"
-          args.shift
-          to_arr(args[0])
-        elsif args[0]
-          # could be a group, table, or mix
-          specified_groups = to_arr(args[0])
-          specified_groups.map do |group|
-            if (tables = config["groups"][group])
-              tables
-            else
-              [group]
-            end
-          end.flatten
-        else
-          nil
+          else
+            abort "Group not found: #{group}"
+          end
         end
+      elsif args[0] == "tables"
+        tables = Hash.new { |hash, key| hash[key] = {} }
+        to_arr(args[1]).each do |tag|
+          table, id = tag.split(":", 2)
+          tables[table] = {}
+          tables[table][:sql] = args[2].to_s.gsub("{id}", cast(id)) if args[2]
+        end
+      elsif args[0]
+        # could be a group, table, or mix
+        tables = Hash.new { |hash, key| hash[key] = {} }
+        specified_groups = to_arr(args[0])
+        specified_groups.map do |tag|
+          group, id = tag.split(":", 2)
+          if (t = config["groups"][group])
+            t.each do |table|
+              sql = nil
+              if table.is_a?(Array)
+                table, sql = table
+              end
+              tables[table] = {}
+              tables[table][:sql] = (args[1] || sql).to_s.gsub("{id}", cast(id)) if args[1] || sql
+            end
+          else
+            tables[group] = {}
+            tables[group][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
+          end
+        end
+      end
 
       with_connection(from_uri, timeout: 3) do |conn|
-        tables ||= self.tables(conn, "public") - to_arr(opts[:exclude])
+        tables ||= to_hash(self.tables(conn, "public") - to_arr(opts[:exclude]))
 
-        tables.each do |table|
+        tables.keys.each do |table|
           unless table_exists?(conn, table, "public")
             abort "Table does not exist in source: #{table}"
           end
@@ -545,6 +554,10 @@ Options:}
       end
 
       tables
+    end
+
+    def cast(value)
+      value
     end
   end
 end
