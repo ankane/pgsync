@@ -97,6 +97,7 @@ groups:
   user:
     users: "where id = {id}"
     orders: "where user_id = {id} limit 10"
+    stores: "inner join stores ON store_id = users.store_id where users.id = {id}"
 ```
 
 And run:
