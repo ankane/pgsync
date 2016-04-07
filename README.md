@@ -20,19 +20,19 @@ This creates `.pgsync.yml` for you to customize. We recommend checking this into
 
 ## How to Use
 
-Fetch all tables
+Sync all tables
 
 ```sh
 pgsync
 ```
 
-Fetch specific tables
+Sync specific tables
 
 ```sh
 pgsync table1,table2
 ```
 
-Fetch specific rows
+Sync specific rows
 
 ```sh
 pgsync products "WHERE id < 1000"
@@ -95,7 +95,7 @@ pgsync user:123
 
 ### Schema
 
-Fetch schema
+Sync schema
 
 ```sh
 pgsync --schema-only
