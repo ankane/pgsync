@@ -517,7 +517,15 @@ Options:}
         elsif args[0] == "tables"
           to_arr(args[1])
         elsif args[0]
-          to_arr(args[0])
+          # could be a group, table, or mix
+          specified_groups = to_arr(args[0])
+          specified_groups.map do |group|
+            if (tables = config["groups"][group])
+              tables
+            else
+              [group]
+            end
+          end.flatten
         else
           nil
         end
