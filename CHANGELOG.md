@@ -1,4 +1,4 @@
-# 0.3.0 [unreleased]
+# 0.3.0
 
 - More powerful groups
 - Overwrite rows by default when `WHERE` clause (previously truncated)
