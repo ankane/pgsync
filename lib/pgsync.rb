@@ -80,16 +80,13 @@ module PgSync
         tables = table_list(args, opts, from_uri)
 
         if opts[:schema_only]
-          time =
-            benchmark do
-              log "* Dumping schema"
-              tables = tables.keys.map { |t| "-t #{t}" }.join(" ")
-              dump_command = "pg_dump --verbose --schema-only --no-owner --no-acl --clean #{tables} #{to_url(source_uri)}"
-              restore_command = "psql -q -d #{to_url(destination_uri)}"
-              system("#{dump_command} | #{restore_command}")
-            end
+          log "* Dumping schema"
+          tables = tables.keys.map { |t| "-t #{t}" }.join(" ")
+          dump_command = "pg_dump --verbose --schema-only --no-owner --no-acl --clean #{tables} #{to_url(source_uri)}"
+          restore_command = "psql -q -d #{to_url(destination_uri)}"
+          system("#{dump_command} | #{restore_command}")
 
-          log "* DONE (#{time.round(1)}s)"
+          log_completed(start_time)
         else
           with_connection(to_uri, timeout: 3) do |conn|
             tables.keys.each do |table|
@@ -110,8 +107,7 @@ module PgSync
               sync_table(table, opts.merge(table_opts), from_uri, to_uri)
             end
 
-            time = Time.now - start_time
-            log "Completed in #{time.round(1)}s"
+            log_completed(start_time)
           end
         end
       end
@@ -588,6 +584,11 @@ Options:}
 
     def deprecated(message)
       log "[DEPRECATED] #{message}"
+    end
+
+    def log_completed(start_time)
+      time = Time.now - start_time
+      log "Completed in #{time.round(1)}s"
     end
   end
 end
