@@ -1,9 +1,13 @@
-# 0.2.5 [unreleased]
+# 0.3.0 [unreleased]
 
+- More powerful groups
+- Overwrite rows by default when `WHERE` clause (previously truncated)
 - Added `pgsync users "WHERE id = 1`
 - Added `pgsync group1`, shorthand for `pgsync groups group1`
 - Added `--schema-only` option
 - Added `--no-rules` option
+- Added `--setup` option
+- Added `--truncate` option
 
 # 0.2.4
 

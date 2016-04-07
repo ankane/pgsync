@@ -13,7 +13,7 @@ gem install pgsync
 And in your project directory, run:
 
 ```sh
-pgsync setup
+pgsync --setup
 ```
 
 This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
@@ -32,16 +32,10 @@ Fetch specific tables
 pgsync table1,table2
 ```
 
-Fetch specific rows (truncates destination table first)
+Fetch specific rows
 
 ```sh
-pgsync products --where "id < 100"
-```
-
-To preserve existing rows, use:
-
-```sh
-pgsync products --where "id < 100" --preserve
+pgsync products "WHERE id < 1000"
 ```
 
 ### Exclude Tables
@@ -65,20 +59,6 @@ exclude:
   - schema_migrations
 ```
 
-### Schema
-
-Fetch schema
-
-```sh
-pgsync schema
-```
-
-Specify tables
-
-```sh
-pgsync schema table1,table2
-```
-
 ### Groups
 
 Define groups in `.pgsync.yml`:
@@ -88,15 +68,43 @@ groups:
   group1:
     - table1
     - table2
-  group2:
-    - table3
-    - table4
 ```
 
 And run:
 
 ```sh
-pgsync groups group1,group2
+pgsync group1
+```
+
+You can also sync specific rows:
+
+```yml
+groups:
+  user:
+    users: "WHERE id = {id}"
+    orders: "WHERE user_id = {id}"
+```
+
+And run:
+
+```sh
+pgsync user:123
+```
+
+to get rows associated with user `123`.
+
+### Schema
+
+Fetch schema
+
+```sh
+pgsync --schema-only
+```
+
+Specify tables
+
+```sh
+pgsync table1,table2 --schema-only
 ```
 
 ## Sensitive Information
@@ -138,7 +146,7 @@ Options for replacement are:
 To use with multiple databases, run:
 
 ```sh
-pgsync setup db2
+pgsync --setup db2
 ```
 
 This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:

@@ -134,7 +134,6 @@ module PgSync
                 if opts[:sql]
                   log "    #{opts[:sql]}"
                   sql_clause << " #{opts[:sql]}"
-                  opts[:preserve] = true
                 end
                 if where
                   log "    #{where}"
@@ -164,7 +163,7 @@ module PgSync
                 end
 
                 copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
-                if opts[:preserve]
+                if !opts[:truncate] && (opts[:preserve] || !sql_clause.empty?)
                   primary_key = self.primary_key(from_connection, table, "public")
                   abort "No primary key" unless primary_key
 
@@ -189,8 +188,13 @@ module PgSync
                         end
                       end
 
-                      # insert into
-                      to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
+                      if opts[:preserve]
+                        # insert into
+                        to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
+                      else
+                        to_connection.exec("DELETE FROM #{table} WHERE #{primary_key} IN (SELECT #{primary_key} FROM #{temp_table})")
+                        to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table})")
+                      end
 
                       # delete temp table
                       to_connection.exec("DROP TABLE #{temp_table}")
@@ -246,6 +250,7 @@ Options:}
         o.boolean "--debug", "debug", default: false
         o.boolean "--list", "list", default: false
         o.boolean "--preserve", "preserve existing rows", default: false
+        o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
@@ -550,7 +555,7 @@ Options:}
       end
 
       with_connection(from_uri, timeout: 3) do |conn|
-        tables ||= to_hash(self.tables(conn, "public") - to_arr(opts[:exclude]))
+        tables ||= Hash[(self.tables(conn, "public") - to_arr(opts[:exclude])).map { |k| [k, {}] }]
 
         tables.keys.each do |table|
           unless table_exists?(conn, table, "public")
@@ -563,7 +568,7 @@ Options:}
     end
 
     def cast(value)
-      value
+      value.to_s
     end
   end
 end
