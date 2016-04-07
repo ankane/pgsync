@@ -1,3 +1,7 @@
+# 0.3.2 [unreleased]
+
+- Deprecated `--where` and `--limit`
+
 # 0.3.1
 
 - Added `-t` or `--tables`, `-g` or `--groups` options

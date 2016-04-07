@@ -59,6 +59,18 @@ module PgSync
         deprecated "Use `pgsync #{opts[:groups]}` instead"
       end
 
+      if opts[:where]
+        opts[:sql] ||= String.new
+        opts[:sql] << " WHERE #{opts[:where]}"
+        deprecated "Use `\"WHERE #{opts[:where]}\"` instead"
+      end
+
+      if opts[:limit]
+        opts[:sql] ||= String.new
+        opts[:sql] << " LIMIT #{opts[:limit]}"
+        deprecated "Use `\"LIMIT #{opts[:limit]}\"` instead"
+      end
+
       if opts[:setup]
         setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
       else
@@ -135,8 +147,6 @@ module PgSync
               extra_sequences = to_sequences - from_sequences
               missing_sequences = from_sequences - to_sequences
 
-              where = opts[:where]
-              limit = opts[:limit]
               sql_clause = String.new
 
               @mutex.synchronize do
@@ -144,14 +154,6 @@ module PgSync
                 if opts[:sql]
                   log "    #{opts[:sql]}"
                   sql_clause << " #{opts[:sql]}"
-                end
-                if where
-                  log "    #{where}"
-                  sql_clause << " WHERE #{opts[:where]}"
-                end
-                if limit
-                  log "    LIMIT #{limit}"
-                  sql_clause << " LIMIT #{limit}"
                 end
                 log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
                 log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
