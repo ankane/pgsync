@@ -1,6 +1,7 @@
-# 0.3.1 [unreleased]
+# 0.3.1
 
-- Added `-t` and `-g` options and deprecated `tables`, `groups`, and `setup` commands
+- Added `-t` or `--tables`, `-g` or `--groups` options
+- Deprecated `tables`, `groups`, and `setup` commands
 
 # 0.3.0
 
