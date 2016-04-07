@@ -98,7 +98,7 @@ groups:
     users: "where id = {id}"
     orders: "where user_id = {id}"
     visits: "where user_id = {id} order by created_at desc limit 10"
-    stores: "inner join users ON users.favorite_store_id = stores.id where users.id = {id}"
+    stores: "inner join users on users.favorite_store_id = stores.id where users.id = {id}"
 ```
 
 And run:

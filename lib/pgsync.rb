@@ -523,9 +523,13 @@ Options:}
         if table.is_a?(Array)
           table, sql = table
         end
-        tables[table] = {}
-        tables[table][:sql] = (boom || sql).to_s.gsub("{id}", cast(id)) if boom || sql
+        add_table(tables, table, id, boom || sql)
       end
+    end
+
+    def add_table(tables, table, id, boom)
+      tables[table] = {}
+      tables[table][:sql] = boom.gsub("{id}", cast(id)) if boom
     end
 
     def table_list(args, opts, from_uri)
@@ -548,8 +552,7 @@ Options:}
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
-          tables[table] = {}
-          tables[table][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
+          add_table(tables, table, id, args[1])
         end
       end
 
@@ -562,8 +565,7 @@ Options:}
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
           else
-            tables[group] = {}
-            tables[group][:sql] = args[1].to_s.gsub("{id}", cast(id)) if args[1]
+            add_table(tables, group, id, args[1])
           end
         end
       end
