@@ -45,6 +45,10 @@ module PgSync
         args.shift
         opts[:setup] = true
         deprecated "Use `psync --setup` instead"
+      when "schema"
+        args.shift
+        opts[:schema_only] = true
+        deprecated "Use `psync --schema-only` instead"
       when "tables"
         args.shift
         opts[:tables] = args.shift
@@ -75,7 +79,7 @@ module PgSync
 
         tables = table_list(args, opts, from_uri)
 
-        if args[0] == "schema" || opts[:schema_only]
+        if opts[:schema_only]
           time =
             benchmark do
               log "* Dumping schema"
@@ -246,8 +250,8 @@ Options:}
         o.string "-g", "--groups", "groups"
         o.string "--from", "source"
         o.string "--to", "destination"
-        o.string "--where", "where"
-        o.integer "--limit", "limit"
+        o.string "--where", "where", help: false
+        o.integer "--limit", "limit", help: false
         o.string "--exclude", "exclude tables"
         o.string "--config", "config file"
         o.string "--db", "database"
