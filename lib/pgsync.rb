@@ -529,7 +529,7 @@ Options:}
 
     def add_table(tables, table, id, boom)
       tables[table] = {}
-      tables[table][:sql] = boom.gsub("{id}", cast(id)) if boom
+      tables[table][:sql] = boom.gsub("{id}", cast(id)).gsub("{1}", cast(id)) if boom
     end
 
     def table_list(args, opts, from_uri)
