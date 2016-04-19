@@ -18,7 +18,6 @@ end
 
 module PgSync
   class Error < StandardError; end
-  class Rollback < StandardError; end
 
   class Client
     def initialize(args)
