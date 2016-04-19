@@ -1,6 +1,10 @@
 # pgsync
 
-Quickly and securely sync data between environments
+Sync Postgres data to your local machine. Designed for:
+
+- **speed** - up to 4x faster than traditional tools on a 4-core machine
+- **security** - built-in methods to prevent sensitive data from ever leaving the server
+- **convenience** - sync partial tables, groups of tables, and related records
 
 :tangerine: Battle-tested at [Instacart](https://www.instacart.com/opensource)
 
