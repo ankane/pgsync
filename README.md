@@ -177,15 +177,15 @@ To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
 ## Setup Scripts
 
-To include in setup scripts, use:
+Use groups when possible to take advantage of parallelism.
+
+For Ruby scripts, you’ll need to do:
 
 ```rb
 Bundler.with_clean_env do
   system "pgsync ..."
 end
 ```
-
-Use groups when possible to take advantage of parallelism.
 
 ## Upgrading
 
