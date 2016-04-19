@@ -175,6 +175,18 @@ To keep you from accidentally overwriting production, the destination is limited
 
 To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
+## Setup Scripts
+
+To include in setup scripts, use:
+
+```rb
+Bundler.with_clean_env do
+  system "pgsync ..."
+end
+```
+
+Use groups when possible to take advantage of parallelism.
+
 ## Upgrading
 
 Run:
