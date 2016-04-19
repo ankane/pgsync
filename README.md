@@ -30,6 +30,8 @@ Sync all tables
 pgsync
 ```
 
+**Note:** pgsync assumes your schema is already set up on your local machine. See the [schema section](#schema) if that’s not the case.
+
 Sync specific tables
 
 ```sh
@@ -99,10 +101,10 @@ To get product `123` with its reviews, last 10 coupons, and store, use:
 ```yml
 groups:
   product:
-    products: "where id = {id}"
-    reviews: "where product_id = {id}"
-    coupons: "where product_id = {id} order by created_at desc limit 10"
-    stores: "where id in (select store_id from products where id = {id})
+    products: "where id = {1}"
+    reviews: "where product_id = {1}"
+    coupons: "where product_id = {1} order by created_at desc limit 10"
+    stores: "where id in (select store_id from products where id = {1})
 ```
 
 And run:

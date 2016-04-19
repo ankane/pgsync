@@ -1,7 +1,8 @@
-# 0.3.2 [unreleased]
+# 0.3.2
 
-- Deprecated `--where` and `--limit`
+- Prefer `{1}` for interpolation
 - Added `--overwrite` option
+- Deprecated `--where` and `--limit`
 
 # 0.3.1
 
