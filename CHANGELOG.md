@@ -1,3 +1,7 @@
+# 0.3.3 [unreleased]
+
+- Added `-d` option as an alias for `--db`
+
 # 0.3.2
 
 - Prefer `{1}` for interpolation

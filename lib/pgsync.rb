@@ -245,13 +245,13 @@ module PgSync
 Options:}
         o.string "-t", "--tables", "tables"
         o.string "-g", "--groups", "groups"
+        o.string "-d", "--db", "database"
         o.string "--from", "source"
         o.string "--to", "destination"
         o.string "--where", "where", help: false
         o.integer "--limit", "limit", help: false
         o.string "--exclude", "exclude tables"
         o.string "--config", "config file"
-        o.string "--db", "database"
         # TODO much better name for this option
         o.boolean "--to-safe", "accept danger", default: false
         o.boolean "--debug", "debug", default: false
