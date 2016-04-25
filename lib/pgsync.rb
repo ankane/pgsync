@@ -516,19 +516,27 @@ Options:}
       end
     end
 
-    def add_tables(tables, t, id, boom)
+    def add_tables(tables, t, id, boom, from_uri)
       t.each do |table|
         sql = nil
         if table.is_a?(Array)
           table, sql = table
         end
-        add_table(tables, table, id, boom || sql)
+        add_table(tables, table, id, boom || sql, from_uri)
       end
     end
 
-    def add_table(tables, table, id, boom)
-      tables[table] = {}
-      tables[table][:sql] = boom.gsub("{id}", cast(id)).gsub("{1}", cast(id)) if boom
+    def add_table(tables, table, id, boom, from_uri, wildcard = false)
+      if table.include?("*") && !wildcard
+        regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
+        t2 = with_connection(from_uri) { |conn| self.tables(conn, "public") }.select { |t| regex.match(t) }
+        t2.each do |table|
+          add_table(tables, table, id, boom, from_uri, true)
+        end
+      else
+        tables[table] = {}
+        tables[table][:sql] = boom.gsub("{id}", cast(id)).gsub("{1}", cast(id)) if boom
+      end
     end
 
     def table_list(args, opts, from_uri)
@@ -540,7 +548,7 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1])
+            add_tables(tables, t, id, args[1], from_uri)
           else
             abort "Group not found: #{group}"
           end
@@ -551,7 +559,7 @@ Options:}
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
-          add_table(tables, table, id, args[1])
+          add_table(tables, table, id, args[1], from_uri)
         end
       end
 
@@ -562,9 +570,9 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1])
+            add_tables(tables, t, id, args[1], from_uri)
           else
-            add_table(tables, group, id, args[1])
+            add_table(tables, group, id, args[1], from_uri)
           end
         end
       end

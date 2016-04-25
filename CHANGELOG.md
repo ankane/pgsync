@@ -1,6 +1,7 @@
 # 0.3.3 [unreleased]
 
 - Added `-d` option as an alias for `--db`
+- Added support for wildcard tables
 
 # 0.3.2
 
