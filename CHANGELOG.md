@@ -2,6 +2,7 @@
 
 - Added `-d` option as an alias for `--db`
 - Added support for wildcard tables
+- Fixed `--schema-only` errors
 
 # 0.3.2
 
