@@ -185,7 +185,7 @@ module PgSync
 
                   if to_max_id == 1
                     from_min_id = min_id(from_connection, table, primary_key, sql_clause)
-                    to_max_id = from_min_id if from_min_id
+                    to_max_id = from_min_id if from_min_id > 0
                   end
 
                   starting_id = to_max_id
