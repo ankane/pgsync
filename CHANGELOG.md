@@ -1,3 +1,7 @@
+# 0.3.4 [unreleased]
+
+- Added `--in-batches` mode for production transfers with `--batch-size` and `--sleep`
+
 # 0.3.3
 
 - Added `-d` option as an alias for `--db`

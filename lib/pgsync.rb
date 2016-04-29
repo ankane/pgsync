@@ -176,7 +176,48 @@ module PgSync
                 end
 
                 copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
-                if !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
+                if opts[:in_batches]
+                  primary_key = self.primary_key(from_connection, table, "public")
+                  abort "No primary key" unless primary_key
+
+                  from_max_id = max_id(from_connection, table, primary_key, sql_clause)
+                  to_max_id = max_id(to_connection, table, primary_key, sql_clause) + 1
+
+                  if to_max_id == 1
+                    from_min_id = min_id(from_connection, table, primary_key, sql_clause)
+                    to_max_id = from_min_id if from_min_id
+                  end
+
+                  starting_id = to_max_id
+                  batch_size = opts[:batch_size]
+
+                  i = 1
+                  batch_count = ((from_max_id - starting_id + 1) / batch_size.to_f).ceil
+
+                  while starting_id <= from_max_id
+                    where = "#{primary_key} >= #{starting_id} AND #{primary_key} < #{starting_id + batch_size}"
+                    log "    #{i}/#{batch_count}: #{where}"
+
+                    # TODO be smarter for advance sql clauses
+                    batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
+
+                    batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{batch_sql_clause}) TO STDOUT"
+                    to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                      from_connection.copy_data batch_copy_to_command do
+                        while row = from_connection.get_copy_data
+                          to_connection.put_copy_data(row)
+                        end
+                      end
+                    end
+
+                    starting_id += batch_size
+                    i += 1
+
+                    if opts[:sleep] && starting_id <= from_max_id
+                      sleep(opts[:sleep])
+                    end
+                  end
+                elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
                   primary_key = self.primary_key(from_connection, table, "public")
                   abort "No primary key" unless primary_key
 
@@ -264,6 +305,9 @@ Options:}
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
+        o.boolean "--in-batches", "in batches", default: false, help: false
+        o.integer "--batch-size", "batch size", default: 10000, help: false
+        o.float "--sleep", "sleep", default: 0, help: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
@@ -505,7 +549,7 @@ Options:}
     end
 
     def in_parallel(tables, &block)
-      if @options[:debug]
+      if @options[:debug] || @options[:in_batches]
         tables.each(&block)
       else
         Parallel.each(tables, &block)
@@ -590,6 +634,14 @@ Options:}
       end
 
       tables
+    end
+
+    def max_id(conn, table, primary_key, sql_clause = nil)
+      conn.exec("SELECT MAX(#{escape_identifier(primary_key)}) FROM #{escape_identifier(table)}#{sql_clause}").to_a[0]["max"].to_i
+    end
+
+    def min_id(conn, table, primary_key, sql_clause = nil)
+      conn.exec("SELECT MIN(#{escape_identifier(primary_key)}) FROM #{escape_identifier(table)}#{sql_clause}").to_a[0]["min"].to_i
     end
 
     def cast(value)
