@@ -212,10 +212,6 @@ gem specific_install ankane/pgsync
 
 Inspired by [heroku-pg-transfer](https://github.com/ddollar/heroku-pg-transfer).
 
-## TODO
-
-- Support for schemas other than `public`
-
 ## Contributing
 
 Everyone is encouraged to help improve this project. Here are a few ways you can help:

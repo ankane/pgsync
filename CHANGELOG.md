@@ -1,3 +1,7 @@
+# 0.3.5 [unreleased]
+
+- Support schemas other than public
+
 # 0.3.4
 
 - Added `--in-batches` mode for production transfers with `--batch-size` and `--sleep`

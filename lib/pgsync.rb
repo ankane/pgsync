@@ -8,6 +8,7 @@ require "parallel"
 require "multiprocessing"
 require "fileutils"
 require "tempfile"
+require "cgi"
 
 module URI
   class POSTGRESQL < Generic
@@ -75,11 +76,11 @@ module PgSync
       else
         source = parse_source(opts[:from])
         abort "No source" unless source
-        source_uri = parse_uri(source)
+        source_uri, from_schema = parse_uri(source)
 
         destination = parse_source(opts[:to])
         abort "No destination" unless destination
-        destination_uri = parse_uri(destination)
+        destination_uri, to_schema = parse_uri(destination)
         abort "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1" unless %(localhost 127.0.0.1).include?(destination_uri.host) || opts[:to_safe]
 
         print_uri("From", source_uri)
@@ -88,7 +89,7 @@ module PgSync
         from_uri = source_uri
         to_uri = destination_uri
 
-        tables = table_list(args, opts, from_uri)
+        tables = table_list(args, opts, from_uri, from_schema)
 
         if opts[:schema_only]
           log "* Dumping schema"
@@ -103,7 +104,7 @@ module PgSync
         else
           with_connection(to_uri, timeout: 3) do |conn|
             tables.keys.each do |table|
-              unless table_exists?(conn, table, "public")
+              unless table_exists?(conn, table, to_schema)
                 abort "Table does not exist in destination: #{table}"
               end
             end
@@ -117,7 +118,7 @@ module PgSync
             end
           else
             in_parallel(tables) do |table, table_opts|
-              sync_table(table, opts.merge(table_opts), from_uri, to_uri)
+              sync_table(table, opts.merge(table_opts), from_uri, to_uri, from_schema, to_schema)
             end
 
             log_completed(start_time)
@@ -129,15 +130,15 @@ module PgSync
 
     protected
 
-    def sync_table(table, opts, from_uri, to_uri)
+    def sync_table(table, opts, from_uri, to_uri, from_schema, to_schema)
       time =
         benchmark do
           with_connection(from_uri) do |from_connection|
             with_connection(to_uri) do |to_connection|
               bad_fields = opts[:no_rules] ? [] : config["data_rules"]
 
-              from_fields = columns(from_connection, table, "public")
-              to_fields = columns(to_connection, table, "public")
+              from_fields = columns(from_connection, table, from_schema)
+              to_fields = columns(to_connection, table, to_schema)
               shared_fields = to_fields & from_fields
               extra_fields = to_fields - from_fields
               missing_fields = from_fields - to_fields
@@ -177,7 +178,7 @@ module PgSync
 
                 copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
                 if opts[:in_batches]
-                  primary_key = self.primary_key(from_connection, table, "public")
+                  primary_key = self.primary_key(from_connection, table, from_schema)
                   abort "No primary key" unless primary_key
 
                   from_max_id = max_id(from_connection, table, primary_key, sql_clause)
@@ -218,7 +219,7 @@ module PgSync
                     end
                   end
                 elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-                  primary_key = self.primary_key(from_connection, table, "public")
+                  primary_key = self.primary_key(to_connection, table, to_schema)
                   abort "No primary key" unless primary_key
 
                   temp_table = "pgsync_#{rand(1_000_000_000)}"
@@ -497,7 +498,8 @@ Options:}
       uri.host ||= "localhost"
       uri.port ||= 5432
       uri.path = "/#{uri.path}" if uri.path && uri.path[0] != "/"
-      uri
+      schema = ((uri.query && CGI::parse(uri.query)["schema"]) || ["public"])[0]
+      [uri, schema]
     end
 
     def print_uri(prefix, uri)
@@ -562,22 +564,22 @@ Options:}
       end
     end
 
-    def add_tables(tables, t, id, boom, from_uri)
+    def add_tables(tables, t, id, boom, from_uri, from_schema)
       t.each do |table|
         sql = nil
         if table.is_a?(Array)
           table, sql = table
         end
-        add_table(tables, table, id, boom || sql, from_uri)
+        add_table(tables, table, id, boom || sql, from_uri, from_schema)
       end
     end
 
-    def add_table(tables, table, id, boom, from_uri, wildcard = false)
+    def add_table(tables, table, id, boom, from_uri, from_schema, wildcard = false)
       if table.include?("*") && !wildcard
         regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
-        t2 = with_connection(from_uri) { |conn| self.tables(conn, "public") }.select { |t| regex.match(t) }
+        t2 = with_connection(from_uri) { |conn| self.tables(conn, from_schema) }.select { |t| regex.match(t) }
         t2.each do |table|
-          add_table(tables, table, id, boom, from_uri, true)
+          add_table(tables, table, id, boom, from_uri, from_schema, true)
         end
       else
         tables[table] = {}
@@ -585,7 +587,7 @@ Options:}
       end
     end
 
-    def table_list(args, opts, from_uri)
+    def table_list(args, opts, from_uri, from_schema)
       tables = nil
 
       if opts[:groups]
@@ -594,7 +596,7 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1], from_uri)
+            add_tables(tables, t, id, args[1], from_uri, from_schema)
           else
             abort "Group not found: #{group}"
           end
@@ -605,7 +607,7 @@ Options:}
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
-          add_table(tables, table, id, args[1], from_uri)
+          add_table(tables, table, id, args[1], from_uri, from_schema)
         end
       end
 
@@ -616,18 +618,18 @@ Options:}
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1], from_uri)
+            add_tables(tables, t, id, args[1], from_uri, from_schema)
           else
-            add_table(tables, group, id, args[1], from_uri)
+            add_table(tables, group, id, args[1], from_uri, from_schema)
           end
         end
       end
 
       with_connection(from_uri, timeout: 3) do |conn|
-        tables ||= Hash[(self.tables(conn, "public") - to_arr(opts[:exclude])).map { |k| [k, {}] }]
+        tables ||= Hash[(self.tables(conn, from_schema) - to_arr(opts[:exclude])).map { |k| [k, {}] }]
 
         tables.keys.each do |table|
-          unless table_exists?(conn, table, "public")
+          unless table_exists?(conn, table, from_schema)
             abort "Table does not exist in source: #{table}"
           end
         end
