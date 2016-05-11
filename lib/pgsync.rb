@@ -74,6 +74,10 @@ module PgSync
       if opts[:setup]
         setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
       else
+        if args.size > 2
+          abort "Usage:\n    pgsync [options]"
+        end
+
         source = parse_source(opts[:from])
         abort "No source" unless source
         source_uri, from_schema = parse_uri(source)
