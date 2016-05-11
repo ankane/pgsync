@@ -181,6 +181,16 @@ To keep you from accidentally overwriting production, the destination is limited
 
 To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
+## Large Tables
+
+For extremely large tables, sync in batches.
+
+```sh
+pgsync large_table --in-batches
+```
+
+The script will resume where it left off when run again, making it great for backfills.
+
 ## Setup Scripts
 
 Use groups when possible to take advantage of parallelism.
