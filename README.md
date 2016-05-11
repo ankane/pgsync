@@ -191,6 +191,20 @@ pgsync large_table --in-batches
 
 The script will resume where it left off when run again, making it great for backfills.
 
+## Reference
+
+Help
+
+```sh
+pgsync --help
+```
+
+Version
+
+```sh
+pgsync --version
+```
+
 ## Setup Scripts
 
 Use groups when possible to take advantage of parallelism.
