@@ -1,4 +1,5 @@
 require "pgsync/version"
+require "erb"
 require "yaml"
 require "slop"
 require "uri"
@@ -331,7 +332,9 @@ Options:}
       @config ||= begin
         if config_file
           begin
-            YAML.load_file(config_file) || {}
+            config_file_content = File.read(config_file)
+            erb_applied         = ERB.new(config_file_content).result(binding)
+            YAML.load(erb_applied) || {}
           rescue Psych::SyntaxError => e
             raise PgSync::Error, e.message
           end
