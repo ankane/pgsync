@@ -20,7 +20,7 @@ And in your project directory, run:
 pgsync --setup
 ```
 
-This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
+This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). If you have sensitive information, you can use `ERB` template code in your `.yml` file to output `ENV` variables (For examle `from: <%= ENV['PGSYNC_FROM_SERVER'] %>`).  `pgsync` commands can be run from this directory or any subdirectory.
 
 ## How to Use
 
