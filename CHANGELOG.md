@@ -1,4 +1,4 @@
-# 0.3.5 [unreleased]
+# 0.3.5
 
 - Support schemas other than public
 
