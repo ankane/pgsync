@@ -70,11 +70,12 @@ exclude:
   - table2
 ```
 
-For Rails, you probably want to exclude schema migrations.
+For Rails, you probably want to exclude schema migrations and ActiveRecord metadata.
 
 ```yml
 exclude:
   - schema_migrations
+  - ar_internal_metadata
 ```
 
 ### Groups

@@ -11,6 +11,7 @@ to: postgres://localhost:5432/myapp_development
 # exclude tables
 # exclude:
 #   - schema_migrations
+#   - ar_internal_metadata
 
 # define groups
 # groups:
