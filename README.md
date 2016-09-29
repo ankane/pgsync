@@ -10,11 +10,15 @@ Sync Postgres data to your local machine. Designed for:
 
 ## Installation
 
+pgsync is a command line tool. To install, run:
+
 ```sh
 gem install pgsync
 ```
 
-And in your project directory, run:
+This will give you the `pgsync` command.
+
+In your project directory, run:
 
 ```sh
 pgsync --setup
