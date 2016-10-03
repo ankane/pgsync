@@ -1,4 +1,4 @@
-# 0.3.6 [unreleased]
+# 0.3.6
 
 - Fixed `Table does not exist in source` error
 
