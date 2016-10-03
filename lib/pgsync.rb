@@ -502,8 +502,8 @@ Options:}
       uri.host ||= "localhost"
       uri.port ||= 5432
       uri.path = "/#{uri.path}" if uri.path && uri.path[0] != "/"
-      schema = ((uri.query && CGI::parse(uri.query)["schema"]) || [])[0]
-      [uri, schema || "public"]
+      schema = CGI::parse(uri.query.to_s)["schema"][0] || "public"
+      [uri, schema]
     end
 
     def print_uri(prefix, uri)
