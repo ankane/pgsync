@@ -1,3 +1,7 @@
+# 0.3.6 [unreleased]
+
+- Fixed `Table does not exist in source` error
+
 # 0.3.5
 
 - Support schemas other than public
