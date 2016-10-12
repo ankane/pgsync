@@ -98,7 +98,7 @@ module PgSync
         if opts[:schema_only]
           log "* Dumping schema"
           tables = tables.keys.map { |t| "-t #{t}" }.join(" ")
-          psql_version = Gem::Version.new(/\d+\.\d+\.\d+/.match(`psql --version`))
+          psql_version = Gem::Version.new(/(\d+(\.\d+)*(\.|alpha|beta|rc)\d+|\d+\.\d+devel)/.match(`psql --version`))
           if_exists = psql_version >= Gem::Version.new("9.4.0")
           dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{to_url(source_uri)}"
           restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url(destination_uri)}"
