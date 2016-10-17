@@ -109,7 +109,7 @@ groups:
     products: "where id = {1}"
     reviews: "where product_id = {1}"
     coupons: "where product_id = {1} order by created_at desc limit 10"
-    stores: "where id in (select store_id from products where id = {1})
+    stores: "where id in (select store_id from products where id = {1})"
 ```
 
 And run:
@@ -131,6 +131,23 @@ Specify tables
 ```sh
 pgsync table1,table2 --schema-only
 ```
+
+Note: `--schema-only` will *not* sync non-table objects like functions, extensions etc.
+
+### Managing integrity checks
+
+If your schema has referential integrity checks, you should do a complete DB sync by dropping
+the exising database first. Then you can import the schema without any constraints/triggers
+with `--pre-data`, import the data and then import the constraints with `--post-data`:
+
+```sh
+pgsync --pre-data
+pgsync
+pgsync --post-data
+```
+
+If you're syncing partial data/tables, you must make sure that the data does not violate any constraints,
+otherwise `pgsync --post-data` will fail
 
 ## Sensitive Information
 
