@@ -1,0 +1,10 @@
+language: ruby
+rvm: 2.2
+addons:
+    postgresql: 9.1
+matrix:
+    include:
+        - addons:
+            postgresql: 9.2
+        - addons:
+            postgresql: 9.3
