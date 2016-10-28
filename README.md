@@ -109,7 +109,7 @@ groups:
     products: "where id = {1}"
     reviews: "where product_id = {1}"
     coupons: "where product_id = {1} order by created_at desc limit 10"
-    stores: "where id in (select store_id from products where id = {1})
+    stores: "where id in (select store_id from products where id = {1})"
 ```
 
 And run:
