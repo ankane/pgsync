@@ -582,8 +582,8 @@ Options:}
       if table.include?("*") && !wildcard
         regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
         t2 = with_connection(from_uri) { |conn| self.tables(conn, from_schema) }.select { |t| regex.match(t) }
-        t2.each do |table|
-          add_table(tables, table, id, boom, from_uri, from_schema, true)
+        t2.each do |tab|
+          add_table(tables, tab, id, boom, from_uri, from_schema, true)
         end
       else
         tables[table] = {}
