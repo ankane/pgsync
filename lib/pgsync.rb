@@ -492,7 +492,9 @@ Options:}
       if value.is_a?(Array)
         value
       else
-        value.to_s.split(",")
+        # Split by commas, but don't use commas inside double quotes
+        # http://stackoverflow.com/questions/21105360/regex-find-comma-not-inside-quotes
+        value.to_s.split(/(?!\B"[^"]*),(?![^"]*"\B)/)
       end
     end
 
@@ -651,7 +653,7 @@ Options:}
     end
 
     def cast(value)
-      value.to_s
+      value.to_s.gsub(/\A\"|\"\z/, '')
     end
 
     def deprecated(message)
