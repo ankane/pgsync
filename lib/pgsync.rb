@@ -176,8 +176,10 @@ module PgSync
                 fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
 
                 seq_values = {}
-                shared_sequences.each do |seq|
-                  seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
+                unless data_pump?
+                  shared_sequences.each do |seq|
+                    seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
+                  end
                 end
 
                 copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
@@ -263,17 +265,21 @@ module PgSync
                      file.unlink
                   end
                 else
-                  to_connection.exec("TRUNCATE #{table} CASCADE")
-                  to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
-                    from_connection.copy_data copy_to_command do
-                      while row = from_connection.get_copy_data
-                        to_connection.put_copy_data(row)
+                  maybe_transaction(to_connection) do
+                    to_connection.exec("TRUNCATE #{table} CASCADE")
+                    to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                      from_connection.copy_data copy_to_command do
+                        while row = from_connection.get_copy_data
+                          to_connection.put_copy_data(row)
+                        end
                       end
                     end
                   end
                 end
-                seq_values.each do |seq, value|
-                  to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                unless data_pump?
+                  seq_values.each do |seq, value|
+                    to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+                  end
                 end
               end
             end
@@ -312,6 +318,7 @@ Options:}
         o.boolean "--setup", "setup", default: false
         o.boolean "--in-batches", "in batches", default: false, help: false
         o.integer "--batch-size", "batch size", default: 10000, help: false
+        o.boolean "--data-pump", default: false
         o.float "--sleep", "sleep", default: 0, help: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
@@ -561,6 +568,20 @@ Options:}
         tables.each(&block)
       else
         Parallel.each(tables, &block)
+      end
+    end
+
+    def data_pump?
+      @options[:data_pump]
+    end
+
+    def maybe_transaction(conn)
+      if data_pump?
+        conn.transaction do
+          yield
+        end
+      else
+        yield
       end
     end
 
