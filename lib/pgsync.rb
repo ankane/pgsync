@@ -268,7 +268,11 @@ module PgSync
                   end
                 else
                   maybe_transaction(to_connection) do
-                    to_connection.exec("TRUNCATE #{table} CASCADE")
+                    if data_pump?
+                      to_connection.exec("DELETE FROM #{table}")
+                    else
+                      to_connection.exec("TRUNCATE #{table} CASCADE")
+                    end
                     to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
                       from_connection.copy_data copy_to_command do
                         while row = from_connection.get_copy_data
