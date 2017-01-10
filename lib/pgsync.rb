@@ -176,6 +176,8 @@ module PgSync
                 fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
 
                 seq_values = {}
+
+                # no need to sync sequences for data pump
                 unless data_pump?
                   shared_sequences.each do |seq|
                     seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
@@ -276,10 +278,8 @@ module PgSync
                     end
                   end
                 end
-                unless data_pump?
-                  seq_values.each do |seq, value|
-                    to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
-                  end
+                seq_values.each do |seq, value|
+                  to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
                 end
               end
             end
