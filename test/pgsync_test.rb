@@ -22,6 +22,10 @@ class PgSyncTest < Minitest::Test
     assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to db2"
   end
 
+  def test_with_schema
+    assert_prints "Completed in", "--from pgsync_db1?schema=sample_schema --to pgsync_db2?schema=sample_schema"
+  end
+
   def test_nonexistent_destination
     assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_db1 --to db2"
   end
