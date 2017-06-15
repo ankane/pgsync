@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Andrew Kane"]
   spec.email         = ["andrew@chartkick.com"]
 
-  spec.summary       = "Quickly and securely sync data between environments"
+  spec.summary       = "Sync Postgres data between databases"
   spec.homepage      = "https://github.com/ankane/pgsync"
   spec.license       = "MIT"
 
