@@ -132,22 +132,22 @@ Specify tables
 pgsync table1,table2 --schema-only
 ```
 
-Note: `--schema-only` will *not* sync non-table objects like functions, extensions etc.
+Note: `--schema-only` will *not* sync non-table objects like functions, extensions etc
+      unless used in conjunction with `--no-constraints` and `--add-constraints` (see next section)
 
 ### Managing integrity checks
 
 If your schema has referential integrity checks, you should do a complete DB sync by dropping
 the exising database first. Then you can import the schema without any constraints/triggers
-with `--pre-data`, import the data and then import the constraints with `--post-data`:
+with `--no-constraints`, and then pass `--add-constraints` when syncing the data:
 
 ```sh
-pgsync --pre-data
-pgsync
-pgsync --post-data
+pgsync --schema-only --no-constraints
+pgsync --add-constraints
 ```
 
 If you're syncing partial data/tables, you must make sure that the data does not violate any constraints,
-otherwise `pgsync --post-data` will fail
+otherwise `pgsync --add-constraints` will fail
 
 ## Sensitive Information
 

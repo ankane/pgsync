@@ -101,20 +101,11 @@ module PgSync
         if opts[:schema_only]
           log "* Dumping schema"
           tables = tables.keys.map { |t| "-t #{t}" }.join(" ")
-          dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{to_url(source_uri)}"
+          section = opts[:no_constraints] ? "--section=pre-data" : ""
+          dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{section} #{tables} #{to_url(source_uri)}"
           restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url(destination_uri)}"
           system("#{dump_command} | #{restore_command}")
           log_completed(start_time)
-        elsif opts[:pre_data]
-          log "* Dumping pre-data schema"
-          dump_command = "pg_dump -Fc --verbose --section=pre-data --no-owner --no-acl #{to_url(source_uri)}"
-          restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url(destination_uri)}"
-          system("#{dump_command} | #{restore_command}")
-        elsif opts[:post_data]
-          log "* Dumping post-data schema"
-          dump_command = "pg_dump -Fc --verbose --section=post-data --no-owner --no-acl #{to_url(source_uri)}"
-          restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url(destination_uri)}"
-          system("#{dump_command} | #{restore_command}")
         else
           with_connection(to_uri, timeout: 3) do |conn|
             tables.keys.each do |table|
@@ -136,6 +127,13 @@ module PgSync
             end
 
             log_completed(start_time)
+          end
+
+          if opts[:add_constraints]
+            log "* Adding constraints/triggers"
+            dump_command = "pg_dump -Fc --verbose --section=post-data --no-owner --no-acl #{to_url(source_uri)}"
+            restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url(destination_uri)}"
+            system("#{dump_command} | #{restore_command}")
           end
         end
       end
@@ -318,8 +316,8 @@ Options:}
         o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
-        o.boolean "--pre-data", "schema without constraints/triggers", default: false
-        o.boolean "--post-data", "constraints and triggers", default: false
+        o.boolean "--no-constraints", "exclude constraints/triggers when syncing schema", default: false
+        o.boolean "--add_constraints", "add constraints and triggers after syncing data", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
         o.boolean "--in-batches", "in batches", default: false, help: false
