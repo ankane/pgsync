@@ -182,8 +182,12 @@ module PgSync
 
                 copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
                 if opts[:in_batches]
+                  abort "Cannot use --overwrite with --in-batches" if opts[:overwrite]
+
                   primary_key = self.primary_key(from_connection, table, from_schema)
                   abort "No primary key" unless primary_key
+
+                  to_connection.exec("TRUNCATE #{table} CASCADE") if opts[:truncate]
 
                   from_max_id = max_id(from_connection, table, primary_key, sql_clause)
                   to_max_id = max_id(to_connection, table, primary_key, sql_clause) + 1

@@ -1,3 +1,7 @@
+# 0.3.7 [unreleased]
+
+- Fixed `--truncate` option with `--in-batches`
+
 # 0.3.6
 
 - Fixed `Table does not exist in source` error
