@@ -172,7 +172,7 @@ module PgSync
               end
 
               if shared_fields.any?
-                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, from_connection)} AS #{escape_identifier(f)}" : "#{table}.#{escape_identifier(f)}" }.join(", ")
+                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, from_connection)} AS #{escape_identifier(f)}" : "#{escape_identifier(table)}.#{escape_identifier(f)}" }.join(", ")
                 fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
 
                 seq_values = {}
