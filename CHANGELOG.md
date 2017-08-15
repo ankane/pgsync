@@ -1,5 +1,6 @@
 # 0.3.7 [unreleased]
 
+- Fixed non-lowercase tables and columns
 - Fixed `--truncate` option with `--in-batches`
 
 # 0.3.6

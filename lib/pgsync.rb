@@ -172,22 +172,22 @@ module PgSync
               end
 
               if shared_fields.any?
-                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, from_connection)} AS #{escape_identifier(f)}" : "#{escape_identifier(table)}.#{escape_identifier(f)}" }.join(", ")
-                fields = shared_fields.map { |f| escape_identifier(f) }.join(", ")
+                copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, from_connection)} AS #{quote_ident(f)}" : "#{quote_ident(table)}.#{quote_ident(f)}" }.join(", ")
+                fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
                 seq_values = {}
                 shared_sequences.each do |seq|
                   seq_values[seq] = from_connection.exec("select last_value from #{seq}").to_a[0]["last_value"]
                 end
 
-                copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{sql_clause}) TO STDOUT"
+                copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident(table)}#{sql_clause}) TO STDOUT"
                 if opts[:in_batches]
                   abort "Cannot use --overwrite with --in-batches" if opts[:overwrite]
 
                   primary_key = self.primary_key(from_connection, table, from_schema)
                   abort "No primary key" unless primary_key
 
-                  to_connection.exec("TRUNCATE #{table} CASCADE") if opts[:truncate]
+                  to_connection.exec("TRUNCATE #{quote_ident(table)} CASCADE") if opts[:truncate]
 
                   from_max_id = max_id(from_connection, table, primary_key, sql_clause)
                   to_max_id = max_id(to_connection, table, primary_key, sql_clause) + 1
@@ -204,14 +204,14 @@ module PgSync
                   batch_count = ((from_max_id - starting_id + 1) / batch_size.to_f).ceil
 
                   while starting_id <= from_max_id
-                    where = "#{primary_key} >= #{starting_id} AND #{primary_key} < #{starting_id + batch_size}"
+                    where = "#{quote_ident(primary_key)} >= #{starting_id} AND #{quote_ident(primary_key)} < #{starting_id + batch_size}"
                     log "    #{i}/#{batch_count}: #{where}"
 
                     # TODO be smarter for advance sql clauses
                     batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
-                    batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{table}#{batch_sql_clause}) TO STDOUT"
-                    to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                    batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident(table)}#{batch_sql_clause}) TO STDOUT"
+                    to_connection.copy_data "COPY #{quote_ident(table)} (#{fields}) FROM STDIN" do
                       from_connection.copy_data batch_copy_to_command do
                         while row = from_connection.get_copy_data
                           to_connection.put_copy_data(row)
@@ -242,10 +242,10 @@ module PgSync
 
                     to_connection.transaction do
                       # create a temp table
-                      to_connection.exec("CREATE TABLE #{temp_table} AS SELECT * FROM #{table} WITH NO DATA")
+                      to_connection.exec("CREATE TABLE #{quote_ident(temp_table)} AS SELECT * FROM #{quote_ident(table)} WITH NO DATA")
 
                       # load file
-                      to_connection.copy_data "COPY #{temp_table} (#{fields}) FROM STDIN" do
+                      to_connection.copy_data "COPY #{quote_ident(temp_table)} (#{fields}) FROM STDIN" do
                         file.each do |row|
                           to_connection.put_copy_data(row)
                         end
@@ -253,22 +253,22 @@ module PgSync
 
                       if opts[:preserve]
                         # insert into
-                        to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table} WHERE NOT EXISTS (SELECT 1 FROM #{table} WHERE #{table}.#{primary_key} = #{temp_table}.#{primary_key}))")
+                        to_connection.exec("INSERT INTO #{quote_ident(table)} (SELECT * FROM #{quote_ident(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident(table)} WHERE #{quote_ident(table)}.#{primary_key} = #{quote_ident(temp_table)}.#{quote_ident(primary_key)}))")
                       else
-                        to_connection.exec("DELETE FROM #{table} WHERE #{primary_key} IN (SELECT #{primary_key} FROM #{temp_table})")
-                        to_connection.exec("INSERT INTO #{table} (SELECT * FROM #{temp_table})")
+                        to_connection.exec("DELETE FROM #{quote_ident(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident(temp_table)})")
+                        to_connection.exec("INSERT INTO #{quote_ident(table)} (SELECT * FROM #{quote_ident(temp_table)})")
                       end
 
                       # delete temp table
-                      to_connection.exec("DROP TABLE #{temp_table}")
+                      to_connection.exec("DROP TABLE #{quote_ident(temp_table)}")
                     end
                   ensure
                      file.close
                      file.unlink
                   end
                 else
-                  to_connection.exec("TRUNCATE #{table} CASCADE")
-                  to_connection.copy_data "COPY #{table} (#{fields}) FROM STDIN" do
+                  to_connection.exec("TRUNCATE #{quote_ident(table)} CASCADE")
+                  to_connection.copy_data "COPY #{quote_ident(table)} (#{fields}) FROM STDIN" do
                     from_connection.copy_data copy_to_command do
                       while row = from_connection.get_copy_data
                         to_connection.put_copy_data(row)
@@ -456,7 +456,7 @@ Options:}
       else
         strategies = {
           "unique_email" => "'email' || #{table}.id || '@example.org'",
-          "untouched" => escape_identifier(column),
+          "untouched" => quote_ident(column),
           "unique_phone" => "(#{table}.id + 1000000000)::text",
           "random_int" => "(RAND() * 10)::int",
           "random_date" => "'1970-01-01'",
@@ -475,7 +475,7 @@ Options:}
       end
     end
 
-    def escape_identifier(value)
+    def quote_ident(value)
       PG::Connection.quote_ident(value)
     end
 
@@ -557,7 +557,7 @@ Options:}
     end
 
     def sequences(conn, table, columns)
-      conn.exec("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape(table)}, #{escape(f)}) AS #{f}" }.join(", ")}").to_a[0].values.compact
+      conn.exec("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape(quote_ident(table))}, #{escape(f)}) AS #{f}" }.join(", ")}").to_a[0].values.compact
     end
 
     def in_parallel(tables, &block)
@@ -649,11 +649,11 @@ Options:}
     end
 
     def max_id(conn, table, primary_key, sql_clause = nil)
-      conn.exec("SELECT MAX(#{escape_identifier(primary_key)}) FROM #{escape_identifier(table)}#{sql_clause}").to_a[0]["max"].to_i
+      conn.exec("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}").to_a[0]["max"].to_i
     end
 
     def min_id(conn, table, primary_key, sql_clause = nil)
-      conn.exec("SELECT MIN(#{escape_identifier(primary_key)}) FROM #{escape_identifier(table)}#{sql_clause}").to_a[0]["min"].to_i
+      conn.exec("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}").to_a[0]["min"].to_i
     end
 
     def cast(value)

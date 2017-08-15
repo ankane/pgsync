@@ -1,6 +1,5 @@
-DROP TABLE IF EXISTS users;
-CREATE TABLE users (
-  id integer NOT NULL,
-  zip_code varchar(255),
-  PRIMARY KEY (id)
+DROP TABLE IF EXISTS "Users";
+CREATE TABLE "Users" (
+  "Id" SERIAL PRIMARY KEY,
+  zip_code varchar(255)
 );
