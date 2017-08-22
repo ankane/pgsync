@@ -8,6 +8,8 @@ Sync Postgres data between databases. Designed for:
 
 :tangerine: Battle-tested at [Instacart](https://www.instacart.com/opensource)
 
+[![Build Status](https://travis-ci.org/ankane/pgsync.svg?branch=master)](https://travis-ci.org/ankane/pgsync)
+
 ## Installation
 
 pgsync is a command line tool. To install, run:
