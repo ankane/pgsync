@@ -386,6 +386,9 @@ Options:}
       }.reject { |_, value| value.to_s.empty? }
       config.map { |key, value| config[key] = uri_parser.unescape(value) if value.is_a?(String) }
       conn = PG::Connection.new(config)
+      # Wrap in schema
+      schema = schema_from_uri(uri) || 'public'
+      conn.exec("SET search_path = #{schema}")
       begin
         yield conn
       ensure
@@ -509,8 +512,12 @@ Options:}
       uri.host ||= "localhost"
       uri.port ||= 5432
       uri.path = "/#{uri.path}" if uri.path && uri.path[0] != "/"
-      schema = CGI.parse(uri.query.to_s)["schema"][0] || "public"
+      schema = schema_from_uri(uri) || 'public'
       [uri, schema]
+    end
+
+    def schema_from_uri(uri)
+      CGI.parse(uri.query.to_s)["schema"][0]
     end
 
     def print_uri(prefix, uri)
