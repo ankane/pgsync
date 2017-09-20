@@ -190,11 +190,11 @@ module PgSync
 
                   to_connection.exec("TRUNCATE #{quote_ident(table)} CASCADE") if opts[:truncate]
 
-                  from_max_id = max_id(from_connection, table, primary_key, sql_clause)
-                  to_max_id = max_id(to_connection, table, primary_key, sql_clause) + 1
+                  from_max_id = max_id(from_connection, table, primary_key)
+                  to_max_id = max_id(to_connection, table, primary_key) + 1
 
                   if to_max_id == 1
-                    from_min_id = min_id(from_connection, table, primary_key, sql_clause)
+                    from_min_id = min_id(from_connection, table, primary_key)
                     to_max_id = from_min_id if from_min_id > 0
                   end
 
