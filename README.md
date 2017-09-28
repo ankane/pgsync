@@ -166,6 +166,8 @@ Options for replacement are:
 - random_date
 - random_time
 - random_ip
+- random_string
+- random_number
 - untouched
 
 ## Multiple Databases
