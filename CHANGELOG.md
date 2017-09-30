@@ -1,3 +1,7 @@
+# 0.3.8 [unreleased]
+
+- Added Windows support
+
 # 0.3.7
 
 - Fixed non-lowercase tables and columns

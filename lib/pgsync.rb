@@ -10,6 +10,7 @@ require "fileutils"
 require "tempfile"
 require "cgi"
 require "shellwords"
+require "thread" # windows only
 
 module URI
   class POSTGRESQL < Generic
@@ -26,7 +27,7 @@ module PgSync
       $stdout.sync = true
       @exit = false
       @arguments, @options = parse_args(args)
-      @mutex = MultiProcessing::Mutex.new
+      @mutex = windows? ? Mutex.new : MultiProcessing::Mutex.new
     end
 
     # TODO clean up this mess
@@ -566,7 +567,7 @@ Options:}
         tables.each(&block)
       else
         options = {}
-        options[:in_threads] = 4 if Gem.win_platform?
+        options[:in_threads] = 4 if windows?
         Parallel.each(tables, options, &block)
       end
     end
@@ -674,6 +675,10 @@ Options:}
     def log_completed(start_time)
       time = Time.now - start_time
       log "Completed in #{time.round(1)}s"
+    end
+
+    def windows?
+      Gem.win_platform?
     end
   end
 end
