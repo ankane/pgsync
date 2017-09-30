@@ -565,7 +565,9 @@ Options:}
       if @options[:debug] || @options[:in_batches]
         tables.each(&block)
       else
-        Parallel.each(tables, &block)
+        options = {}
+        options[:in_threads] = 4 if Gem.win_platform?
+        Parallel.each(tables, options, &block)
       end
     end
 
