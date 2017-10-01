@@ -1,7 +1,8 @@
-# 0.3.8 [unreleased]
+# 0.3.8
 
 - Added Windows support
 - Added `random_string` and `random_number` replacement options
+- Improved performance of `--in-batches` for large tables
 
 # 0.3.7
 
