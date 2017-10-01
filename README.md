@@ -166,6 +166,8 @@ Options for replacement are:
 - random_date
 - random_time
 - random_ip
+- random_string
+- random_number
 - untouched
 
 ## Multiple Databases
@@ -197,6 +199,15 @@ pgsync large_table --in-batches
 ```
 
 The script will resume where it left off when run again, making it great for backfills.
+
+## Parallel
+
+By default when copying multiple tables setup in a group, the will be copied in parallel. 
+This may cause foreign-key violations and to prevent that you can turn off parallel mode by passing in `--debug` option
+
+```sh
+pgsync product:123 --debug
+```    
 
 ## Reference
 

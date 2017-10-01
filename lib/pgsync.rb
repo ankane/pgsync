@@ -466,6 +466,8 @@ Options:}
           "unique_secret" => "'secret' || #{table}.id",
           "random_ip" => "'127.0.0.1'",
           "random_letter" => "'A'",
+          "random_string" => "right(md5(random()::text),10)",
+          "random_number" => "(RANDOM() * 1000000)::int",
           "null" => "NULL",
           nil => "NULL"
         }
