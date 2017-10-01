@@ -1,6 +1,7 @@
 # 0.3.8 [unreleased]
 
 - Added Windows support
+- Added `random_string` and `random_number` replacement options
 
 # 0.3.7
 

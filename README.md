@@ -200,14 +200,13 @@ pgsync large_table --in-batches
 
 The script will resume where it left off when run again, making it great for backfills.
 
-## Parallel
+## Foreign Keys
 
-By default when copying multiple tables setup in a group, the will be copied in parallel. 
-This may cause foreign-key violations and to prevent that you can turn off parallel mode by passing in `--debug` option
+By default, tables are copied in parallel. If you use foreign keys, this can cause violations. You can specify tables to be copied serially with:
 
 ```sh
-pgsync product:123 --debug
-```    
+pgsync group1 --debug
+```
 
 ## Reference
 
