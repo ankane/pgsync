@@ -337,7 +337,8 @@ Options:}
       @config ||= begin
         if config_file
           begin
-            YAML.load_file(config_file) || {}
+            template = ERB.new(File.read(config_file))
+            YAML.load(template.result) || {}
           rescue Psych::SyntaxError => e
             raise PgSync::Error, e.message
           end
