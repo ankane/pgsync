@@ -192,7 +192,7 @@ Options:}
       if File.exist?(config_file)
         abort "#{config_file} exists."
       else
-        FileUtils.cp(File.dirname(__FILE__) + "/../config.yml", config_file)
+        FileUtils.cp(File.dirname(__FILE__) + "/../../config.yml", config_file)
         log "#{config_file} created. Add your database credentials."
       end
     end
