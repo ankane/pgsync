@@ -72,7 +72,7 @@ module PgSync
 
         tables = nil
         begin
-          tables = TableList.new(args, opts, source).tables
+          tables = TableList.new(args, opts, source, config).tables
         ensure
           source.close
         end

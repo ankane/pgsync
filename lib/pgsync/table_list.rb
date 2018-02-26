@@ -1,11 +1,12 @@
 module PgSync
   class TableList
-    attr_reader :args, :opts, :source
+    attr_reader :args, :opts, :source, :config
 
-    def initialize(args, options, source)
+    def initialize(args, options, source, config)
       @args = args
       @opts = options
       @source = source
+      @config = config
     end
 
     def tables
@@ -17,7 +18,7 @@ module PgSync
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1], source)
+            add_tables(tables, t, id, args[1])
           else
             raise PgSync::Error, "Group not found: #{group}"
           end
@@ -28,7 +29,7 @@ module PgSync
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
-          add_table(tables, table, id, args[1], source)
+          add_table(tables, table, id, args[1])
         end
       end
 
@@ -39,9 +40,9 @@ module PgSync
         specified_groups.map do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1], source)
+            add_tables(tables, t, id, args[1])
           else
-            add_table(tables, group, id, args[1], source)
+            add_table(tables, group, id, args[1])
           end
         end
       end
@@ -69,22 +70,22 @@ module PgSync
       end
     end
 
-    def add_tables(tables, t, id, boom, from_uri, from_schema)
+    def add_tables(tables, t, id, boom)
       t.each do |table|
         sql = nil
         if table.is_a?(Array)
           table, sql = table
         end
-        add_table(tables, table, id, boom || sql, from_uri, from_schema)
+        add_table(tables, table, id, boom || sql)
       end
     end
 
-    def add_table(tables, table, id, boom, from_uri, from_schema, wildcard = false)
+    def add_table(tables, table, id, boom, wildcard = false)
       if table.include?("*") && !wildcard
         regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
         t2 = source.tables.select { |t| regex.match(t) }
         t2.each do |tab|
-          add_table(tables, tab, id, boom, from_uri, from_schema, true)
+          add_table(tables, tab, id, boom, true)
         end
       else
         tables[table] = {}

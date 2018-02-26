@@ -38,6 +38,14 @@ class PgSyncTest < Minitest::Test
     assert_works "--from pgsync_db2 --to pgsync_db1 --overwrite"
   end
 
+  def test_table
+    assert_works "Users --from pgsync_db2 --to pgsync_db1"
+  end
+
+  def test_partial
+    assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_db2 --to pgsync_db1"
+  end
+
   def test_parallel
     assert_prints "Completed in", "--from pgsync_db1 --to pgsync_db2", debug: false
   end
