@@ -113,7 +113,7 @@ module PgSync
     protected
 
     def sync_schema(source, destination, tables)
-      tables = tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident(t))}" }.join(" ")
+      tables = tables.keys.map { |t| "-t #{Shellwords.escape("#{quote_ident(source.schema)}.#{quote_ident(t)}")}" }.join(" ")
       psql_version = Gem::Version.new(`psql --version`.lines[0].chomp.split(" ")[-1].sub(/beta\d/, ""))
       if_exists = psql_version >= Gem::Version.new("9.4.0")
       dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{source.to_url}"
