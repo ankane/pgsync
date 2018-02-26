@@ -19,7 +19,7 @@ module PgSync
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1], source)
           else
-            abort "Group not found: #{group}"
+            raise PgSync::Error, "Group not found: #{group}"
           end
         end
       end
@@ -50,7 +50,7 @@ module PgSync
 
       tables.keys.each do |table|
         unless source.table_exists?(table)
-          abort "Table does not exist in source: #{table}"
+          raise PgSync::Error, "Table does not exist in source: #{table}"
         end
       end
 
@@ -90,6 +90,10 @@ module PgSync
         tables[table] = {}
         tables[table][:sql] = boom.gsub("{id}", cast(id)).gsub("{1}", cast(id)) if boom
       end
+    end
+
+    def cast(value)
+      value.to_s.gsub(/\A\"|\"\z/, '')
     end
   end
 end

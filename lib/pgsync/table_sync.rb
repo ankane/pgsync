@@ -51,10 +51,10 @@ module PgSync
 
           copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident(table)}#{sql_clause}) TO STDOUT"
           if opts[:in_batches]
-            abort "Cannot use --overwrite with --in-batches" if opts[:overwrite]
+            raise PgSync::Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
 
             primary_key = source.primary_key(table)
-            abort "No primary key" unless primary_key
+            raise PgSync::Error, "No primary key" unless primary_key
 
             destination.truncate(table) if opts[:truncate]
 
@@ -97,7 +97,7 @@ module PgSync
             end
           elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
             primary_key = destination.primary_key(table)
-            abort "No primary key" unless primary_key
+            raise PgSync::Error, "No primary key" unless primary_key
 
             temp_table = "pgsync_#{rand(1_000_000_000)}"
             file = Tempfile.new(temp_table)

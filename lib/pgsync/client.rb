@@ -54,17 +54,17 @@ module PgSync
         setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
       else
         if args.size > 2
-          abort "Usage:\n    pgsync [options]"
+          raise PgSync::Error, "Usage:\n    pgsync [options]"
         end
 
         source = DataSource.new(opts[:from])
-        abort "No source" unless source.exists?
+        raise PgSync::Error, "No source" unless source.exists?
 
         destination = DataSource.new(opts[:to])
-        abort "No destination" unless destination.exists?
+        raise PgSync::Error, "No destination" unless destination.exists?
 
         unless opts[:to_safe] || destination.local?
-          abort "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
+          raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
         end
 
         print_description("From", source)
@@ -85,7 +85,7 @@ module PgSync
           begin
             tables.keys.each do |table|
               unless destination.table_exists?(table)
-                abort "Table does not exist in destination: #{table}"
+                raise PgSync::Error, "Table does not exist in destination: #{table}"
               end
             end
           ensure
@@ -171,7 +171,7 @@ Options:}
       end
       [opts.arguments, opts.to_hash]
     rescue Slop::Error => e
-      abort e.message
+      raise PgSync::Error, e.message
     end
 
     def config
@@ -190,7 +190,7 @@ Options:}
 
     def setup(config_file)
       if File.exist?(config_file)
-        abort "#{config_file} exists."
+        raise PgSync::Error, "#{config_file} exists."
       else
         FileUtils.cp(File.dirname(__FILE__) + "/../../config.yml", config_file)
         log "#{config_file} created. Add your database credentials."
@@ -222,7 +222,7 @@ Options:}
         elsif rule.key?("statement")
           rule["statement"]
         else
-          abort "Unknown rule #{rule.inspect} for column #{column}"
+          raise PgSync::Error, "Unknown rule #{rule.inspect} for column #{column}"
         end
       else
         strategies = {
@@ -243,7 +243,7 @@ Options:}
         if strategies[rule]
           strategies[rule]
         else
-          abort "Unknown rule #{rule} for column #{column}"
+          raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
         end
       end
     end
@@ -295,10 +295,6 @@ Options:}
         )
     end
 
-    def abort(message)
-      raise PgSync::Error, message
-    end
-
     def log(message = nil)
       $stderr.puts message
     end
@@ -317,10 +313,6 @@ Options:}
       items.each do |item|
         log item
       end
-    end
-
-    def cast(value)
-      value.to_s.gsub(/\A\"|\"\z/, '')
     end
 
     def deprecated(message)
