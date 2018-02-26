@@ -1,3 +1,7 @@
+# 0.3.9
+
+- Fixed issue with non-lowercase tables and partial syncs
+
 # 0.3.8
 
 - Added Windows support

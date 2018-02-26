@@ -34,12 +34,22 @@ class PgSyncTest < Minitest::Test
     assert_prints "Extra columns: zip_code", "--from pgsync_db2 --to pgsync_db1"
   end
 
+  def test_overwrite
+    assert_works "--from pgsync_db2 --to pgsync_db1 --overwrite"
+  end
+
   def test_parallel
     assert_prints "Completed in", "--from pgsync_db1 --to pgsync_db2", debug: false
   end
 
   def test_version
     assert_prints PgSync::VERSION, "-v"
+  end
+
+  def assert_works(args_str)
+    capture_io do
+      assert PgSync::Client.new(Shellwords.split(args_str)).perform
+    end
   end
 
   def assert_error(message, args_str)

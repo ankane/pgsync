@@ -435,7 +435,7 @@ Options:}
           pg_attribute.attnum = any(pg_index.indkey) AND
           indisprimary
       SQL
-      row = conn.exec_params(query, [schema, table]).to_a[0]
+      row = conn.exec_params(query, [schema, quote_ident(table)]).to_a[0]
       row && row["attname"]
     end
 
