@@ -45,7 +45,7 @@ module PgSync
     end
 
     def to_url
-      uri = uri.dup
+      uri = self.uri.dup
       uri.query = nil
       uri.to_s
     end
