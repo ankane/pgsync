@@ -46,6 +46,10 @@ class PgSyncTest < Minitest::Test
     assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_db2 --to pgsync_db1"
   end
 
+  def test_group
+    assert_works "group1 --from pgsync_db2 --to pgsync_db1 --config test/support/config.yml"
+  end
+
   def test_parallel
     assert_prints "Completed in", "--from pgsync_db1 --to pgsync_db2", debug: false
   end
