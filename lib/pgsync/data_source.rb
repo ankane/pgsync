@@ -40,8 +40,10 @@ module PgSync
     end
 
     def close
-      conn.close if conn
-      @conn = nil
+      if @conn
+        conn.close
+        @conn = nil
+      end
     end
 
     def to_url
