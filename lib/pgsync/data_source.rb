@@ -152,6 +152,5 @@ module PgSync
       end
       source
     end
-
   end
 end

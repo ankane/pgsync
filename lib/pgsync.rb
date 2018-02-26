@@ -14,6 +14,7 @@ require "thread" # windows only
 require "pgsync/client"
 require "pgsync/data_source"
 require "pgsync/table_list"
+require "pgsync/table_sync"
 require "pgsync/version"
 
 module URI
