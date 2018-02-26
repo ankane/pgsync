@@ -31,12 +31,12 @@ module PgSync
 
     def tables
       query = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 ORDER BY tablename ASC"
-      conn.exec_params(query, [schema]).to_a.map { |row| row["tablename"] }
+      execute(query, [schema]).map { |row| row["tablename"] }
     end
 
     def table_exists?(table)
       query = "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2"
-      conn.exec_params(query, [schema, table]).to_a.size > 0
+      execute(query, [schema, table]).size > 0
     end
 
     def close
@@ -52,27 +52,27 @@ module PgSync
 
     def columns(table)
       query = "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2"
-      conn.exec_params(query, [schema, table]).to_a.map { |row| row["column_name"] }
+      execute(query, [schema, table]).map { |row| row["column_name"] }
     end
 
     def sequences(table, columns)
-      conn.exec("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape(quote_ident(table))}, #{escape(f)}) AS #{f}" }.join(", ")}").to_a[0].values.compact
+      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape(quote_ident(table))}, #{escape(f)}) AS #{f}" }.join(", ")}")[0].values.compact
     end
 
     def max_id(table, primary_key, sql_clause = nil)
-      conn.exec("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}").to_a[0]["max"].to_i
+      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}")[0]["max"].to_i
     end
 
     def min_id(table, primary_key, sql_clause = nil)
-      conn.exec("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}").to_a[0]["min"].to_i
+      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}")[0]["min"].to_i
     end
 
     def last_value(seq)
-     conn.exec("select last_value from #{seq}").to_a[0]["last_value"]
+      execute("select last_value from #{seq}")[0]["last_value"]
     end
 
     def truncate(table)
-      conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
+      execute("TRUNCATE #{quote_ident(table)} CASCADE")
     end
 
     # http://stackoverflow.com/a/20537829
@@ -92,7 +92,7 @@ module PgSync
           pg_attribute.attnum = any(pg_index.indkey) AND
           indisprimary
       SQL
-      row = conn.exec_params(query, [schema, quote_ident(table)]).to_a[0]
+      row = execute(query, [schema, quote_ident(table)])[0]
       row && row["attname"]
     end
 
@@ -120,6 +120,10 @@ module PgSync
     end
 
     private
+
+    def execute(query, params = [])
+      conn.exec_params(query, params).to_a
+    end
 
     def log(message = nil)
       $stderr.puts message
