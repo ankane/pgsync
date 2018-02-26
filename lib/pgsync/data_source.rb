@@ -121,6 +121,10 @@ module PgSync
 
     private
 
+    def log(message = nil)
+      $stderr.puts message
+    end
+
     def quote_ident(value)
       PG::Connection.quote_ident(value)
     end

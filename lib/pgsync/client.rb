@@ -216,7 +216,7 @@ module PgSync
                   end
                 end
               elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-                primary_key = self.primary_key(to_connection, table, to_schema)
+                primary_key = destination.primary_key(table)
                 abort "No primary key" unless primary_key
 
                 temp_table = "pgsync_#{rand(1_000_000_000)}"
@@ -256,7 +256,7 @@ module PgSync
                    file.unlink
                 end
               else
-                to_connection.exec("TRUNCATE #{quote_ident(table)} CASCADE")
+                destination.truncate(table)
                 to_connection.copy_data "COPY #{quote_ident(table)} (#{fields}) FROM STDIN" do
                   from_connection.copy_data copy_to_command do
                     while row = from_connection.get_copy_data
