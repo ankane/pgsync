@@ -49,12 +49,6 @@ module PgSync
 
       tables ||= Hash[(source.tables - to_arr(opts[:exclude])).map { |k| [k, {}] }]
 
-      tables.keys.each do |table|
-        unless source.table_exists?(table)
-          raise PgSync::Error, "Table does not exist in source: #{table}"
-        end
-      end
-
       tables
     end
 

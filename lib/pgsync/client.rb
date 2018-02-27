@@ -55,8 +55,10 @@ module PgSync
         source.close
       end
 
+      confirm_tables_exist(source, tables, "source")
+
       if opts[:list]
-        confirm_tables_exist(destination, tables)
+        confirm_tables_exist(destination, tables, "destination")
 
         if args[0] == "groups"
           pretty_list (config["groups"] || {}).keys
@@ -70,7 +72,7 @@ module PgSync
         end
 
         unless opts[:schema_only]
-          confirm_tables_exist(destination, tables)
+          confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables) do |table, table_opts|
             sync_table(table, opts.merge(table_opts), source.url, destination.url)
@@ -81,10 +83,10 @@ module PgSync
       end
     end
 
-    def confirm_tables_exist(destination, tables)
+    def confirm_tables_exist(destination, tables, description)
       tables.keys.each do |table|
         unless destination.table_exists?(table)
-          raise PgSync::Error, "Table does not exist in destination: #{table}"
+          raise PgSync::Error, "Table does not exist in #{description}: #{table}"
         end
       end
     ensure
