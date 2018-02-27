@@ -50,7 +50,14 @@ module PgSync
       tables ||= begin
         exclude = to_arr(opts[:exclude])
         exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
-        Hash[(source.tables - exclude).map { |k| [k, {}] }]
+
+        tabs = source.tables
+        unless opts[:all_schemas]
+          schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : [source.schema || "public"])
+          tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
+        end
+
+        Hash[(tabs - exclude).map { |k| [k, {}] }]
       end
 
       source.fully_resolve_tables(tables)

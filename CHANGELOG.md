@@ -1,8 +1,9 @@
 # 0.3.9 [unreleased]
 
 - Better support for schemas
+- Added `--schemas` option
 - Added `--all-schemas` option
-- Added `--schema-first` option to sync with schema
+- Added `--schema-first` option
 - Fixed issue with non-lowercase tables and partial syncs
 
 # 0.3.8

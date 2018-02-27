@@ -55,11 +55,6 @@ module PgSync
         source.close
       end
 
-      unless opts[:all_schemas]
-        schema = source.schema || "public"
-        tables.select! { |t| t.start_with?("#{schema}.") }
-      end
-
       confirm_tables_exist(source, tables, "source")
 
       if opts[:list]
@@ -152,9 +147,10 @@ module PgSync
     pgsync [options]
 
 Options:}
-        o.string "-t", "--tables", "tables"
-        o.string "-g", "--groups", "groups"
         o.string "-d", "--db", "database"
+        o.string "-t", "--tables", "tables to sync"
+        o.string "-g", "--groups", "groups to sync"
+        o.string "--schemas", "schemas to sync"
         o.string "--from", "source"
         o.string "--to", "destination"
         o.string "--where", "where", help: false

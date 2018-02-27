@@ -9,6 +9,7 @@ require "fileutils"
 require "tempfile"
 require "cgi"
 require "shellwords"
+require "set"
 require "thread" # windows only
 
 require "pgsync/client"
