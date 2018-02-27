@@ -82,7 +82,7 @@ module PgSync
           confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables) do |table, table_opts|
-            sync_table(table, opts.merge(table_opts), source.url, destination.url)
+            TableSync.new.sync_with_benchmark(@mutex, config, table, opts.merge(table_opts), source.url, destination.url)
           end
         end
 
@@ -139,17 +139,6 @@ module PgSync
       dump_command = source.dump_command(tables)
       restore_command = destination.restore_command
       system("#{dump_command} | #{restore_command}")
-    end
-
-    def sync_table(table, opts, source_url, destination_url)
-      time =
-        benchmark do
-          TableSync.new.sync(@mutex, config, table, opts, source_url, destination_url)
-        end
-
-      @mutex.synchronize do
-        log "* DONE #{table} (#{time.round(1)}s)"
-      end
     end
 
     def parse_args(args)
@@ -222,29 +211,6 @@ Options:}
     def db_config_file(db)
       return unless db
       ".pgsync-#{db}.yml"
-    end
-
-    def benchmark
-      start_time = Time.now
-      yield
-      Time.now - start_time
-    end
-
-    def quote_ident(value)
-      PG::Connection.quote_ident(value)
-    end
-
-    def escape(value)
-      if value.is_a?(String)
-        "'#{quote_string(value)}'"
-      else
-        value
-      end
-    end
-
-    # activerecord
-    def quote_string(s)
-      s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
 
     def print_description(prefix, source)

@@ -1,5 +1,16 @@
 module PgSync
   class TableSync
+    def sync_with_benchmark(mutex, config, table, opts, source_url, destination_url)
+      time =
+        benchmark do
+          sync(mutex, config, table, opts, source_url, destination_url)
+        end
+
+      mutex.synchronize do
+        log "* DONE #{table} (#{time.round(1)}s)"
+      end
+    end
+
     def sync(mutex, config, table, opts, source_url, destination_url)
       source = DataSource.new(source_url)
       destination = DataSource.new(destination_url)
@@ -195,6 +206,12 @@ module PgSync
           raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
         end
       end
+    end
+
+    def benchmark
+      start_time = Time.now
+      yield
+      Time.now - start_time
     end
 
     def log(message = nil)
