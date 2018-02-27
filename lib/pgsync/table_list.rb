@@ -47,7 +47,11 @@ module PgSync
         end
       end
 
-      tables ||= Hash[(source.tables - to_arr(opts[:exclude])).map { |k| [k, {}] }]
+      tables ||= begin
+        exclude = to_arr(opts[:exclude])
+        exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
+        Hash[(source.tables - exclude).map { |k| [k, {}] }]
+      end
 
       source.fully_resolve_tables(tables)
     end
