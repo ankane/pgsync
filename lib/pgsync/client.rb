@@ -11,12 +11,82 @@ module PgSync
     def perform
       return if @exit
 
-      start_time = Time.now
-
       args, opts = @arguments, @options
       [:to, :from, :to_safe, :exclude].each do |opt|
         opts[opt] ||= config[opt.to_s]
       end
+      map_deprecations(args, opts)
+
+      if opts[:setup]
+        setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
+      else
+        sync(args, opts)
+      end
+
+      true
+    end
+
+    protected
+
+    def sync(args, opts)
+      start_time = Time.now
+
+      if args.size > 2
+        raise PgSync::Error, "Usage:\n    pgsync [options]"
+      end
+
+      source = DataSource.new(opts[:from])
+      raise PgSync::Error, "No source" unless source.exists?
+
+      destination = DataSource.new(opts[:to])
+      raise PgSync::Error, "No destination" unless destination.exists?
+
+      unless opts[:to_safe] || destination.local?
+        raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
+      end
+
+      print_description("From", source)
+      print_description("To", destination)
+
+      tables = nil
+      begin
+        tables = TableList.new(args, opts, source, config).tables
+      ensure
+        source.close
+      end
+
+      if opts[:schema_only]
+        log "* Dumping schema"
+        sync_schema(source, destination, tables)
+        log_completed(start_time)
+      else
+        begin
+          tables.keys.each do |table|
+            unless destination.table_exists?(table)
+              raise PgSync::Error, "Table does not exist in destination: #{table}"
+            end
+          end
+        ensure
+          destination.close
+        end
+
+        if opts[:list]
+          if args[0] == "groups"
+            pretty_list (config["groups"] || {}).keys
+          else
+            pretty_list tables.keys
+          end
+        else
+          in_parallel(tables) do |table, table_opts|
+            sync_table(table, opts.merge(table_opts), source.url, destination.url)
+          end
+
+          log_completed(start_time)
+        end
+      end
+    end
+
+    def map_deprecations(args, opts)
       command = args[0]
 
       case command
@@ -49,68 +119,7 @@ module PgSync
         opts[:sql] << " LIMIT #{opts[:limit]}"
         deprecated "Use `\"LIMIT #{opts[:limit]}\"` instead"
       end
-
-      if opts[:setup]
-        setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
-      else
-        if args.size > 2
-          raise PgSync::Error, "Usage:\n    pgsync [options]"
-        end
-
-        source = DataSource.new(opts[:from])
-        raise PgSync::Error, "No source" unless source.exists?
-
-        destination = DataSource.new(opts[:to])
-        raise PgSync::Error, "No destination" unless destination.exists?
-
-        unless opts[:to_safe] || destination.local?
-          raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
-        end
-
-        print_description("From", source)
-        print_description("To", destination)
-
-        tables = nil
-        begin
-          tables = TableList.new(args, opts, source, config).tables
-        ensure
-          source.close
-        end
-
-        if opts[:schema_only]
-          log "* Dumping schema"
-          sync_schema(source, destination, tables)
-          log_completed(start_time)
-        else
-          begin
-            tables.keys.each do |table|
-              unless destination.table_exists?(table)
-                raise PgSync::Error, "Table does not exist in destination: #{table}"
-              end
-            end
-          ensure
-            destination.close
-          end
-
-          if opts[:list]
-            if args[0] == "groups"
-              pretty_list (config["groups"] || {}).keys
-            else
-              pretty_list tables.keys
-            end
-          else
-            in_parallel(tables) do |table, table_opts|
-              sync_table(table, opts.merge(table_opts), source.url, destination.url)
-            end
-
-            log_completed(start_time)
-          end
-        end
-      end
-      true
     end
-
-    protected
 
     def sync_schema(source, destination, tables)
       tables = tables.keys.map { |t| "-t #{Shellwords.escape("#{quote_ident(source.schema)}.#{quote_ident(t)}")}" }.join(" ")
