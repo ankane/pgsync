@@ -74,9 +74,9 @@ module PgSync
 
         pretty_list list_items
       else
-        if opts[:schema] || opts[:schema_only]
+        if opts[:schema_first] || opts[:schema_only]
           if opts[:preserve]
-            raise PgSync::Error, "Cannot use --preserve with --schema or --schema-only"
+            raise PgSync::Error, "Cannot use --preserve with --schema-first or --schema-only"
           end
 
           log "* Dumping schema"
@@ -168,8 +168,8 @@ Options:}
         o.boolean "--overwrite", "overwrite existing rows", default: false, help: false
         o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--truncate", "truncate existing rows", default: false
+        o.boolean "--schema-first", "schema first", default: false
         o.boolean "--schema-only", "schema only", default: false
-        o.boolean "--schema", "with schema", default: false
         o.boolean "--all-schemas", "all schemas", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
