@@ -64,11 +64,14 @@ module PgSync
       if opts[:list]
         confirm_tables_exist(destination, tables, "destination")
 
-        if args[0] == "groups"
-          pretty_list (config["groups"] || {}).keys
-        else
-          pretty_list tables.keys
-        end
+        list_items =
+          if args[0] == "groups"
+            (config["groups"] || {}).keys
+          else
+            tables.keys
+          end
+
+        pretty_list list_items
       else
         if opts[:schema] || opts[:schema_only]
           log "* Dumping schema"
