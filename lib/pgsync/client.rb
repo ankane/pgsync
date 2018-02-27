@@ -56,7 +56,8 @@ module PgSync
       end
 
       unless opts[:all_schemas]
-        tables.select! { |t| t.start_with?("#{source.schema}.") }
+        schema = source.schema || "public"
+        tables.select! { |t| t.start_with?("#{schema}.") }
       end
 
       confirm_tables_exist(source, tables, "source")

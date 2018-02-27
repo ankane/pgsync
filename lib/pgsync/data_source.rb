@@ -26,7 +26,7 @@ module PgSync
     end
 
     def schema
-      @schema ||= CGI.parse(uri.query.to_s)["schema"][0] || "public"
+      @schema ||= CGI.parse(uri.query.to_s)["schema"][0]
     end
 
     def tables
