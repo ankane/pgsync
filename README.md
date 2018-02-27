@@ -161,6 +161,7 @@ Options for replacement are:
 - statement
 - unique_email
 - unique_phone
+- unique_secret
 - random_letter
 - random_int
 - random_date
