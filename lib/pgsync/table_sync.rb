@@ -120,27 +120,24 @@ module PgSync
               end
               file.rewind
 
-              to_connection.transaction do
-                # create a temp table
-                to_connection.exec("CREATE TABLE #{quote_ident_full(temp_table)} AS SELECT * FROM #{quote_ident_full(table)} WITH NO DATA")
+              # create a temp table
+              to_connection.exec("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS SELECT * FROM #{quote_ident_full(table)} WITH NO DATA")
 
-                # load file
-                to_connection.copy_data "COPY #{quote_ident_full(temp_table)} (#{fields}) FROM STDIN" do
-                  file.each do |row|
-                    to_connection.put_copy_data(row)
-                  end
+              # load file
+              to_connection.copy_data "COPY #{quote_ident_full(temp_table)} (#{fields}) FROM STDIN" do
+                file.each do |row|
+                  to_connection.put_copy_data(row)
                 end
+              end
 
-                if opts[:preserve]
-                  # insert into
-                  to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{primary_key} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
-                else
+              if opts[:preserve]
+                # insert into
+                to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{primary_key} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
+              else
+                to_connection.transaction do
                   to_connection.exec("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
                   to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
                 end
-
-                # delete temp table
-                to_connection.exec("DROP TABLE #{quote_ident_full(temp_table)}")
               end
             ensure
                file.close
