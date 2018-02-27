@@ -1,6 +1,7 @@
-# 0.3.9
+# 0.3.9 [unreleased]
 
 - Fixed issue with non-lowercase tables and partial syncs
+- Added `--schema` option to sync with schema
 
 # 0.3.8
 

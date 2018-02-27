@@ -55,35 +55,40 @@ module PgSync
         source.close
       end
 
-      if opts[:schema_only]
-        log "* Dumping schema"
-        sync_schema(source, destination, tables)
-        log_completed(start_time)
+      if opts[:list]
+        confirm_tables_exist(destination, tables)
+
+        if args[0] == "groups"
+          pretty_list (config["groups"] || {}).keys
+        else
+          pretty_list tables.keys
+        end
       else
-        begin
-          tables.keys.each do |table|
-            unless destination.table_exists?(table)
-              raise PgSync::Error, "Table does not exist in destination: #{table}"
-            end
-          end
-        ensure
-          destination.close
+        if opts[:schema] || opts[:schema_only]
+          log "* Dumping schema"
+          sync_schema(source, destination, tables)
         end
 
-        if opts[:list]
-          if args[0] == "groups"
-            pretty_list (config["groups"] || {}).keys
-          else
-            pretty_list tables.keys
-          end
-        else
+        unless opts[:schema_only]
+          confirm_tables_exist(destination, tables)
+
           in_parallel(tables) do |table, table_opts|
             sync_table(table, opts.merge(table_opts), source.url, destination.url)
           end
+        end
 
-          log_completed(start_time)
+        log_completed(start_time)
+      end
+    end
+
+    def confirm_tables_exist(destination, tables)
+      tables.keys.each do |table|
+        unless destination.table_exists?(table)
+          raise PgSync::Error, "Table does not exist in destination: #{table}"
         end
       end
+    ensure
+      destination.close
     end
 
     def map_deprecations(args, opts)
@@ -164,6 +169,7 @@ Options:}
         o.boolean "--preserve", "preserve existing rows", default: false
         o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
+        o.boolean "--schema", "with schema", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
         o.boolean "--in-batches", "in batches", default: false, help: false
