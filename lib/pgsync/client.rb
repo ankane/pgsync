@@ -74,6 +74,10 @@ module PgSync
         pretty_list list_items
       else
         if opts[:schema] || opts[:schema_only]
+          if opts[:preserve]
+            raise PgSync::Error, "Cannot use --preserve with --schema or --schema-only"
+          end
+
           log "* Dumping schema"
           sync_schema(source, destination, tables)
         end
