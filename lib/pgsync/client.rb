@@ -55,6 +55,10 @@ module PgSync
         source.close
       end
 
+      unless opts[:all_schemas]
+        tables.select! { |t| t.start_with?("#{source.schema}.") }
+      end
+
       confirm_tables_exist(source, tables, "source")
 
       if opts[:list]
@@ -129,11 +133,8 @@ module PgSync
     end
 
     def sync_schema(source, destination, tables)
-      tables = tables.keys.map { |t| "-t #{Shellwords.escape("#{quote_ident(source.schema)}.#{quote_ident(t)}")}" }.join(" ")
-      psql_version = Gem::Version.new(`psql --version`.lines[0].chomp.split(" ")[-1].sub(/beta\d/, ""))
-      if_exists = psql_version >= Gem::Version.new("9.4.0")
-      dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{source.to_url}"
-      restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{destination.to_url}"
+      dump_command = source.dump_command(tables)
+      restore_command = destination.restore_command
       system("#{dump_command} | #{restore_command}")
     end
 
@@ -172,6 +173,7 @@ Options:}
         o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--schema", "with schema", default: false
+        o.boolean "--all-schemas", "all schemas", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
         o.boolean "--in-batches", "in batches", default: false, help: false

@@ -41,7 +41,7 @@ module PgSync
         end
 
         if shared_fields.any?
-          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f)} AS #{quote_ident(f)}" : "#{quote_ident(table)}.#{quote_ident(f)}" }.join(", ")
+          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
           fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
           seq_values = {}
@@ -49,7 +49,7 @@ module PgSync
             seq_values[seq] = source.last_value(seq)
           end
 
-          copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident(table)}#{sql_clause}) TO STDOUT"
+          copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
           if opts[:in_batches]
             raise PgSync::Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
 
@@ -79,8 +79,8 @@ module PgSync
               # TODO be smarter for advance sql clauses
               batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
-              batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident(table)}#{batch_sql_clause}) TO STDOUT"
-              to_connection.copy_data "COPY #{quote_ident(table)} (#{fields}) FROM STDIN" do
+              batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
+              to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
                 from_connection.copy_data batch_copy_to_command do
                   while row = from_connection.get_copy_data
                     to_connection.put_copy_data(row)
@@ -111,10 +111,10 @@ module PgSync
 
               to_connection.transaction do
                 # create a temp table
-                to_connection.exec("CREATE TABLE #{quote_ident(temp_table)} AS SELECT * FROM #{quote_ident(table)} WITH NO DATA")
+                to_connection.exec("CREATE TABLE #{quote_ident_full(temp_table)} AS SELECT * FROM #{quote_ident_full(table)} WITH NO DATA")
 
                 # load file
-                to_connection.copy_data "COPY #{quote_ident(temp_table)} (#{fields}) FROM STDIN" do
+                to_connection.copy_data "COPY #{quote_ident_full(temp_table)} (#{fields}) FROM STDIN" do
                   file.each do |row|
                     to_connection.put_copy_data(row)
                   end
@@ -122,14 +122,14 @@ module PgSync
 
                 if opts[:preserve]
                   # insert into
-                  to_connection.exec("INSERT INTO #{quote_ident(table)} (SELECT * FROM #{quote_ident(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident(table)} WHERE #{quote_ident(table)}.#{primary_key} = #{quote_ident(temp_table)}.#{quote_ident(primary_key)}))")
+                  to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{primary_key} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
                 else
-                  to_connection.exec("DELETE FROM #{quote_ident(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident(temp_table)})")
-                  to_connection.exec("INSERT INTO #{quote_ident(table)} (SELECT * FROM #{quote_ident(temp_table)})")
+                  to_connection.exec("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
+                  to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
                 end
 
                 # delete temp table
-                to_connection.exec("DROP TABLE #{quote_ident(temp_table)}")
+                to_connection.exec("DROP TABLE #{quote_ident_full(temp_table)}")
               end
             ensure
                file.close
@@ -137,7 +137,7 @@ module PgSync
             end
           else
             destination.truncate(table)
-            to_connection.copy_data "COPY #{quote_ident(table)} (#{fields}) FROM STDIN" do
+            to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
               from_connection.copy_data copy_to_command do
                 while row = from_connection.get_copy_data
                   to_connection.put_copy_data(row)
@@ -159,6 +159,10 @@ module PgSync
 
     def log(message = nil)
       $stderr.puts message
+    end
+
+    def quote_ident_full(ident)
+      ident.split(".").map { |v| quote_ident(v) }.join(".")
     end
 
     def quote_ident(value)

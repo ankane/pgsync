@@ -30,13 +30,13 @@ module PgSync
     end
 
     def tables
-      query = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 ORDER BY tablename ASC"
-      execute(query, [schema]).map { |row| row["tablename"] }
+      query = "SELECT schemaname, tablename FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
+      execute(query).map { |row| "#{row["schemaname"]}.#{row["tablename"]}" }
     end
 
     def table_exists?(table)
       query = "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2"
-      execute(query, [schema, table]).size > 0
+      execute(query, table.split(".", 2)).size > 0
     end
 
     def close
@@ -54,19 +54,19 @@ module PgSync
 
     def columns(table)
       query = "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2"
-      execute(query, [schema, table]).map { |row| row["column_name"] }
+      execute(query, table.split(".", 2)).map { |row| row["column_name"] }
     end
 
     def sequences(table, columns)
-      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident(schema)}.#{quote_ident(table)}")}, #{escape(f)}) AS #{f}" }.join(", ")}")[0].values.compact
+      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{f}" }.join(", ")}")[0].values.compact
     end
 
     def max_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}")[0]["max"].to_i
+      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}")[0]["max"].to_i
     end
 
     def min_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident(table)}#{sql_clause}")[0]["min"].to_i
+      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}")[0]["min"].to_i
     end
 
     def last_value(seq)
@@ -74,7 +74,7 @@ module PgSync
     end
 
     def truncate(table)
-      execute("TRUNCATE #{quote_ident(table)} CASCADE")
+      execute("TRUNCATE #{quote_ident_full(table)} CASCADE")
     end
 
     # http://stackoverflow.com/a/20537829
@@ -94,7 +94,7 @@ module PgSync
           pg_attribute.attnum = any(pg_index.indkey) AND
           indisprimary
       SQL
-      row = execute(query, [schema, quote_ident(table)])[0]
+      row = execute(query, [table.split(".", 2)[0], quote_ident_full(table)])[0]
       row && row["attname"]
     end
 
@@ -121,7 +121,36 @@ module PgSync
       end
     end
 
+    def dump_command(tables)
+      tables = tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ")
+      dump_command = "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{to_url}"
+    end
+
+    def restore_command
+      psql_version = Gem::Version.new(`psql --version`.lines[0].chomp.split(" ")[-1].sub(/beta\d/, ""))
+      if_exists = psql_version >= Gem::Version.new("9.4.0")
+      restore_command = "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url}"
+    end
+
+    def fully_resolve_tables(tables)
+      no_schema_tables = {}
+      search_path_index = Hash[search_path.map.with_index.to_a]
+      self.tables.group_by { |t| t.split(".", 2)[-1] }.each do |group, t2|
+        no_schema_tables[group] = t2.sort_by { |t| [search_path_index[t.split(".", 2)[0]] || 1000000, t] }[0]
+      end
+
+      Hash[tables.map { |k, v| [no_schema_tables[k] || k, v] }]
+    end
+
+    def search_path
+      execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
+    end
+
     private
+
+    def quote_ident_full(ident)
+      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
+    end
 
     def execute(query, params = [])
       conn.exec_params(query, params).to_a

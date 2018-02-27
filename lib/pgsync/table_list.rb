@@ -49,7 +49,7 @@ module PgSync
 
       tables ||= Hash[(source.tables - to_arr(opts[:exclude])).map { |k| [k, {}] }]
 
-      tables
+      source.fully_resolve_tables(tables)
     end
 
     private
