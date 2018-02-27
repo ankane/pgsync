@@ -1,4 +1,4 @@
-# 0.3.9 [unreleased]
+# 0.3.9
 
 - Better support for schemas
 - Added `--schemas` option

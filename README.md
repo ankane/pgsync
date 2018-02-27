@@ -122,16 +122,24 @@ pgsync product:123
 
 ### Schema
 
-Sync schema
+Sync schema before the data
 
 ```sh
-pgsync --schema-only
+pgsync --schema-first
 ```
+
+**Note:** This wipes out existing data
 
 Specify tables
 
 ```sh
-pgsync table1,table2 --schema-only
+pgsync table1,table2 --schema-first
+```
+
+Or just the schema
+
+```sh
+pgsync --schema-only
 ```
 
 ## Sensitive Information
