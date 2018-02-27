@@ -227,46 +227,6 @@ Options:}
       Time.now - start_time
     end
 
-    # TODO better performance
-    def rule_match?(table, column, rule)
-      regex = Regexp.new('\A' + Regexp.escape(rule).gsub('\*','[^\.]*') + '\z')
-      regex.match(column) || regex.match("#{table}.#{column}")
-    end
-
-    # TODO wildcard rules
-    def apply_strategy(rule, table, column)
-      if rule.is_a?(Hash)
-        if rule.key?("value")
-          escape(rule["value"])
-        elsif rule.key?("statement")
-          rule["statement"]
-        else
-          raise PgSync::Error, "Unknown rule #{rule.inspect} for column #{column}"
-        end
-      else
-        strategies = {
-          "unique_email" => "'email' || #{table}.id || '@example.org'",
-          "untouched" => quote_ident(column),
-          "unique_phone" => "(#{table}.id + 1000000000)::text",
-          "random_int" => "(RAND() * 10)::int",
-          "random_date" => "'1970-01-01'",
-          "random_time" => "NOW()",
-          "unique_secret" => "'secret' || #{table}.id",
-          "random_ip" => "'127.0.0.1'",
-          "random_letter" => "'A'",
-          "random_string" => "right(md5(random()::text),10)",
-          "random_number" => "(RANDOM() * 1000000)::int",
-          "null" => "NULL",
-          nil => "NULL"
-        }
-        if strategies[rule]
-          strategies[rule]
-        else
-          raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
-        end
-      end
-    end
-
     def quote_ident(value)
       PG::Connection.quote_ident(value)
     end
