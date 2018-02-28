@@ -34,7 +34,7 @@ module PgSync
     def tables
       @tables ||= begin
         query = "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
-        execute(query).map { |row| "#{row["schemaname"]}.#{row["tablename"]}" }
+        execute(query).map { |row| "#{row["table_schema"]}.#{row["table_name"]}" }
       end
     end
 
