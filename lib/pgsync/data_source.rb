@@ -100,14 +100,11 @@ module PgSync
     def conn
       @conn ||= begin
         begin
+          ENV["PGCONNECT_TIMEOUT"] ||= "2"
           if @url =~ /\Apostgres(ql)?:\/\//
             config = @url
-            unless config.include?("connect_timeout")
-              sep = config.include?("?") ? "&" : "?"
-              config = "#{config}#{sep}connect_timeout=2"
-            end
           else
-            config = {dbname: @url, connect_timeout: 2}
+            config = {dbname: @url}
           end
           PG::Connection.new(config)
         rescue PG::ConnectionBad => e
