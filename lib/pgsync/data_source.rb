@@ -102,12 +102,18 @@ module PgSync
         begin
           if @url =~ /\Apostgres(ql)?:\/\//
             config = @url
+            unless config.include?("connect_timeout")
+              sep = config.include?("?") ? "&" : "?"
+              config = "#{config}#{sep}connect_timeout=2"
+            end
           else
-            config = {dbname: @url}
+            config = {dbname: @url, connect_timeout: 2}
           end
           PG::Connection.new(config)
         rescue PG::ConnectionBad => e
           raise PgSync::Error, e.message
+        rescue URI::InvalidURIError
+          raise PgSync::Error, "Invalid connection string"
         end
       end
     end
