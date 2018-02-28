@@ -18,13 +18,6 @@ require "pgsync/table_list"
 require "pgsync/table_sync"
 require "pgsync/version"
 
-module URI
-  class POSTGRESQL < Generic
-    DEFAULT_PORT = 5432
-  end
-  @@schemes["POSTGRESQL"] = @@schemes["POSTGRES"] = POSTGRESQL
-end
-
 module PgSync
   class Error < StandardError; end
 end
