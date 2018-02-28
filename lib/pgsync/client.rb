@@ -12,7 +12,7 @@ module PgSync
       return if @exit
 
       args, opts = @arguments, @options
-      [:to, :from, :to_safe, :exclude].each do |opt|
+      [:to, :from, :to_safe, :exclude, :schemas].each do |opt|
         opts[opt] ||= config[opt.to_s]
       end
       map_deprecations(args, opts)
