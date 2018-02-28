@@ -107,7 +107,6 @@ module PgSync
           end
           PG::Connection.new(config)
         rescue PG::ConnectionBad => e
-          log
           raise PgSync::Error, e.message
         end
       end
@@ -146,10 +145,6 @@ module PgSync
 
     def execute(query, params = [])
       conn.exec_params(query, params).to_a
-    end
-
-    def log(message = nil)
-      $stderr.puts message
     end
 
     def quote_ident(value)
