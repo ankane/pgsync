@@ -41,12 +41,21 @@ module PgSync
       destination = DataSource.new(opts[:to])
       raise PgSync::Error, "No destination" unless destination.exists?
 
-      unless opts[:to_safe] || destination.local?
-        raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
-      end
+      begin
+        # start connections
+        source.host
+        destination.host
 
-      print_description("From", source)
-      print_description("To", destination)
+        unless opts[:to_safe] || destination.local?
+          raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
+        end
+
+        print_description("From", source)
+        print_description("To", destination)
+      ensure
+        source.close
+        destination.close
+      end
 
       tables = nil
       begin
@@ -215,7 +224,8 @@ Options:}
     end
 
     def print_description(prefix, source)
-      log "#{prefix}: #{source.uri.path.sub(/\A\//, '')} on #{source.uri.host}:#{source.uri.port}"
+      location = " on #{source.host}:#{source.port}" if source.host
+      log "#{prefix}: #{source.dbname}#{location}"
     end
 
     def search_tree(file)

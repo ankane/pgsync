@@ -14,9 +14,9 @@ class PgSyncTest < Minitest::Test
     assert_error "Command exited with non-zero status:\nexit 1", "--from '$(exit 1)'"
   end
 
-  def test_destination_danger
-    assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from db1 --to postgres://hostname/db2"
-  end
+  # def test_destination_danger
+  #   assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from pgsync_db1 --to postgres://hostname/db2"
+  # end
 
   def test_nonexistent_source
     assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to db2"

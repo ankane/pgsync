@@ -11,22 +11,27 @@ module PgSync
     end
 
     def local?
-      %w(localhost 127.0.0.1).include?(uri.host)
+      !host || %w(localhost 127.0.0.1).include?(host)
     end
 
-    def uri
-      @uri ||= begin
-        uri = URI.parse(@url)
-        uri.scheme ||= "postgres"
-        uri.host ||= "localhost"
-        uri.port ||= 5432
-        uri.path = "/#{uri.path}" if uri.path && uri.path[0] != "/"
-        uri
-      end
+    def host
+      @host ||= conninfo[:host]
+    end
+
+    def port
+      @port ||= conninfo[:port]
+    end
+
+    def dbname
+      @dbname ||= conninfo[:dbname]
+    end
+
+    def conninfo
+      @conninfo ||= conn.conninfo_hash
     end
 
     def schema
-      @schema ||= CGI.parse(uri.query.to_s)["schema"][0]
+      @schema ||= CGI.parse(URI.parse(@url).query.to_s)["schema"][0]
     end
 
     def tables
@@ -44,12 +49,6 @@ module PgSync
         conn.close
         @conn = nil
       end
-    end
-
-    def to_url
-      uri = self.uri.dup
-      uri.query = nil
-      uri.to_s
     end
 
     def columns(table)
@@ -98,22 +97,15 @@ module PgSync
       row && row["attname"]
     end
 
-    # borrowed from
-    # ActiveRecord::ConnectionAdapters::ConnectionSpecification::ConnectionUrlResolver
     def conn
       @conn ||= begin
         begin
-          uri_parser = URI::Parser.new
-          config = {
-              host: uri.host,
-              port: uri.port,
-              dbname: uri.path.sub(/\A\//, ""),
-              user: uri.user,
-              password: uri.password,
-              connect_timeout: 3
-          }.reject { |_, value| value.to_s.empty? }
-          config.map { |key, value| config[key] = uri_parser.unescape(value) if value.is_a?(String) }
-          conn = PG::Connection.new(config)
+          if @url =~ /\Apostgres(ql)?:\/\//
+            config = @url
+          else
+            config = {dbname: @url}
+          end
+          PG::Connection.new(config)
         rescue PG::ConnectionBad => e
           log
           raise PgSync::Error, e.message
@@ -123,13 +115,13 @@ module PgSync
 
     def dump_command(tables)
       tables = tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ")
-      "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} #{to_url}"
+      "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@url}"
     end
 
     def restore_command
       psql_version = Gem::Version.new(`psql --version`.lines[0].chomp.split(" ")[-1].sub(/beta\d/, ""))
       if_exists = psql_version >= Gem::Version.new("9.4.0")
-      "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{to_url}"
+      "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@url}"
     end
 
     def fully_resolve_tables(tables)

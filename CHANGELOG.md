@@ -1,3 +1,8 @@
+# 0.4.0 [unreleased]
+
+- Add support for socket connections
+- Add support for environment variables
+
 # 0.3.9
 
 - Better support for schemas
