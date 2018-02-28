@@ -30,10 +30,6 @@ module PgSync
       @conninfo ||= conn.conninfo_hash
     end
 
-    def schema
-      @schema ||= CGI.parse(URI.parse(@url).query.to_s)["schema"][0]
-    end
-
     def tables
       query = "SELECT schemaname, tablename FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
       execute(query).map { |row| "#{row["schemaname"]}.#{row["tablename"]}" }
@@ -137,7 +133,7 @@ module PgSync
     end
 
     def search_path
-      execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
+      @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
     end
 
     private

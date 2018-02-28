@@ -1,7 +1,8 @@
 # 0.4.0 [unreleased]
 
-- Add support for socket connections
-- Add support for environment variables
+- Sync all schemas in search path by default
+- Added support for socket connections
+- Added support for environment variables
 
 # 0.3.9
 

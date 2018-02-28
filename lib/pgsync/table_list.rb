@@ -53,7 +53,7 @@ module PgSync
 
         tabs = source.tables
         unless opts[:all_schemas]
-          schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : [source.schema || "public"])
+          schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
           tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
         end
 
