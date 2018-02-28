@@ -30,14 +30,20 @@ module PgSync
       @conninfo ||= conn.conninfo_hash
     end
 
+    # gets visible tables
     def tables
-      query = "SELECT schemaname, tablename FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
-      execute(query).map { |row| "#{row["schemaname"]}.#{row["tablename"]}" }
+      @tables ||= begin
+        query = "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
+        execute(query).map { |row| "#{row["schemaname"]}.#{row["tablename"]}" }
+      end
+    end
+
+    def table_set
+      @table_set ||= Set.new(tables)
     end
 
     def table_exists?(table)
-      query = "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2"
-      execute(query, table.split(".", 2)).size > 0
+      table_set.include?(table)
     end
 
     def close
