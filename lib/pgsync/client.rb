@@ -2,6 +2,7 @@ module PgSync
   class Client
     def initialize(args)
       $stdout.sync = true
+      $stderr.sync = true
       @exit = false
       @arguments, @options = parse_args(args)
       @mutex = windows? ? Mutex.new : MultiProcessing::Mutex.new
