@@ -12,8 +12,8 @@ module PgSync
     end
 
     def sync(mutex, config, table, opts, source_url, destination_url)
-      source = DataSource.new(source_url)
-      destination = DataSource.new(destination_url)
+      source = DataSource.new(source_url, timeout: 0)
+      destination = DataSource.new(destination_url, timeout: 0)
 
       from_connection = source.conn
       to_connection = destination.conn

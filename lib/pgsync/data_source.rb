@@ -2,8 +2,9 @@ module PgSync
   class DataSource
     attr_reader :url
 
-    def initialize(source)
+    def initialize(source, timeout: 2)
       @url = resolve_url(source)
+      @timeout = timeout
     end
 
     def exists?
@@ -102,7 +103,7 @@ module PgSync
     def conn
       @conn ||= begin
         begin
-          ENV["PGCONNECT_TIMEOUT"] ||= "2"
+          ENV["PGCONNECT_TIMEOUT"] ||= @timeout.to_s
           if @url =~ /\Apostgres(ql)?:\/\//
             config = @url
           else
