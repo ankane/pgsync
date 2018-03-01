@@ -1,4 +1,4 @@
-# 0.4.0 [unreleased]
+# 0.4.0
 
 - Sync all schemas in search path by default
 - Added support for socket connections
