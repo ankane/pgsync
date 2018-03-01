@@ -27,10 +27,6 @@ module PgSync
       @dbname ||= conninfo[:dbname]
     end
 
-    def conninfo
-      @conninfo ||= conn.conninfo_hash
-    end
-
     # gets visible tables
     def tables
       @tables ||= begin
@@ -39,19 +35,8 @@ module PgSync
       end
     end
 
-    def table_set
-      @table_set ||= Set.new(tables)
-    end
-
     def table_exists?(table)
       table_set.include?(table)
-    end
-
-    def close
-      if @conn
-        conn.close
-        @conn = nil
-      end
     end
 
     def columns(table)
@@ -118,6 +103,13 @@ module PgSync
       end
     end
 
+    def close
+      if @conn
+        @conn.close
+        @conn = nil
+      end
+    end
+
     def dump_command(tables)
       tables = tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ")
       "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@url}"
@@ -144,6 +136,14 @@ module PgSync
     end
 
     private
+
+    def table_set
+      @table_set ||= Set.new(tables)
+    end
+
+    def conninfo
+      @conninfo ||= conn.conninfo_hash
+    end
 
     def quote_ident_full(ident)
       ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
