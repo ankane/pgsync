@@ -100,14 +100,14 @@ module PgSync
       end
     end
 
-    def confirm_tables_exist(destination, tables, description)
+    def confirm_tables_exist(data_source, tables, description)
       tables.keys.each do |table|
-        unless destination.table_exists?(table)
+        unless data_source.table_exists?(table)
           raise PgSync::Error, "Table does not exist in #{description}: #{table}"
         end
       end
     ensure
-      destination.close
+      data_source.close
     end
 
     def map_deprecations(args, opts)
