@@ -92,7 +92,7 @@ module PgSync
           confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables) do |table, table_opts|
-            TableSync.new.sync(@mutex, config, table, opts.merge(table_opts), source.url, destination.url, source.search_path.select { |sp| sp != "pg_catalog" }.first)
+            TableSync.new.sync(@mutex, config, table, opts.merge(table_opts), source.url, destination.url, source.search_path.find { |sp| sp != "pg_catalog" })
           end
         end
 
