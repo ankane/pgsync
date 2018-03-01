@@ -85,7 +85,7 @@ module PgSync
               batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
               to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
                 from_connection.copy_data batch_copy_to_command do
-                  while row = from_connection.get_copy_data
+                  while (row = from_connection.get_copy_data)
                     to_connection.put_copy_data(row)
                   end
                 end
