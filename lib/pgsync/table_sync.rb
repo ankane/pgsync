@@ -1,17 +1,7 @@
 module PgSync
   class TableSync
-    def sync_with_benchmark(mutex, config, table, opts, source_url, destination_url)
-      time =
-        benchmark do
-          sync(mutex, config, table, opts, source_url, destination_url)
-        end
-
-      mutex.synchronize do
-        log "* DONE #{table} (#{time.round(1)}s)"
-      end
-    end
-
-    def sync(mutex, config, table, opts, source_url, destination_url)
+    def sync(mutex, config, table, opts, source_url, destination_url, first_schema)
+      start_time = Time.now
       source = DataSource.new(source_url, timeout: 0)
       destination = DataSource.new(destination_url, timeout: 0)
 
@@ -35,8 +25,10 @@ module PgSync
 
         sql_clause = String.new
 
+        table_name = table.sub("#{first_schema}.", "")
+
         mutex.synchronize do
-          log "* Syncing #{table}"
+          log "* Syncing #{table_name}"
           if opts[:sql]
             log "    #{opts[:sql]}"
             sql_clause << " #{opts[:sql]}"
@@ -157,6 +149,9 @@ module PgSync
             to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
           end
         end
+        mutex.synchronize do
+          log "* DONE #{table_name} (#{(Time.now - start_time).round(1)}s)"
+        end
       ensure
         source.close
         destination.close
@@ -203,12 +198,6 @@ module PgSync
           raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
         end
       end
-    end
-
-    def benchmark
-      start_time = Time.now
-      yield
-      Time.now - start_time
     end
 
     def log(message = nil)
