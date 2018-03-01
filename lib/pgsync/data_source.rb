@@ -2,7 +2,7 @@ module PgSync
   class DataSource
     attr_reader :url
 
-    def initialize(source, timeout: 2)
+    def initialize(source, timeout: 3)
       @url = resolve_url(source)
       @timeout = timeout
     end
