@@ -5,10 +5,10 @@ module PgSync
       source = DataSource.new(source_url, timeout: 0)
       destination = DataSource.new(destination_url, timeout: 0)
 
-      from_connection = source.conn
-      to_connection = destination.conn
-
       begin
+        from_connection = source.conn
+        to_connection = destination.conn
+
         bad_fields = opts[:no_rules] ? [] : config["data_rules"]
 
         from_fields = source.columns(table)
