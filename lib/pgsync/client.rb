@@ -90,7 +90,7 @@ module PgSync
 
         if opts[:stats_only]
           log "* Dumping stats"
-          sync_stats(source, destination, tables.keys)
+          sync_stats(source, destination, tables.keys) if tables.any?
         end
 
         if !opts[:schema_only] && !opts[:stats_only]
