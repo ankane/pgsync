@@ -85,6 +85,34 @@ module PgSync
       row && row["attname"]
     end
 
+    def table_stats(tables)
+      execute <<-SQL
+        SELECT
+          nspname || '.' || relname AS table,
+          pg_class.oid,
+          relpages,
+          reltuples,
+          relallvisible
+        FROM
+          pg_catalog.pg_class
+        INNER JOIN
+          pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+        WHERE
+          nspname || '.' || relname IN (#{tables.map { |t| escape(t) }.join(", ")})
+      SQL
+    end
+
+    def column_stats(oids)
+      execute <<-SQL
+        SELECT
+          *
+        FROM
+          pg_catalog.pg_statistic
+        WHERE
+          starelid IN (#{oids.map { |v| escape(v) }.join(", ")})
+      SQL
+    end
+
     def conn
       @conn ||= begin
         begin

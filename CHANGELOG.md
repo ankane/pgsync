@@ -1,3 +1,7 @@
+# 0.4.1 [unreleased]
+
+- Added experimental support for syncing stats
+
 # 0.4.0
 
 - Sync all schemas in search path by default

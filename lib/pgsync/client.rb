@@ -88,7 +88,12 @@ module PgSync
           sync_schema(source, destination, tables)
         end
 
-        unless opts[:schema_only]
+        if opts[:stats_only]
+          log "* Dumping stats"
+          sync_stats(source, destination, tables.keys)
+        end
+
+        if !opts[:schema_only] && !opts[:stats_only]
           confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables) do |table, table_opts|
@@ -151,6 +156,55 @@ module PgSync
       system("#{dump_command} | #{restore_command}")
     end
 
+    def sync_stats(source, destination, tables)
+      destination_oids = Hash[destination.table_stats(tables).map { |ts| [ts["table"], ts["oid"]] }]
+      table_stats = Hash[source.table_stats(tables).map { |ts| [ts["table"], ts] }]
+
+      # create mapping
+      oid_mapping = {}
+      table_stats.each do |_, ts|
+        oid_mapping[ts["oid"]] = destination_oids[ts["table"]]
+      end
+
+      i = 1
+      queries = []
+      params = []
+      source.column_stats(oid_mapping.keys).each do |row|
+        query = []
+        row.each do |k, v|
+          if k == "starelid"
+            v = oid_mapping[v]
+          end
+
+          if k.start_with?("stavalues")
+            query << "array_in($#{i}, 25, -1)"
+          else
+            query << "$#{i}"
+          end
+          params << v
+          i += 1
+        end
+        queries << query
+      end
+      sql = queries.map { |r| "(#{r.join(", ")})" }.join(",")
+
+      conn = destination.conn
+      conn.transaction do
+        # update pg_catalog
+        tables.each do |table|
+          ts = table_stats[table]
+          conn.exec_params("UPDATE pg_catalog.pg_class SET relpages = $1, reltuples = $2, relallvisible = $3 WHERE oid = $4", [ts["relpages"], ts["reltuples"], ts["relallvisible"], destination_oids[table]])
+        end
+
+        # update pg_statistic
+        conn.exec_params("DELETE FROM pg_catalog.pg_statistic WHERE starelid IN (#{destination_oids.values.join(", ")})", [])
+        conn.exec_params("INSERT INTO pg_catalog.pg_statistic VALUES #{sql}", params)
+      end
+    ensure
+      source.close
+      destination.close
+    end
+
     def parse_args(args)
       opts = Slop.parse(args) do |o|
         o.banner = %{Usage:
@@ -176,6 +230,7 @@ Options:}
         o.boolean "--truncate", "truncate existing rows", default: false
         o.boolean "--schema-first", "schema first", default: false
         o.boolean "--schema-only", "schema only", default: false
+        o.boolean "--stats-only", "stats only", default: false
         o.boolean "--all-schemas", "all schemas", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
         o.boolean "--setup", "setup", default: false
