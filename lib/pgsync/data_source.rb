@@ -116,8 +116,8 @@ module PgSync
     end
 
     def restore_command
-      psql_version = Gem::Version.new(`psql --version`.lines[0].chomp.split(" ")[-1].sub(/beta\d/, ""))
-      if_exists = psql_version >= Gem::Version.new("9.4.0")
+      psql_version = `psql --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
+      if_exists = Gem::Version.new(psql_version) >= Gem::Version.new("9.4.0")
       "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@url}"
     end
 

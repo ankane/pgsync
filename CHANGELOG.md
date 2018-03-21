@@ -1,3 +1,7 @@
+# 0.4.1 [unreleased]
+
+- Made `psql` version check more robust
+
 # 0.4.0
 
 - Sync all schemas in search path by default
