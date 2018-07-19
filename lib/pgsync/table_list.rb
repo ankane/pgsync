@@ -70,7 +70,7 @@ module PgSync
         value
       else
         # Split by commas, but don't use commas inside double quotes
-        # http://stackoverflow.com/questions/21105360/regex-find-comma-not-inside-quotes
+        # https://stackoverflow.com/questions/21105360/regex-find-comma-not-inside-quotes
         value.to_s.split(/(?!\B"[^"]*),(?![^"]*"\B)/)
       end
     end
