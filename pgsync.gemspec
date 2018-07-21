@@ -6,17 +6,20 @@ require "pgsync/version"
 Gem::Specification.new do |spec|
   spec.name          = "pgsync"
   spec.version       = PgSync::VERSION
-  spec.authors       = ["Andrew Kane"]
-  spec.email         = ["andrew@chartkick.com"]
-
   spec.summary       = "Sync Postgres data between databases"
   spec.homepage      = "https://github.com/ankane/pgsync"
   spec.license       = "MIT"
 
-  spec.files         = Dir["README.md", "CHANGELOG.md", "LICENSE.txt", "{exe,lib}/**/*", "config.yml"]
+  spec.authors       = "Andrew Kane"
+  spec.email         = "andrew@chartkick.com"
+
+  spec.files         = Dir["*.{md,txt}", "{lib,exe}/**/*", "config.yml"]
+  spec.require_path  = "lib"
+
   spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
-  spec.require_paths = ["lib"]
+  spec.executables   = ["pgsync"]
+
+  spec.required_ruby_version = ">= 2.2"
 
   spec.add_dependency "multiprocessing"
   spec.add_dependency "parallel"
