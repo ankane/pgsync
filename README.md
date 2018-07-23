@@ -150,10 +150,10 @@ If you do not use a VPN, you must use `sslmode=verify-full` with a root certific
 
 Surprisingly and unfortunately, there’s [not a secure way](https://thusoy.com/2016/mitming-postgres) to connect to Heroku Postgres with any client.
 
-For Amazon RDS, download the [root certificate](https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem) and update your `.pgsync.yml` to:
+For Amazon RDS, download the [root certificate](https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem) and append to your `from` url:
 
-```yml
-from: $(command-to-get-url)?sslmode=verify-full&sslrootcert=rds-combined-ca-bundle.pem
+```
+?sslmode=verify-full&sslrootcert=rds-combined-ca-bundle.pem
 ```
 
 ## Sensitive Information
