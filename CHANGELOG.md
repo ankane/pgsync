@@ -1,7 +1,7 @@
 # 0.4.1 [unreleased]
 
 - Made `psql` version check more robust
-- Fixed issue with non-lowercase primary key and `fill` command
+- Fixed issue with non-lowercase primary key
 
 # 0.4.0
 
