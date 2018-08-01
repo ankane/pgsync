@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "multiprocessing"
   spec.add_dependency "parallel"
-  spec.add_dependency "pg"
+  spec.add_dependency "pg", ">= 0.18.2"
   spec.add_dependency "slop", ">= 4.2.0"
 
   spec.add_development_dependency "bundler"
