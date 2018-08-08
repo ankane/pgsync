@@ -44,7 +44,7 @@ module PgSync
         end
 
         if shared_fields.any?
-          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, bk| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
+          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
           fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
           seq_values = {}
@@ -106,7 +106,7 @@ module PgSync
             file = Tempfile.new(temp_table)
             begin
               from_connection.copy_data copy_to_command do
-                while row = from_connection.get_copy_data
+                while (row = from_connection.get_copy_data)
                   file.write(row)
                 end
               end
@@ -139,7 +139,7 @@ module PgSync
             destination.truncate(table)
             to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
               from_connection.copy_data copy_to_command do
-                while row = from_connection.get_copy_data
+                while (row = from_connection.get_copy_data)
                   to_connection.put_copy_data(row)
                 end
               end
