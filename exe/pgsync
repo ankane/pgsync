@@ -6,5 +6,5 @@ begin
 rescue PgSync::Error => e
   abort e.message
 rescue Interrupt
-  # do nothing
+  abort
 end
