@@ -18,7 +18,7 @@ module PgSync
       end
       map_deprecations(args, opts)
 
-      if opts[:setup]
+      if opts[:init]
         setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
       else
         sync(args, opts)
@@ -116,8 +116,8 @@ module PgSync
       case command
       when "setup"
         args.shift
-        opts[:setup] = true
-        deprecated "Use `psync --setup` instead"
+        opts[:init] = true
+        deprecated "Use `psync --init` instead"
       when "schema"
         args.shift
         opts[:schema_only] = true
@@ -178,7 +178,8 @@ Options:}
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--all-schemas", "all schemas", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
-        o.boolean "--setup", "setup", default: false
+        o.boolean "--init", "init", default: false
+        o.boolean "--setup", "setup", default: false, help: false
         o.boolean "--in-batches", "in batches", default: false, help: false
         o.integer "--batch-size", "batch size", default: 10000, help: false
         o.float "--sleep", "sleep", default: 0, help: false
@@ -191,7 +192,11 @@ Options:}
           @exit = true
         end
       end
-      [opts.arguments, opts.to_hash]
+
+      opts_hash = opts.to_hash
+      opts_hash[:init] = opts_hash[:setup] if opts_hash[:setup]
+
+      [opts.arguments, opts_hash]
     rescue Slop::Error => e
       raise PgSync::Error, e.message
     end
