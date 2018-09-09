@@ -144,17 +144,7 @@ pgsync --schema-only
 
 ## Data Protection
 
-When connecting to a remote database, make sure your connection is secure.
-
-If you do not use a VPN, you must use `sslmode=verify-full` with a root certificate to [protect against MITM attacks](https://www.postgresql.org/docs/current/static/libpq-ssl.html). If you don’t do this, your database credentials can be compromised. This cannot be understated!
-
-Surprisingly and unfortunately, there’s [not a secure way](https://thusoy.com/2016/mitming-postgres) to connect to Heroku Postgres with any client.
-
-For Amazon RDS, download the [root certificate](https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem) and append to your `from` url:
-
-```
-?sslmode=verify-full&sslrootcert=rds-combined-ca-bundle.pem
-```
+Always make sure your connection is secure when connecting to your database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full` with a root certificate. If you don’t do this, your database credentials can be compromised.
 
 ## Sensitive Information
 
