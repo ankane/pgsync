@@ -3,7 +3,7 @@
 #   postgres://user:password@host:port/dbname
 # we recommend a command which outputs a database URL
 # so sensitive information is not included in this file
-from: $(heroku config:get DATABASE_URL)
+from: $(some_command)
 
 # destination database URL
 to: postgres://localhost:5432/myapp_development
