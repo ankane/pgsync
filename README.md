@@ -170,18 +170,20 @@ data_rules:
 
 Options for replacement are:
 
-- null
-- value
-- statement
-- unique_email
-- unique_phone
-- unique_secret
-- random_letter
-- random_int
-- random_date
-- random_time
-- random_ip
-- untouched
+- `unique_email`
+- `unique_phone`
+- `unique_secret`
+- `random_letter`
+- `random_int`
+- `random_date`
+- `random_time`
+- `random_ip`
+- `value`
+- `statement`
+- `null`
+- `untouched`
+
+Rules starting with `unique_` require the table to have a primary key.
 
 ## Multiple Databases
 
