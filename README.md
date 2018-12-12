@@ -150,7 +150,7 @@ Always make sure your [connection is secure](https://ankane.org/postgres-sslmode
 
 ## Sensitive Information
 
-Prevent sensitive information - like passwords and email addresses - from leaving the remote server.
+Prevent sensitive information like email addresses from leaving the remote server.
 
 Define rules in `.pgsync.yml`:
 
@@ -299,5 +299,9 @@ To run tests, do:
 git clone https://github.com/ankane/pgsync.git
 cd pgsync
 bundle install
+
+createdb pgsync_test1
+createdb pgsync_test2
+
 bundle exec rake
 ```
