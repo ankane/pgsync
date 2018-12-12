@@ -42,6 +42,7 @@ module PgSync
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
           else
+            raise PgSync::Error, "Cannot use parameters with tables" if id
             add_table(tables, group, id, args[1])
           end
         end
