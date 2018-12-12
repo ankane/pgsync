@@ -1,7 +1,8 @@
-from: $(echo "pgsync_db1")
-to: pgsync_db2
+from: $(echo "pgsync_test1")
+to: pgsync_test2
 groups:
   group1:
     - Users
 data_rules:
   email: unique_email
+  token: unique_secret

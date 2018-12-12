@@ -50,6 +50,16 @@ class PgSyncTest < Minitest::Test
     assert_works "group1 --from pgsync_test2 --to pgsync_test1 --config test/support/config.yml"
   end
 
+  def test_data_rules
+    conn1 = PG::Connection.open(dbname: "pgsync_test1")
+    conn1.exec("INSERT INTO \"Users\" (email, token) VALUES ('hi@example.org', 'token123');")
+    assert_works "Users --from pgsync_test1 --to pgsync_test2 --config test/support/config.yml"
+    conn2 = PG::Connection.open(dbname: "pgsync_test2")
+    row = conn2.exec("SELECT * FROM \"Users\"").first
+    assert_equal row["email"], "email#{row["Id"]}@example.org"
+    assert_equal row["token"], "secret#{row["Id"]}"
+  end
+
   def test_parallel
     assert_prints "Completed in", "--from pgsync_test1 --to pgsync_test2", debug: false
   end
