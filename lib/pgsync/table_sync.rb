@@ -183,7 +183,7 @@ module PgSync
         when "unique_phone"
           "(#{quoted_primary_key(table, primary_key)} + 1000000000)::text"
         when "unique_secret"
-          "secret || #{quoted_primary_key(table, primary_key, rule)}::text"
+          "'secret' || #{quoted_primary_key(table, primary_key, rule)}::text"
         when "random_int"
           "(RAND() * 10)::int"
         when "random_date"
