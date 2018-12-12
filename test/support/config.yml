@@ -3,3 +3,5 @@ to: pgsync_db2
 groups:
   group1:
     - Users
+data_rules:
+  email: unique_email
