@@ -249,7 +249,7 @@ end
 
 ## Dependencies
 
-If installation fails, your system be missing Ruby or libpq.
+If installation fails, your system may be missing Ruby or libpq.
 
 On Mac, run:
 
