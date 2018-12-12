@@ -44,7 +44,8 @@ module PgSync
         end
 
         if shared_fields.any?
-          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
+          primary_key = destination.primary_key(table)
+          copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
           fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
           seq_values = {}
@@ -55,8 +56,6 @@ module PgSync
           copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
           if opts[:in_batches]
             raise PgSync::Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
-
-            primary_key = source.primary_key(table)
             raise PgSync::Error, "No primary key" unless primary_key
 
             destination.truncate(table) if opts[:truncate]
@@ -99,7 +98,6 @@ module PgSync
               end
             end
           elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-            primary_key = destination.primary_key(table)
             raise PgSync::Error, "No primary key" unless primary_key
 
             temp_table = "pgsync_#{rand(1_000_000_000)}"
@@ -167,7 +165,7 @@ module PgSync
     end
 
     # TODO wildcard rules
-    def apply_strategy(rule, table, column)
+    def apply_strategy(rule, table, column, primary_key)
       if rule.is_a?(Hash)
         if rule.key?("value")
           escape(rule["value"])
@@ -177,27 +175,44 @@ module PgSync
           raise PgSync::Error, "Unknown rule #{rule.inspect} for column #{column}"
         end
       else
-        strategies = {
-          "unique_email" => "'email' || #{table}.id || '@example.org'",
-          "untouched" => quote_ident(column),
-          "unique_phone" => "(#{table}.id + 1000000000)::text",
-          "random_int" => "(RAND() * 10)::int",
-          "random_date" => "'1970-01-01'",
-          "random_time" => "NOW()",
-          "unique_secret" => "'secret' || #{table}.id",
-          "random_ip" => "'127.0.0.1'",
-          "random_letter" => "'A'",
-          "random_string" => "right(md5(random()::text),10)",
-          "random_number" => "(RANDOM() * 1000000)::int",
-          "null" => "NULL",
-          nil => "NULL"
-        }
-        if strategies[rule]
-          strategies[rule]
+        case rule
+        when "untouched"
+          quote_ident(column)
+        when "unique_email"
+          "'email' || #{quoted_primary_key(table, primary_key, rule)}::text || '@example.org'"
+        when "unique_phone"
+          "(#{quoted_primary_key(table, primary_key)} + 1000000000)::text"
+        when "unique_secret"
+          "secret || #{quoted_primary_key(table, primary_key, rule)}::text"
+        when "random_int"
+          "(RAND() * 10)::int"
+        when "random_date"
+          # TODO make random
+          "'1970-01-01'"
+        when "random_time"
+          # TODO make random
+          "NOW()"
+        when "random_ip"
+          # TODO make random
+          "'127.0.0.1'"
+        when "random_letter"
+          # TODO make random
+          "'A'"
+        when "random_string"
+          "right(md5(random()::text),10)"
+        when "random_number"
+          "(RANDOM() * 1000000)::int"
+        when "null", nil
+          "NULL"
         else
           raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
         end
       end
+    end
+
+    def quoted_primary_key(table, primary_key, rule)
+      raise "Primary key required for this data rule: #{rule}" unless primary_key
+      "#{quote_ident_full(table)}.#{quote_ident(primary_key)}"
     end
 
     def log(message = nil)
