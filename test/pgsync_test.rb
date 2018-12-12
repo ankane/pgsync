@@ -15,7 +15,7 @@ class PgSyncTest < Minitest::Test
   end
 
   # def test_destination_danger
-  #   assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from pgsync_db1 --to postgres://hostname/db2"
+  #   assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from pgsync_test1 --to postgres://hostname/db2"
   # end
 
   def test_nonexistent_source
@@ -23,35 +23,35 @@ class PgSyncTest < Minitest::Test
   end
 
   def test_nonexistent_destination
-    assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_db1 --to db2"
+    assert_error "FATAL:  database \"db2\" does not exist\n", "--from pgsync_test1 --to db2"
   end
 
   def test_missing_column
-    assert_prints "Missing columns: zip_code", "--from pgsync_db1 --to pgsync_db2"
+    assert_prints "Missing columns: zip_code", "--from pgsync_test1 --to pgsync_test2"
   end
 
   def test_extra_column
-    assert_prints "Extra columns: zip_code", "--from pgsync_db2 --to pgsync_db1"
+    assert_prints "Extra columns: zip_code", "--from pgsync_test2 --to pgsync_test1"
   end
 
   def test_overwrite
-    assert_works "--from pgsync_db2 --to pgsync_db1 --overwrite"
+    assert_works "--from pgsync_test2 --to pgsync_test1 --overwrite"
   end
 
   def test_table
-    assert_works "Users --from pgsync_db2 --to pgsync_db1"
+    assert_works "Users --from pgsync_test2 --to pgsync_test1"
   end
 
   def test_partial
-    assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_db2 --to pgsync_db1"
+    assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_test2 --to pgsync_test1"
   end
 
   def test_group
-    assert_works "group1 --from pgsync_db2 --to pgsync_db1 --config test/support/config.yml"
+    assert_works "group1 --from pgsync_test2 --to pgsync_test1 --config test/support/config.yml"
   end
 
   def test_parallel
-    assert_prints "Completed in", "--from pgsync_db1 --to pgsync_db2", debug: false
+    assert_prints "Completed in", "--from pgsync_test1 --to pgsync_test2", debug: false
   end
 
   def test_version
