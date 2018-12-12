@@ -3,6 +3,7 @@
 - Made `psql` version check more robust
 - Fixed issue with non-lowercase primary key
 - Prefer `--init` over `--setup`
+- Improved data rules
 
 # 0.4.0
 
