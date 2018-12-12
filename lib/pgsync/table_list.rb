@@ -29,6 +29,7 @@ module PgSync
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
+          raise PgSync::Error, "Cannot use parameters with tables" if id
           add_table(tables, table, id, args[1])
         end
       end
