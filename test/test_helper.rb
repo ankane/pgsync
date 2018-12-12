@@ -9,9 +9,17 @@ conn1.exec <<-SQL
 DROP TABLE IF EXISTS "Users";
 CREATE TABLE "Users" (
   "Id" SERIAL PRIMARY KEY,
+  zip_code TEXT,
   email TEXT,
+  phone TEXT,
   token TEXT,
-  zip_code TEXT
+  attempts INT,
+  created_on DATE,
+  updated_at TIMESTAMP,
+  ip TEXT,
+  name TEXT,
+  nonsense TEXT,
+  untouchable TEXT
 );
 SQL
 conn1.close
@@ -22,7 +30,15 @@ DROP TABLE IF EXISTS "Users";
 CREATE TABLE "Users" (
   "Id" SERIAL PRIMARY KEY,
   email TEXT,
-  token TEXT
+  phone TEXT,
+  token TEXT,
+  attempts INT,
+  created_on DATE,
+  updated_at TIMESTAMP,
+  ip TEXT,
+  name TEXT,
+  nonsense TEXT,
+  untouchable TEXT
 );
 SQL
 conn2.close

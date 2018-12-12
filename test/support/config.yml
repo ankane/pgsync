@@ -5,4 +5,11 @@ groups:
     - Users
 data_rules:
   email: unique_email
+  phone: unique_phone
   token: unique_secret
+  attempts: random_int
+  created_on: random_date
+  updated_at: random_time
+  ip: random_ip
+  name: random_letter
+  nonsense: random_string

@@ -181,27 +181,21 @@ module PgSync
         when "unique_email"
           "'email' || #{quoted_primary_key(table, primary_key, rule)}::text || '@example.org'"
         when "unique_phone"
-          "(#{quoted_primary_key(table, primary_key)} + 1000000000)::text"
+          "(#{quoted_primary_key(table, primary_key, rule)} + 1000000000)::text"
         when "unique_secret"
           "'secret' || #{quoted_primary_key(table, primary_key, rule)}::text"
-        when "random_int"
-          "(RAND() * 10)::int"
+        when "random_int", "random_number"
+          "(RANDOM() * 100)::int"
         when "random_date"
-          # TODO make random
-          "'1970-01-01'"
+          "date '1970-01-01' + (RANDOM() * 10000)::int"
         when "random_time"
-          # TODO make random
-          "NOW()"
+          "NOW() - (RANDOM() * 100000000)::int * INTERVAL '1 second'"
         when "random_ip"
-          # TODO make random
-          "'127.0.0.1'"
+          "(1 + RANDOM() * 254)::int::text || '.0.0.1'"
         when "random_letter"
-          # TODO make random
-          "'A'"
+          "chr(65 + (RANDOM() * 26)::int)"
         when "random_string"
-          "right(md5(random()::text),10)"
-        when "random_number"
-          "(RANDOM() * 1000000)::int"
+          "RIGHT(MD5(RANDOM()::text), 10)"
         when "null", nil
           "NULL"
         else

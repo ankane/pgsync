@@ -52,12 +52,16 @@ class PgSyncTest < Minitest::Test
 
   def test_data_rules
     conn1 = PG::Connection.open(dbname: "pgsync_test1")
-    conn1.exec("INSERT INTO \"Users\" (email, token) VALUES ('hi@example.org', 'token123');")
+    2.times do
+      conn1.exec("INSERT INTO \"Users\" (email, phone, token, attempts, created_on, updated_at, ip, name, nonsense, untouchable)
+      VALUES ('hi@example.org', '555-555-5555', 'token123', 1, NOW(), NOW(), '127.0.0.1', 'Hi', 'Text', 'rock');")
+    end
     assert_works "Users --from pgsync_test1 --to pgsync_test2 --config test/support/config.yml"
     conn2 = PG::Connection.open(dbname: "pgsync_test2")
-    row = conn2.exec("SELECT * FROM \"Users\"").first
-    assert_equal row["email"], "email#{row["Id"]}@example.org"
-    assert_equal row["token"], "secret#{row["Id"]}"
+    result = conn2.exec("SELECT * FROM \"Users\"").to_a
+    row = result.first
+    assert_equal "email#{row["Id"]}@example.org", row["email"]
+    assert_equal "secret#{row["Id"]}", row["token"]
   end
 
   def test_parallel
