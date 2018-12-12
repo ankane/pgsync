@@ -18,7 +18,7 @@ pgsync is a command line tool. To install, run:
 gem install pgsync
 ```
 
-This will give you the `pgsync` command.
+This will give you the `pgsync` command. If installation fails, you may need to install [dependencies](#dependencies).
 
 In your project directory, run:
 
@@ -245,6 +245,22 @@ For Ruby scripts, you may need to do:
 Bundler.with_clean_env do
   system "pgsync ..."
 end
+```
+
+## Dependencies
+
+If installation fails, your system be missing Ruby or libpq.
+
+On Mac, run:
+
+```sh
+brew install postgresql
+```
+
+On Ubuntu, run:
+
+```sh
+sudo apt-get install ruby-dev libpq-dev build-essential
 ```
 
 ## Upgrading
