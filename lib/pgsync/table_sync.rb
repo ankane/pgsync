@@ -181,7 +181,7 @@ module PgSync
         when "unique_email"
           "'email' || #{quoted_primary_key(table, primary_key, rule)}::text || '@example.org'"
         when "unique_phone"
-          "(#{quoted_primary_key(table, primary_key, rule)} + 1000000000)::text"
+          "(#{quoted_primary_key(table, primary_key, rule)}::bigint + 1000000000)::text"
         when "unique_secret"
           "'secret' || #{quoted_primary_key(table, primary_key, rule)}::text"
         when "random_int", "random_number"
