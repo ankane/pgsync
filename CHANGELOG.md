@@ -1,4 +1,4 @@
-# 0.4.1 [unreleased]
+# 0.4.1
 
 - Made `psql` version check more robust
 - Fixed issue with non-lowercase primary key

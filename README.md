@@ -23,7 +23,7 @@ This will give you the `pgsync` command. If installation fails, you may need to 
 In your project directory, run:
 
 ```sh
-pgsync --setup
+pgsync --init
 ```
 
 This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
@@ -190,7 +190,7 @@ Rules starting with `unique_` require the table to have a primary key.
 To use with multiple databases, run:
 
 ```sh
-pgsync --setup db2
+pgsync --init db2
 ```
 
 This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:
@@ -237,7 +237,7 @@ Version
 pgsync --version
 ```
 
-## Setup Scripts
+## Scripts
 
 Use groups when possible to take advantage of parallelism.
 
