@@ -280,6 +280,10 @@ gem install specific_install
 gem specific_install https://github.com/ankane/pgsync.git
 ```
 
+## Temporary files
+A temporary file is created in /tmp while syncing tables.
+Be careful to have enough space on it.
+
 ## Thanks
 
 Inspired by [heroku-pg-transfer](https://github.com/ddollar/heroku-pg-transfer).
