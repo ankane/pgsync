@@ -171,11 +171,15 @@ module PgSync
     end
 
     def resolve_url(source)
-      if source && source[0..1] == "$(" && source[-1] == ")"
-        command = source[2..-2]
-        source = `#{command}`.chomp
-        unless $?.success?
-          raise PgSync::Error, "Command exited with non-zero status:\n#{command}"
+      if source
+        source = source.dup
+        source.gsub!(/\$\([^)]+\)/) do |m|
+          command = m[2..-2]
+          result = `#{command}`.chomp
+          unless $?.success?
+            raise PgSync::Error, "Command exited with non-zero status:\n#{command}"
+          end
+          result
         end
       end
       source

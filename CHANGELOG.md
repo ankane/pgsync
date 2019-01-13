@@ -1,3 +1,7 @@
+# 0.4.2 [unreleased]
+
+- Improved flexibility of commands
+
 # 0.4.1
 
 - Made `psql` version check more robust
