@@ -40,8 +40,25 @@ module PgSync
     end
 
     def columns(table)
-      query = "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2"
-      execute(query, table.split(".", 2)).map { |row| row["column_name"] }
+      query = <<-SQL
+        SELECT 
+          column_name,
+          data_type
+        FROM
+          information_schema.columns
+        WHERE
+          table_schema = $1 AND
+          table_name = $2
+      SQL
+      result = execute(query, table.split(".", 2))
+      column_names = result.map { |row| row["column_name"] }
+
+      data_types = Hash.new
+      result.each do |row|
+        data_types[row["column_name"]] = row["data_type"]
+      end
+
+      [column_names, data_types]
     end
 
     def sequences(table, columns)
@@ -54,6 +71,10 @@ module PgSync
 
     def min_id(table, primary_key, sql_clause = nil)
       execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}")[0]["min"].to_i
+    end
+
+    def row_count(table)
+      execute("SELECT COUNT(*) as total_rows FROM #{quote_ident_full(table)}")[0]["total_rows"]
     end
 
     def last_value(seq)
@@ -186,3 +207,4 @@ module PgSync
     end
   end
 end
+

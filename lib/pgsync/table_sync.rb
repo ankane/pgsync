@@ -11,8 +11,9 @@ module PgSync
 
         bad_fields = opts[:no_rules] ? [] : config["data_rules"]
 
-        from_fields = source.columns(table)
-        to_fields = destination.columns(table)
+        from_fields, from_fields_types = source.columns(table)
+        to_fields, to_fields_types = destination.columns(table)
+
         shared_fields = to_fields & from_fields
         extra_fields = to_fields - from_fields
         missing_fields = from_fields - to_fields
@@ -60,42 +61,83 @@ module PgSync
 
             destination.truncate(table) if opts[:truncate]
 
-            from_max_id = source.max_id(table, primary_key)
-            to_max_id = destination.max_id(table, primary_key) + 1
+            if from_fields_types[primary_key] == "integer"
+              # INTEGER BATCHING (original)
+              from_max_id = source.max_id(table, primary_key)
+              to_max_id = destination.max_id(table, primary_key) + 1
 
-            if to_max_id == 1
-              from_min_id = source.min_id(table, primary_key)
-              to_max_id = from_min_id if from_min_id > 0
-            end
+              if to_max_id == 1
+                from_min_id = source.min_id(table, primary_key)
+                to_max_id = from_min_id if from_min_id > 0
+              end
 
-            starting_id = to_max_id
-            batch_size = opts[:batch_size]
+              starting_id = to_max_id
+              batch_size = opts[:batch_size]
 
-            i = 1
-            batch_count = ((from_max_id - starting_id + 1) / batch_size.to_f).ceil
+              i = 1
+              batch_count = ((from_max_id - starting_id + 1) / batch_size.to_f).ceil
 
-            while starting_id <= from_max_id
-              where = "#{quote_ident(primary_key)} >= #{starting_id} AND #{quote_ident(primary_key)} < #{starting_id + batch_size}"
-              log "    #{i}/#{batch_count}: #{where}"
+              while starting_id <= from_max_id
+                where = "#{quote_ident(primary_key)} >= #{starting_id} AND #{quote_ident(primary_key)} < #{starting_id + batch_size}"
 
-              # TODO be smarter for advance sql clauses
-              batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
+                log "    #{i}/#{batch_count}: #{where}"
 
-              batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
-              to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
-                from_connection.copy_data batch_copy_to_command do
-                  while (row = from_connection.get_copy_data)
-                    to_connection.put_copy_data(row)
+                # TODO be smarter for advance sql clauses
+                batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
+
+                batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
+                to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
+                  from_connection.copy_data batch_copy_to_command do
+                    while (row = from_connection.get_copy_data)
+                      to_connection.put_copy_data(row)
+                    end
                   end
                 end
-              end
 
-              starting_id += batch_size
-              i += 1
+                starting_id += batch_size
+                i += 1
 
-              if opts[:sleep] && starting_id <= from_max_id
-                sleep(opts[:sleep])
+                if opts[:sleep] && starting_id <= from_max_id
+                  sleep(opts[:sleep])
+                end
               end
+            elsif from_fields_types[primary_key] == "uuid"
+              # UUID BATCHING (new)
+              total_rows = source.row_count(table)
+              batch_size = opts[:batch_size]
+
+              modulo = (total_rows.to_f / batch_size.to_f).ceil
+
+              current_batch_position = 0
+
+              while current_batch_position < modulo
+                # Convert UUID to BigInt in the where clause then take the absolute(modulo)
+                where_modulo = "
+                    @ (('x' || translate(left(#{quote_ident(primary_key)}::text, 18), '-', ''))::bit(64)::bigint)
+                    % #{modulo} = #{current_batch_position}
+                "
+
+                log "    #{current_batch_position + 1}/#{modulo}: #{where}"
+
+                batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where_modulo}"
+
+                batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
+                to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
+                  from_connection.copy_data batch_copy_to_command do
+                    while (row = from_connection.get_copy_data)
+                      to_connection.put_copy_data(row)
+                    end
+                  end
+                end
+
+                current_batch_position += 1
+
+                if opts[:sleep] && current_batch_position < modulo
+                  sleep(opts[:sleep])
+                end
+              end
+            else
+              raise PgSync::Error, "Can only use --in-batches with columns of type 'integer' and 'uuid'"
             end
           elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
             raise PgSync::Error, "No primary key" unless primary_key
@@ -130,8 +172,8 @@ module PgSync
                 end
               end
             ensure
-               file.close
-               file.unlink
+              file.close
+              file.unlink
             end
           else
             destination.truncate(table)
@@ -235,3 +277,4 @@ module PgSync
     end
   end
 end
+
