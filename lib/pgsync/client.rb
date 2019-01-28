@@ -36,10 +36,10 @@ module PgSync
         raise PgSync::Error, "Usage:\n    pgsync [options]"
       end
 
-      source = DataSource.new(opts[:from])
+      source = DataSource.new(opts[:from], timeout: 0)
       raise PgSync::Error, "No source" unless source.exists?
 
-      destination = DataSource.new(opts[:to])
+      destination = DataSource.new(opts[:to], timeout: 0)
       raise PgSync::Error, "No destination" unless destination.exists?
 
       begin
