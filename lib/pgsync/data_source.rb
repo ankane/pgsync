@@ -61,7 +61,7 @@ module PgSync
     end
 
     def truncate(table)
-      execute("TRUNCATE #{quote_ident_full(table)} CASCADE")
+      execute("TRUNCATE #{quote_ident_full(table)}")
     end
 
     # http://stackoverflow.com/a/20537829
