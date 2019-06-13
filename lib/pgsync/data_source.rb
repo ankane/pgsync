@@ -64,7 +64,7 @@ module PgSync
       execute("TRUNCATE #{quote_ident_full(table)} CASCADE")
     end
 
-    # http://stackoverflow.com/a/20537829
+    # https://stackoverflow.com/a/20537829
     def primary_key(table)
       query = <<-SQL
         SELECT
