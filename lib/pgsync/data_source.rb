@@ -45,7 +45,7 @@ module PgSync
     end
 
     def sequences(table, columns)
-      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{f}" }.join(", ")}")[0].values.compact
+      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{quote_ident(f)}" }.join(", ")}")[0].values.compact
     end
 
     def max_id(table, primary_key, sql_clause = nil)

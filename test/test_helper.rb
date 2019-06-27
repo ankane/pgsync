@@ -19,7 +19,8 @@ CREATE TABLE "Users" (
   ip TEXT,
   name TEXT,
   nonsense TEXT,
-  untouchable TEXT
+  untouchable TEXT,
+  "column_with_punctuation?" BOOLEAN
 );
 SQL
 conn1.close
@@ -38,7 +39,8 @@ CREATE TABLE "Users" (
   ip TEXT,
   name TEXT,
   nonsense TEXT,
-  untouchable TEXT
+  untouchable TEXT,
+  "column_with_punctuation?" BOOLEAN
 );
 SQL
 conn2.close
