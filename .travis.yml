@@ -8,6 +8,7 @@ script: bundle exec rake test
 before_install:
   - createdb pgsync_test1
   - createdb pgsync_test2
+  - createdb pgsync_test3
 notifications:
   email:
     on_success: never

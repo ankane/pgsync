@@ -72,6 +72,16 @@ class PgSyncTest < Minitest::Test
     assert_prints PgSync::VERSION, "-v"
   end
 
+  def test_schema_only
+    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only"
+  end
+
+  def test_schema_first
+    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first"
+  end
+
+  private
+
   def assert_works(args_str)
     capture_io do
       assert PgSync::Client.new(Shellwords.split(args_str)).perform

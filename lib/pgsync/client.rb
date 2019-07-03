@@ -148,7 +148,9 @@ module PgSync
     def sync_schema(source, destination, tables)
       dump_command = source.dump_command(tables)
       restore_command = destination.restore_command
-      system("#{dump_command} | #{restore_command}")
+      unless system("#{dump_command} | #{restore_command}")
+        raise PgSync::Error, "Schema sync returned non-zero exit code"
+      end
     end
 
     def parse_args(args)

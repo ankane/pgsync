@@ -302,6 +302,7 @@ bundle install
 
 createdb pgsync_test1
 createdb pgsync_test2
+createdb pgsync_test3
 
 bundle exec rake
 ```
