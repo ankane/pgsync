@@ -25,6 +25,12 @@ CREATE TABLE "Users" (
   "column_with_punctuation?" BOOLEAN,
   current_mood mood
 );
+
+DROP SCHEMA IF EXISTS other CASCADE;
+CREATE SCHEMA other;
+CREATE TABLE other.posts (
+  id SERIAL PRIMARY KEY
+);
 SQL
 conn1.close
 
