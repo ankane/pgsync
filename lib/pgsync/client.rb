@@ -85,7 +85,7 @@ module PgSync
           end
 
           log "* Dumping schema"
-          schema_tables = tables unless opts[:all_schemas] && !opts[:exclude] && !opts[:tables] && !opts[:groups] && !args[0]
+          schema_tables = tables if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
           sync_schema(source, destination, schema_tables)
         end
 
