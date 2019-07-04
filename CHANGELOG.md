@@ -1,6 +1,7 @@
 # 0.4.2 [unreleased]
 
 - Improved flexibility of commands
+- Sync all objects when no tables specified
 
 # 0.4.1
 

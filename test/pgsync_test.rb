@@ -73,11 +73,11 @@ class PgSyncTest < Minitest::Test
   end
 
   def test_schema_only
-    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only"
+    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
   end
 
   def test_schema_first
-    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first"
+    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first --all-schemas"
   end
 
   private

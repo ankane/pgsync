@@ -7,6 +7,8 @@ require "pg"
 conn1 = PG::Connection.open(dbname: "pgsync_test1")
 conn1.exec <<-SQL
 DROP TABLE IF EXISTS "Users";
+DROP TYPE IF EXISTS mood;
+CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
 CREATE TABLE "Users" (
   "Id" SERIAL PRIMARY KEY,
   zip_code TEXT,
@@ -20,7 +22,8 @@ CREATE TABLE "Users" (
   name TEXT,
   nonsense TEXT,
   untouchable TEXT,
-  "column_with_punctuation?" BOOLEAN
+  "column_with_punctuation?" BOOLEAN,
+  current_mood mood
 );
 SQL
 conn1.close

@@ -85,7 +85,8 @@ module PgSync
           end
 
           log "* Dumping schema"
-          sync_schema(source, destination, tables)
+          schema_tables = tables unless opts[:all_schemas] && !opts[:exclude] && !opts[:tables] && !opts[:groups] && !args[0]
+          sync_schema(source, destination, schema_tables)
         end
 
         unless opts[:schema_only]
@@ -145,7 +146,7 @@ module PgSync
       end
     end
 
-    def sync_schema(source, destination, tables)
+    def sync_schema(source, destination, tables = nil)
       dump_command = source.dump_command(tables)
       restore_command = destination.restore_command
       unless system("#{dump_command} | #{restore_command}")
