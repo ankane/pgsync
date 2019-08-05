@@ -89,6 +89,7 @@ module PgSync
       @conn ||= begin
         begin
           ENV["PGCONNECT_TIMEOUT"] ||= @timeout.to_s
+          ENV["PGSSLMODE"] ||= "require"
           if @url =~ /\Apostgres(ql)?:\/\//
             config = @url
           else
@@ -96,7 +97,13 @@ module PgSync
           end
           PG::Connection.new(config)
         rescue PG::ConnectionBad => e
-          raise PgSync::Error, e.message
+          if e.message.include?("SSL was required")
+            # first sentence consistent with actual error message
+            # to make it easier to search
+            raise PgSync::Error, "Server does not support SSL. Use sslmode=disable if you fully trust the network."
+          else
+            raise PgSync::Error, e.message
+          end
         rescue URI::InvalidURIError
           raise PgSync::Error, "Invalid connection string"
         end
