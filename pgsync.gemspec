@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.authors       = "Andrew Kane"
   spec.email         = "andrew@chartkick.com"
 
-  spec.files         = Dir["*.{md,txt}", "{lib,exe}/**/*", "config.yml"]
+  spec.files         = Dir["*.{md,txt}", "{lib,exe,certs}/**/*", "config.yml"]
   spec.require_path  = "lib"
 
   spec.bindir        = "exe"

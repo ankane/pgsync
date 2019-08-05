@@ -88,13 +88,22 @@ module PgSync
     def conn
       @conn ||= begin
         begin
-          ENV["PGCONNECT_TIMEOUT"] ||= @timeout.to_s
-          ENV["PGSSLMODE"] ||= "require"
           if @url =~ /\Apostgres(ql)?:\/\//
             config = @url
+
+            # upgrade connection security
+            host = URI.parse(@url).host rescue nil
+            if host && host.end_with?(".rds.amazonaws.com") && !File.exist?("#{Dir.home}/.postgresql/root.crt")
+              ENV["PGSSLMODE"] ||= "verify-full"
+              ENV["PGSSLROOTCERT"] ||= File.expand_path("../../certs/rds-ca-2015-root.pem", __dir__)
+            end
           else
             config = {dbname: @url}
           end
+
+          ENV["PGCONNECT_TIMEOUT"] ||= @timeout.to_s
+          ENV["PGSSLMODE"] ||= "require"
+
           PG::Connection.new(config)
         rescue PG::ConnectionBad => e
           if e.message.include?("SSL was required")
