@@ -6,7 +6,7 @@
 from: $(some_command)
 
 # destination database URL
-to: postgres://localhost:5432/myapp_development
+to: postgres://localhost:5432/myapp_development?sslmode=disable
 
 # exclude tables
 # exclude:
