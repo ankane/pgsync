@@ -1,8 +1,10 @@
 # source database URL
 # database URLs take the format of:
 #   postgres://user:password@host:port/dbname
+#
 # we recommend a command which outputs a database URL
 # so sensitive information is not included in this file
+#
 # we *highly recommend* you use sslmode=verify-full when possible
 # see https://ankane.org/postgres-sslmode-explained for more info
 from: $(some_command)?sslmode=require
