@@ -1,4 +1,4 @@
-# 0.4.3 [unreleased]
+# 0.4.3
 
 - Added `sslmode` to template
 
