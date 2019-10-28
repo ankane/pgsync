@@ -1,3 +1,7 @@
+# 0.4.3 [unreleased]
+
+- Added `sslmode` to template
+
 # 0.4.2
 
 - Improved flexibility of commands

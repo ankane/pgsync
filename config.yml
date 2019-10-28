@@ -3,7 +3,9 @@
 #   postgres://user:password@host:port/dbname
 # we recommend a command which outputs a database URL
 # so sensitive information is not included in this file
-from: $(some_command)
+# we *highly recommend* you use sslmode=verify-full when possible
+# see https://ankane.org/postgres-sslmode-explained for more info
+from: $(some_command)?sslmode=require
 
 # destination database URL
 to: postgres://localhost:5432/myapp_development
