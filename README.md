@@ -295,7 +295,7 @@ Everyone is encouraged to help improve this project. Here are a few ways you can
 - Write, clarify, or fix documentation
 - Suggest or add new features
 
-To get started with development and testing:
+To get started with development:
 
 ```sh
 git clone https://github.com/ankane/pgsync.git
@@ -306,5 +306,5 @@ createdb pgsync_test1
 createdb pgsync_test2
 createdb pgsync_test3
 
-bundle exec rake
+bundle exec rake test
 ```
