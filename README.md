@@ -122,6 +122,8 @@ pgsync product:123
 
 ### Schema
 
+**Note:** pgsync is designed to sync data. You should use a schema migration tool to manage schema changes. The methods in this section are provided for convenience but not recommended.
+
 Sync schema before the data
 
 ```sh
