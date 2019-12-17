@@ -1,3 +1,7 @@
+# 0.4.4 (unreleased)
+
+- Added `--no-sequences` option
+
 # 0.4.3
 
 - Added `sslmode` to template

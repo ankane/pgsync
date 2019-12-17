@@ -181,6 +181,7 @@ Options:}
         o.boolean "--schema-only", "schema only", default: false
         o.boolean "--all-schemas", "all schemas", default: false
         o.boolean "--no-rules", "do not apply data rules", default: false
+        o.boolean "--no-sequences", "do not sync sequences", default: false
         o.boolean "--init", "init", default: false
         o.boolean "--setup", "setup", default: false, help: false
         o.boolean "--in-batches", "in batches", default: false, help: false

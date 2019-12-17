@@ -17,8 +17,14 @@ module PgSync
         extra_fields = to_fields - from_fields
         missing_fields = from_fields - to_fields
 
-        from_sequences = source.sequences(table, shared_fields)
-        to_sequences = destination.sequences(table, shared_fields)
+        if opts[:no_sequences]
+          from_sequences = []
+          to_sequences = []
+        else
+          from_sequences = source.sequences(table, shared_fields)
+          to_sequences = destination.sequences(table, shared_fields)
+        end
+
         shared_sequences = to_sequences & from_sequences
         extra_sequences = to_sequences - from_sequences
         missing_sequences = from_sequences - to_sequences
