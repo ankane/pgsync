@@ -148,7 +148,7 @@ pgsync does not try to sync Postgres extensions.
 
 ## Data Protection
 
-Always make sure your [connection is secure](https://ankane.org/postgres-sslmode-explained) when connecting to your database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full`. If you don’t do this, your database credentials can be compromised.
+Always make sure your [connection is secure](https://ankane.org/postgres-sslmode-explained) when connecting to a database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full`. If you don’t do this, your database credentials can be compromised.
 
 ## Sensitive Information
 
