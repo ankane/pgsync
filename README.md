@@ -185,7 +185,7 @@ Options for replacement are:
 - `null`
 - `untouched`
 
-Rules starting with `unique_` require the table to have a primary key.
+Rules starting with `unique_` require the table to have a primary key. `unique_phone` requires a numeric primary key.
 
 ## Multiple Databases
 
