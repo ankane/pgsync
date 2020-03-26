@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+trap("SIGINT") { abort }
+
 begin
   require "pgsync"
   PgSync::Client.new(ARGV).perform
