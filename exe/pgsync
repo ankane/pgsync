@@ -2,11 +2,19 @@
 
 trap("SIGINT") { abort }
 
+def colorize(message, color_code)
+  if STDOUT.tty?
+    "\e[#{color_code}m#{message}\e[0m"
+  else
+    message
+  end
+end
+
 begin
   require "pgsync"
   PgSync::Client.new(ARGV).perform
 rescue PgSync::Error => e
-  abort e.message
+  abort colorize(e.message, 31) # red
 rescue Interrupt
   abort
 end

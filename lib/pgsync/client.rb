@@ -331,7 +331,8 @@ Options:}
 
     def log_completed(start_time)
       time = Time.now - start_time
-      log "Completed in #{time.round(1)}s"
+      message = "Completed in #{time.round(1)}s"
+      log colorize(message, 32) # green
     end
 
     def windows?
