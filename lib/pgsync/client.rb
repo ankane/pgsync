@@ -340,7 +340,7 @@ Options:}
     end
 
     def self.colorize(message, color_code)
-      if STDERR.tty?
+      if $stderr.tty?
         "\e[#{color_code}m#{message}\e[0m"
       else
         message
