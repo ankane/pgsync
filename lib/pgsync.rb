@@ -1,17 +1,21 @@
+# dependencies
+require "multiprocessing"
+require "parallel"
+require "pg"
+require "slop"
+
+# stdlib
 require "cgi"
 require "erb"
 require "fileutils"
-require "multiprocessing"
-require "pg"
-require "parallel"
 require "set"
 require "shellwords"
-require "slop"
 require "tempfile"
 require "thread" # windows only
 require "uri"
 require "yaml"
 
+# modules
 require "pgsync/client"
 require "pgsync/data_source"
 require "pgsync/table_list"
