@@ -5,7 +5,6 @@ module PgSync
       $stderr.sync = true
       @exit = false
       @arguments, @options = parse_args(args)
-      @mutex = windows? ? Mutex.new : MultiProcessing::Mutex.new
     end
 
     # TODO clean up this mess
@@ -92,8 +91,8 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tables, "destination")
 
-          in_parallel(tables) do |table, table_opts|
-            TableSync.new.sync(@mutex, config, table, opts.merge(table_opts), source.url, destination.url, source.search_path.find { |sp| sp != "pg_catalog" })
+          in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts|
+            TableSync.new.sync(config, table, opts.merge(table_opts), source.url, destination.url)
           end
         end
 
@@ -268,14 +267,57 @@ Options:}
       $stderr.puts message
     end
 
-    def in_parallel(tables, &block)
-      if @options[:debug] || @options[:in_batches]
-        tables.each(&block)
-      else
-        options = {}
-        options[:in_threads] = 4 if windows?
-        Parallel.each(tables, options, &block)
+    def in_parallel(tables, first_schema:, &block)
+      spinners = TTY::Spinner::Multi.new(format: :dots)
+      item_spinners = {}
+
+      start = lambda do |item, i|
+        table, opts = item
+        message = String.new(":spinner ")
+        message << table.sub("#{first_schema}.", "")
+        # maybe output later
+        # message << " #{opts[:sql]}" if opts[:sql]
+        spinner = spinners.register(message)
+        spinner.auto_spin
+        item_spinners[item] = spinner
       end
+
+      errors = 0
+
+      finish = lambda do |item, i, result|
+        spinner = item_spinners[item]
+        if result[:status] == "success"
+          if result[:message]
+            spinner.success(display_message(result))
+          else
+            spinner.success
+          end
+        else
+          # TODO add option to fail fast
+          spinner.error(display_message(result))
+          errors += 1
+        end
+
+        unless spinner.send(:tty?)
+          status = result[:status] == "success" ? "✔" : "✖"
+          log [status, item.first.sub("#{first_schema}.", ""), display_message(result)].compact.join(" ")
+        end
+      end
+
+      options = {start: start, finish: finish}
+      if @options[:debug] || @options[:in_batches]
+        options[:in_processes] = 0
+      else
+        options[:in_threads] = 4 if windows?
+      end
+
+      Parallel.each(tables, **options, &block)
+
+      raise PgSync::Error, "Synced failed for #{errors} table#{errors == 1 ? nil : "s"}" if errors > 0
+    end
+
+    def display_message(result)
+      "(#{result[:message]})" if result[:message]
     end
 
     def pretty_list(items)

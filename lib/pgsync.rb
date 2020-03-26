@@ -1,8 +1,8 @@
 # dependencies
-require "multiprocessing"
 require "parallel"
 require "pg"
 require "slop"
+require "tty-spinner"
 
 # stdlib
 require "cgi"

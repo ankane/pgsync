@@ -1,7 +1,8 @@
-## 0.4.4 (unreleased)
+## 0.5.0 (unreleased)
 
-- Added `--no-sequences` option
+- Improved output when syncing
 - Improved output on interrupt
+- Added `--no-sequences` option
 
 ## 0.4.3 (2019-10-27)
 

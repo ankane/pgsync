@@ -1,6 +1,6 @@
 module PgSync
   class TableSync
-    def sync(mutex, config, table, opts, source_url, destination_url, first_schema)
+    def sync(config, table, opts, source_url, destination_url)
       start_time = Time.now
       source = DataSource.new(source_url, timeout: 0)
       destination = DataSource.new(destination_url, timeout: 0)
@@ -31,22 +31,18 @@ module PgSync
 
         sql_clause = String.new
 
-        table_name = table.sub("#{first_schema}.", "")
+        if opts[:sql]
+          sql_clause << " #{opts[:sql]}"
+        end
 
-        mutex.synchronize do
-          log "* Syncing #{table_name}"
-          if opts[:sql]
-            log "    #{opts[:sql]}"
-            sql_clause << " #{opts[:sql]}"
-          end
-          log "    Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
-          log "    Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
-          log "    Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
-          log "    Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+        notes = []
+        notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+        notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+        notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+        notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
 
-          if shared_fields.empty?
-            log "    No fields to copy"
-          end
+        if shared_fields.empty?
+          return {status: "success", message: "No fields to copy"}
         end
 
         if shared_fields.any?
@@ -153,13 +149,19 @@ module PgSync
             to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
           end
         end
-        mutex.synchronize do
-          log "* DONE #{table_name} (#{(Time.now - start_time).round(1)}s)"
+
+        message = nil
+        if notes.any?
+          message = notes.join(", ")
         end
+
+        {status: "success", message: message}
       ensure
         source.close
         destination.close
       end
+    rescue PgSync::Error => e
+      {status: "error", message: e.message}
     end
 
     private
