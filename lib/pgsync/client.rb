@@ -332,11 +332,19 @@ Options:}
     def log_completed(start_time)
       time = Time.now - start_time
       message = "Completed in #{time.round(1)}s"
-      log colorize(message, 32) # green
+      log self.class.colorize(message, 32) # green
     end
 
     def windows?
       Gem.win_platform?
+    end
+
+    def self.colorize(message, color_code)
+      if STDERR.tty?
+        "\e[#{color_code}m#{message}\e[0m"
+      else
+        message
+      end
     end
   end
 end
