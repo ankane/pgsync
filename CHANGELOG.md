@@ -1,6 +1,7 @@
 ## 0.4.4 (unreleased)
 
 - Added `--no-sequences` option
+- Improved output on interrupt
 
 ## 0.4.3 (2019-10-27)
 
