@@ -282,6 +282,14 @@ gem install specific_install
 gem specific_install https://github.com/ankane/pgsync.git
 ```
 
+## Related Projects
+
+Also check out:
+
+- [Dexter](https://github.com/ankane/dexter) - The automatic indexer for Postgres
+- [PgHero](https://github.com/ankane/pghero) - A performance dashboard for Postgres
+- [pgslice](https://github.com/ankane/pgslice) - Postgres partitioning as easy as pie
+
 ## Thanks
 
 Inspired by [heroku-pg-transfer](https://github.com/ddollar/heroku-pg-transfer).
