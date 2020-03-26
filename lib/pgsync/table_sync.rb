@@ -155,7 +155,7 @@ module PgSync
           message = notes.join(", ")
         end
 
-        {status: "success", message: message}
+        {status: "success", message: message, time: (Time.now - start_time).round(1)}
       ensure
         source.close
         destination.close

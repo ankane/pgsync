@@ -287,11 +287,7 @@ Options:}
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
         if result[:status] == "success"
-          if result[:message]
-            spinner.success(display_message(result))
-          else
-            spinner.success
-          end
+          spinner.success(display_message(result))
         else
           # TODO add option to fail fast
           spinner.error(display_message(result))
@@ -317,7 +313,10 @@ Options:}
     end
 
     def display_message(result)
-      "(#{result[:message]})" if result[:message]
+      message = String.new("")
+      message << "- #{result[:time]}s" if result[:time]
+      message << "(#{result[:message]})" if result[:message]
+      message
     end
 
     def pretty_list(items)
