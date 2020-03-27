@@ -268,7 +268,7 @@ Options:}
       $stderr.puts message
     end
 
-    def in_parallel(tables, first_schema:)
+    def in_parallel(tables, first_schema:, &block)
       spinners = TTY::Spinner::Multi.new(format: :dots)
       item_spinners = {}
 
@@ -285,7 +285,6 @@ Options:}
 
       failed_tables = []
 
-      # note: i is nil for --fail-fast
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
         table_name = item.first.sub("#{first_schema}.", "")
@@ -296,6 +295,7 @@ Options:}
           # TODO add option to fail fast
           spinner.error(display_message(result))
           failed_tables << table_name
+          fail_sync(failed_tables) if @options[:fail_fast]
         end
 
         unless spinner.send(:tty?)
@@ -311,27 +311,13 @@ Options:}
         options[:in_threads] = 4 if windows?
       end
 
-      Parallel.each(tables, **options) do |table, table_opts|
-        raise Parallel::Kill if Thread.current[:pgsync_kill]
+      Parallel.each(tables, **options, &block)
 
-        result = yield(table, table_opts)
-        if @options[:fail_fast] && result && result[:status] != "success"
-          # the only way we have to pass the error message is the finish hook
-          # so wait to kill until next pass
-          # if there are no more tables to process, this waits until existing tables have finished
-          # not sure there's a better way right now (not able to call kill from finish hook)
-          Thread.current[:pgsync_kill] = true
-        end
-        result
-      end
+      fail_sync(failed_tables) if failed_tables.any?
+    end
 
-      item_spinners.each do |item, spinner|
-        finish.call(item, nil, {status: "error", message: "Stopped"}) unless spinner.done?
-      end
-
-      if failed_tables.any?
-        raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
-      end
+    def fail_sync(failed_tables)
+      raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
     def display_message(result)
