@@ -227,7 +227,6 @@ Options:}
         contents = File.read(__dir__ + "/../../config.yml")
         # TODO improve code when adding another app
         if rails_app?
-          log "Rails app detected."
           ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
             contents.sub!("# #{line}", line)
           end
