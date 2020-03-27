@@ -4,6 +4,7 @@
 - Added `--var` option
 - Improved error message
 - Fixed typo in error message
+- Deprecated `group:var` for variables
 
 ## 0.5.1 (2020-03-26)
 

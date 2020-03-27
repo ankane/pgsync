@@ -78,6 +78,8 @@ module PgSync
     end
 
     def add_tables(tables, t, id, boom)
+      $stderr.puts "pgsync group:var is deprecated. Use pgsync group --var name=value instead." if id
+
       t.each do |table|
         sql = nil
         if table.is_a?(Array)
