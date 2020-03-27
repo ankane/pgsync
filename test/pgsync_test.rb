@@ -91,7 +91,7 @@ class PgSyncTest < Minitest::Test
   def assert_error(message, args_str)
     error = nil
     capture_io do
-      error = assert_raises(PgSync::Error) { PgSync::Client.new(Shellwords.split(args_str)).perform }
+      error = assert_raises { PgSync::Client.new(Shellwords.split(args_str)).perform }
     end
     assert_equal message, error.message
   end
