@@ -186,6 +186,7 @@ Options:}
         o.boolean "--in-batches", "in batches", default: false, help: false
         o.integer "--batch-size", "batch size", default: 10000, help: false
         o.float "--sleep", "sleep", default: 0, help: false
+        o.boolean "--fail-fast", "stop on the first failed table", default: false
         o.on "-v", "--version", "print the version" do
           log PgSync::VERSION
           @exit = true
@@ -294,6 +295,7 @@ Options:}
           # TODO add option to fail fast
           spinner.error(display_message(result))
           failed_tables << table_name
+          fail_sync(failed_tables) if @options[:fail_fast]
         end
 
         unless spinner.send(:tty?)
@@ -311,7 +313,11 @@ Options:}
 
       Parallel.each(tables, **options, &block)
 
-      raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}" if failed_tables.any?
+      fail_sync(failed_tables) if failed_tables.any?
+    end
+
+    def fail_sync(failed_tables)
+      raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
     def display_message(result)

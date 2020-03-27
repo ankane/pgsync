@@ -160,7 +160,7 @@ module PgSync
         source.close
         destination.close
       end
-    rescue PgSync::Error => e
+    rescue => e
       {status: "error", message: e.message}
     end
 
