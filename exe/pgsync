@@ -5,11 +5,10 @@ $VERBOSE = nil
 
 trap("SIGINT") { abort }
 
+require "pgsync"
+
 begin
-  require "pgsync"
   PgSync::Client.new(ARGV).perform
 rescue PgSync::Error => e
   abort PgSync::Client.colorize(e.message, 31) # red
-rescue Interrupt
-  abort
 end
