@@ -95,8 +95,6 @@ module PgSync
             config = {dbname: @url}
           end
           PG::Connection.new(config)
-        rescue PG::ConnectionBad => e
-          raise PgSync::Error, e.message
         rescue URI::InvalidURIError
           raise PgSync::Error, "Invalid connection string"
         end

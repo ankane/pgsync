@@ -161,7 +161,17 @@ module PgSync
         destination.close
       end
     rescue => e
-      {status: "error", message: e.message}
+      message =
+        case e
+        when PG::Error
+          "Connection failed"
+        when PgSync::Error
+          e.message
+        else
+          "#{e.class.name}: #{e.message}"
+        end
+
+      {status: "error", message: message}
     end
 
     private

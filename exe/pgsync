@@ -9,6 +9,6 @@ require "pgsync"
 
 begin
   PgSync::Client.new(ARGV).perform
-rescue PgSync::Error => e
+rescue PgSync::Error, PG::ConnectionBad => e
   abort PgSync::Client.colorize(e.message, 31) # red
 end
