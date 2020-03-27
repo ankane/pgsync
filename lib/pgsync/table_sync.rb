@@ -164,6 +164,8 @@ module PgSync
       message =
         case e
         when PG::Error
+          # likely fine to show simplified message here
+          # the full message will be shown when first trying to connect
           "Connection failed"
         when PgSync::Error
           e.message
