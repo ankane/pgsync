@@ -20,6 +20,8 @@ gem install pgsync
 
 This will give you the `pgsync` command. If installation fails, you may need to install [dependencies](#dependencies).
 
+## Setup
+
 In your project directory, run:
 
 ```sh
@@ -36,7 +38,7 @@ Sync all tables
 pgsync
 ```
 
-**Note:** pgsync assumes your schema is already set up on your local machine. See the [schema section](#schema) if that’s not the case.
+**Note:** pgsync assumes your schema is setup in your `to` database. See the [schema section](#schema) if that’s not the case.
 
 Sync specific tables
 
