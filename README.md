@@ -1,9 +1,10 @@
 # pgsync
 
-Sync Postgres data between databases. Designed for:
+Sync data from one Postgres database to another (like `pg_dump`/`pg_restore`). Designed for:
 
-- **speed** - up to 4x faster than traditional tools on a 4-core machine
+- **speed** - tables are transferred in parallel
 - **security** - built-in methods to prevent sensitive data from ever leaving the server
+- **flexibility** - gracefully handles schema differences, like missing columns and extra columns
 - **convenience** - sync partial tables, groups of tables, and related records
 
 :tangerine: Battle-tested at [Instacart](https://www.instacart.com/opensource)
