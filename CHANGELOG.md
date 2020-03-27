@@ -1,4 +1,4 @@
-## 0.5.0 (unreleased)
+## 0.5.0 (2020-03-26)
 
 - Improved output when syncing
 - Improved output on interrupt
