@@ -1,3 +1,7 @@
+## 0.5.2 (unreleased)
+
+- Fixed typo in error message
+
 ## 0.5.1 (2020-03-26)
 
 - Fixed Slop warning with Ruby 2.7

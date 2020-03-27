@@ -309,7 +309,7 @@ Options:}
 
       Parallel.each(tables, **options, &block)
 
-      raise PgSync::Error, "Synced failed for #{errors} table#{errors == 1 ? nil : "s"}" if errors > 0
+      raise PgSync::Error, "Sync failed for #{errors} table#{errors == 1 ? nil : "s"}" if errors > 0
     end
 
     def display_message(result)
