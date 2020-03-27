@@ -2,7 +2,7 @@
 
 - Added `--fail-fast` option
 - Added `--var` option
-- Automatically exclude tables when `--init` run inside Rails application
+- Automatically exclude tables when `--init` run inside Rails app
 - Improved error message
 - Fixed typo in error message
 - Deprecated `group:var` for variables
