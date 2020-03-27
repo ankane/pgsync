@@ -107,11 +107,14 @@ module PgSync
           sql = boom.dup
           missing_vars = sql.scan(/{[^}]+}/).map { |v| v[1..-2] }
 
+          vars = {}
+
           # legacy
-          vars = {
-            "id" => cast(id),
-            "1" => cast(id)
-          }
+          if id
+            vars["id"] = cast(id)
+            vars["1"] = cast(id)
+          end
+
           opts[:var].each do |value|
             k, v = value.split("=", 2)
             vars[k] = v
