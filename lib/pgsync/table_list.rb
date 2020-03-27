@@ -105,7 +105,8 @@ module PgSync
         tables[table] = {}
         if boom
           sql = boom.dup
-          missing_vars = sql.scan(/{[^}]+}/).map { |v| v[1..-2] }
+          # vars must be alphanumeric
+          missing_vars = sql.scan(/{[[:alnum:]]+}/).map { |v| v[1..-2] }
 
           vars = {}
 
@@ -122,8 +123,8 @@ module PgSync
 
           sql = boom.dup
           vars.each do |k, v|
-            sql.gsub!("{#{k}}", cast(v))
-            missing_vars.delete(k)
+            # only sub if in var list
+            sql.gsub!("{#{k}}", cast(v)) if missing_vars.delete(k)
           end
 
           raise PgSync::Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
