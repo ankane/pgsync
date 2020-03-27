@@ -5,6 +5,7 @@
 - Improved error message
 - Fixed typo in error message
 - Deprecated `group:var` for variables
+- Automatically exclude tables when `--init` run inside Rails application
 
 ## 0.5.1 (2020-03-26)
 

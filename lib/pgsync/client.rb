@@ -224,9 +224,19 @@ Options:}
       if File.exist?(config_file)
         raise PgSync::Error, "#{config_file} exists."
       else
-        FileUtils.cp(File.dirname(__FILE__) + "/../../config.yml", config_file)
+        contents = File.read(__dir__ + "/../../config.yml")
+        if rails_app?
+          ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
+            contents.sub!("# #{line}", line)
+          end
+        end
+        File.write(config_file, contents)
         log "#{config_file} created. Add your database credentials."
       end
+    end
+
+    def rails_app?
+      File.exist?("config/database.yml")
     end
 
     def db_config_file(db)
