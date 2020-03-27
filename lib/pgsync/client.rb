@@ -311,6 +311,9 @@ Options:}
         options[:in_threads] = 4 if windows?
       end
 
+      # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
+      # see `fast_faster` branch
+      # however, need to make sure connections are cleaned up properly
       Parallel.each(tables, **options, &block)
 
       fail_sync(failed_tables) if failed_tables.any?
