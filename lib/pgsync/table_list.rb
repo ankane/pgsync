@@ -96,10 +96,34 @@ module PgSync
         end
       else
         tables[table] = {}
-        tables[table][:sql] = boom.gsub("{id}", cast(id)).gsub("{1}", cast(id)) if boom
+        if boom
+          sql = boom.dup
+          missing_vars = sql.scan(/{[^}]+}/).map { |v| v[1..-2] }
+
+          # legacy
+          vars = {
+            "id" => cast(id),
+            "1" => cast(id)
+          }
+          opts[:var].each do |value|
+            k, v = value.split("=", 2)
+            vars[k] = v
+          end
+
+          sql = boom.dup
+          vars.each do |k, v|
+            sql.gsub!("{#{k}}", cast(v))
+            missing_vars.delete(k)
+          end
+
+          raise PgSync::Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
+
+          tables[table][:sql] = sql
+        end
       end
     end
 
+    # TODO quote vars in next major version
     def cast(value)
       value.to_s.gsub(/\A\"|\"\z/, '')
     end
