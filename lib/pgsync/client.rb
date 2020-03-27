@@ -238,7 +238,7 @@ Options:}
 
     # TODO maybe check parent directories
     def rails_app?
-      File.exist?("config/database.yml")
+      File.exist?("bin/rails")
     end
 
     def db_config_file(db)
