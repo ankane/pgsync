@@ -282,21 +282,23 @@ Options:}
         item_spinners[item] = spinner
       end
 
-      errors = 0
+      failed_tables = []
 
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
+        table_name = item.first.sub("#{first_schema}.", "")
+
         if result[:status] == "success"
           spinner.success(display_message(result))
         else
           # TODO add option to fail fast
           spinner.error(display_message(result))
-          errors += 1
+          failed_tables << table_name
         end
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, item.first.sub("#{first_schema}.", ""), display_message(result)].compact.join(" ")
+          log [status, table_name, display_message(result)].compact.join(" ")
         end
       end
 
@@ -309,7 +311,7 @@ Options:}
 
       Parallel.each(tables, **options, &block)
 
-      raise PgSync::Error, "Sync failed for #{errors} table#{errors == 1 ? nil : "s"}" if errors > 0
+      raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}" if failed_tables.any?
     end
 
     def display_message(result)
