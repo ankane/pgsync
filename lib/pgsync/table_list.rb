@@ -105,8 +105,8 @@ module PgSync
         tables[table] = {}
         if boom
           sql = boom.dup
-          # vars must be alphanumeric
-          missing_vars = sql.scan(/{[[:alnum:]]+}/).map { |v| v[1..-2] }
+          # vars must match \w
+          missing_vars = sql.scan(/{\w+}/).map { |v| v[1..-2] }
 
           vars = {}
 
