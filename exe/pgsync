@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+# disable Slop warning with Ruby 2.7
+$VERBOSE = nil
+
 trap("SIGINT") { abort }
 
 begin

@@ -1,3 +1,7 @@
+## 0.5.1 (unreleased)
+
+- Fixed Slop warning with Ruby 2.7
+
 ## 0.5.0 (2020-03-26)
 
 - Improved output when syncing
