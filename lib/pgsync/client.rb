@@ -225,6 +225,7 @@ Options:}
         raise PgSync::Error, "#{config_file} exists."
       else
         contents = File.read(__dir__ + "/../../config.yml")
+        # TODO improve code when adding another app
         if rails_app?
           ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
             contents.sub!("# #{line}", line)
@@ -235,6 +236,7 @@ Options:}
       end
     end
 
+    # TODO maybe check parent directories
     def rails_app?
       File.exist?("config/database.yml")
     end
