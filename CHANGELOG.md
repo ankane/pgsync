@@ -1,4 +1,4 @@
-## 0.5.1 (unreleased)
+## 0.5.1 (2020-03-26)
 
 - Fixed Slop warning with Ruby 2.7
 
