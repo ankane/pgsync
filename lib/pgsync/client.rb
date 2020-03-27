@@ -315,7 +315,7 @@ Options:}
     def display_message(result)
       message = String.new("")
       message << "- #{result[:time]}s" if result[:time]
-      message << "(#{result[:message]})" if result[:message]
+      message << "(#{result[:message].gsub("\n", " ").strip})" if result[:message]
       message
     end
 
