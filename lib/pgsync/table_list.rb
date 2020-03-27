@@ -80,8 +80,8 @@ module PgSync
     def add_tables(tables, t, id, boom)
       if id
         $stderr.puts
-        $stderr.puts PgSync::Client.colorize("pgsync group:var is deprecated and will have a different function in 0.6.0.", 33) # yellow
-        $stderr.puts PgSync::Client.colorize("Use pgsync group --var name=value instead.", 33) # yellow
+        $stderr.puts PgSync::Client.colorize("`pgsync group:var` is deprecated and will have a different function in 0.6.0.", 33) # yellow
+        $stderr.puts PgSync::Client.colorize("Use `pgsync group --var name=value` instead.", 33) # yellow
         $stderr.puts
       end
 
