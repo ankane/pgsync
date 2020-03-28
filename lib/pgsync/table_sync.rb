@@ -99,6 +99,8 @@ module PgSync
                 sleep(opts[:sleep])
               end
             end
+
+            log # add extra line for spinner
           elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
             raise PgSync::Error, "No primary key" unless primary_key
 
