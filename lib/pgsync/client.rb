@@ -20,6 +20,12 @@ module PgSync
       end
     end
 
+    def self.start
+      new(ARGV).perform
+    rescue PgSync::Error, PG::ConnectionBad => e
+      abort PgSync::Client.colorize(e.message, 31) # red
+    end
+
     protected
 
     def init(opts)

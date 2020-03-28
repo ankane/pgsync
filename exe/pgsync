@@ -7,8 +7,4 @@ trap("SIGINT") { abort }
 
 require "pgsync"
 
-begin
-  PgSync::Client.new(ARGV).perform
-rescue PgSync::Error, PG::ConnectionBad => e
-  abort PgSync::Client.colorize(e.message, 31) # red
-end
+PgSync::Client.start
