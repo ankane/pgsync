@@ -8,7 +8,6 @@ require "tty-spinner"
 require "set"
 require "shellwords"
 require "tempfile"
-require "thread" # windows only
 require "uri"
 require "yaml"
 
