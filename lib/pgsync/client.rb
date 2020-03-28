@@ -12,6 +12,7 @@ module PgSync
         log PgSync::VERSION
       elsif opts.help?
         log opts
+      # TODO remove deprecated conditions (last two)
       elsif opts.init? || opts.setup? || opts.arguments[0] == "setup"
         init(opts)
       else
