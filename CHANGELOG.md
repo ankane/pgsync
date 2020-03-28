@@ -1,4 +1,4 @@
-## 0.5.2 (unreleased)
+## 0.5.2 (2020-03-27)
 
 - Added `--fail-fast` option
 - Automatically exclude tables when `--init` run inside Rails app
