@@ -32,7 +32,7 @@ module PgSync
         opts[opt] ||= config[opt.to_s]
       end
 
-      # handle deprecations
+      # TODO remove deprecations
       map_deprecations(args, opts)
 
       # start
