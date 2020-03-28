@@ -1,34 +1,40 @@
 module PgSync
   class Client
     def initialize(args)
-      $stdout.sync = true
+      @args = args
       $stderr.sync = true
-      @exit = false
-      @arguments, @options = parse_args(args)
     end
 
-    # TODO clean up this mess
     def perform
-      return if @exit
+      opts = parse_args
 
-      args, opts = @arguments, @options
-      [:to, :from, :to_safe, :exclude, :schemas].each do |opt|
-        opts[opt] ||= config[opt.to_s]
-      end
-      map_deprecations(args, opts)
-
-      if opts[:init]
-        setup(db_config_file(args[0]) || config_file || ".pgsync.yml")
+      if opts.version?
+        log PgSync::VERSION
+      elsif opts.help?
+        log opts
+      elsif opts.init? || opts.setup? || opts.arguments[0] == "setup"
+        init(opts)
       else
-        sync(args, opts)
+        sync(opts)
       end
-
-      true
     end
 
     protected
 
-    def sync(args, opts)
+    def sync(options)
+      args = options.arguments
+      opts = options.to_hash
+      @options = opts
+
+      # merge config
+      [:to, :from, :to_safe, :exclude, :schemas].each do |opt|
+        opts[opt] ||= config[opt.to_s]
+      end
+
+      # handle deprecations
+      map_deprecations(args, opts)
+
+      # start
       start_time = Time.now
 
       if args.size > 2
@@ -114,10 +120,6 @@ module PgSync
       command = args[0]
 
       case command
-      when "setup"
-        args.shift
-        opts[:init] = true
-        deprecated "Use `psync --init` instead"
       when "schema"
         args.shift
         opts[:schema_only] = true
@@ -153,8 +155,8 @@ module PgSync
       end
     end
 
-    def parse_args(args)
-      opts = Slop.parse(args) do |o|
+    def parse_args
+      Slop.parse(@args) do |o|
         o.banner = %{Usage:
     pgsync [options]
 
@@ -188,20 +190,9 @@ Options:}
         o.float "--sleep", "sleep", default: 0, help: false
         o.boolean "--fail-fast", "stop on the first failed table", default: false
         o.array "--var", "pass a variable"
-        o.on "-v", "--version", "print the version" do
-          log PgSync::VERSION
-          @exit = true
-        end
-        o.on "-h", "--help", "prints help" do
-          log o
-          @exit = true
-        end
+        o.boolean "-v", "--version", "print the version"
+        o.boolean "-h", "--help", "prints help"
       end
-
-      opts_hash = opts.to_hash
-      opts_hash[:init] = opts_hash[:setup] if opts_hash[:setup]
-
-      [opts.arguments, opts_hash]
     rescue Slop::Error => e
       raise PgSync::Error, e.message
     end
@@ -220,7 +211,10 @@ Options:}
       end
     end
 
-    def setup(config_file)
+    def init(opts)
+      @options = opts.to_hash
+      config_file = db_config_file(opts.arguments[0]) || self.send(:config_file) || ".pgsync.yml"
+
       if File.exist?(config_file)
         raise PgSync::Error, "#{config_file} exists."
       else

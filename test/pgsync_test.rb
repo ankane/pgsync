@@ -84,7 +84,7 @@ class PgSyncTest < Minitest::Test
 
   def assert_works(args_str)
     capture_io do
-      assert PgSync::Client.new(Shellwords.split(args_str)).perform
+      PgSync::Client.new(Shellwords.split(args_str)).perform
     end
   end
 
