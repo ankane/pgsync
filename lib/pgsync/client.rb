@@ -352,7 +352,7 @@ Options:}
     end
 
     def deprecated(message)
-      log "[DEPRECATED] #{message}"
+      log self.class.colorize("[DEPRECATED] #{message}", 33) # yellow
     end
 
     def log_completed(start_time)
