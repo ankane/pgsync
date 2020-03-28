@@ -9,15 +9,25 @@ module PgSync
       if File.exist?(config_file)
         raise Error, "#{config_file} exists."
       else
-        contents = File.read(__dir__ + "/../../config.yml")
-
-        # TODO improve code when adding another app
-        if rails_app?
-          ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
-            contents.sub!("# #{line}", line)
+        exclude =
+          if rails_app?
+            <<~EOS
+              exclude:
+                - schema_migrations
+                - ar_internal_metadata
+            EOS
+          else
+            <<~EOS
+              # exclude:
+              #   - schema_migrations
+              #   - ar_internal_metadata
+            EOS
           end
-        end
-        File.write(config_file, contents)
+
+        # create file
+        contents = File.read(__dir__ + "/../../config.yml")
+        File.write(config_file, contents % {exclude: exclude})
+
         log "#{config_file} created. Add your database credentials."
       end
     end

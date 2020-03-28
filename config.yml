@@ -13,10 +13,7 @@ from: $(some_command)?sslmode=require
 to: postgres://localhost:5432/myapp_development
 
 # exclude tables
-# exclude:
-#   - schema_migrations
-#   - ar_internal_metadata
-
+%{exclude}
 # define groups
 # groups:
 #   group1:
