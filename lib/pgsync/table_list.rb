@@ -1,5 +1,7 @@
 module PgSync
   class TableList
+    include Utils
+
     attr_reader :args, :opts, :source, :config
 
     def initialize(args, options, source, config)
@@ -80,8 +82,8 @@ module PgSync
     def add_tables(tables, t, id, boom)
       if id
         # TODO show group name and value
-        $stderr.puts Client.colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", 33) # yellow
-        $stderr.puts Client.colorize("Use `pgsync group --var 1=value` instead.", 33) # yellow
+        log colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", 33) # yellow
+        log colorize("Use `pgsync group --var 1=value` instead.", 33) # yellow
       end
 
       t.each do |table|
