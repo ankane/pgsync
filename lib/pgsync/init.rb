@@ -3,11 +3,13 @@ module PgSync
     include Utils
 
     def perform(opts)
+      # needed for config_file method
       @options = opts.to_hash
-      config_file = db_config_file(opts.arguments[0]) || self.send(:config_file) || ".pgsync.yml"
 
-      if File.exist?(config_file)
-        raise Error, "#{config_file} exists."
+      file = db_config_file(opts.arguments[0]) || config_file || ".pgsync.yml"
+
+      if File.exist?(file)
+        raise Error, "#{file} exists."
       else
         exclude =
           if rails_app?
@@ -26,9 +28,9 @@ module PgSync
 
         # create file
         contents = File.read(__dir__ + "/../../config.yml")
-        File.write(config_file, contents % {exclude: exclude})
+        File.write(file, contents % {exclude: exclude})
 
-        log "#{config_file} created. Add your database credentials."
+        log "#{file} created. Add your database credentials."
       end
     end
 
