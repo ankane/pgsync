@@ -167,11 +167,11 @@ module PgSync
     rescue => e
       message =
         case e
-        when PG::Error
+        when PG::ConnectionBad
           # likely fine to show simplified message here
           # the full message will be shown when first trying to connect
           "Connection failed"
-        when Error
+        when Error, PG::Error
           e.message
         else
           "#{e.class.name}: #{e.message}"

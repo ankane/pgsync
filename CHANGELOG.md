@@ -1,3 +1,7 @@
+## 0.5.3 (unreleased)
+
+- Improved Postgres error messages
+
 ## 0.5.2 (2020-03-27)
 
 - Added `--fail-fast` option
