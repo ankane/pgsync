@@ -337,10 +337,10 @@ Options:}
     end
 
     def display_message(result)
-      message = String.new("")
-      message << "- #{result[:time]}s" if result[:time]
-      message << "(#{result[:message].gsub("\n", " ").strip})" if result[:message]
-      message
+      messages = []
+      messages << "- #{result[:time]}s" if result[:time]
+      messages << "(#{result[:message].gsub("\n", " ").strip})" if result[:message]
+      messages.join(" ")
     end
 
     def pretty_list(items)
