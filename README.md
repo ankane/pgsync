@@ -249,7 +249,7 @@ Use groups when possible to take advantage of parallelism.
 For Ruby scripts, you may need to do:
 
 ```rb
-Bundler.with_clean_env do
+Bundler.with_unbundled_env do
   system "pgsync ..."
 end
 ```
