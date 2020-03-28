@@ -213,7 +213,7 @@ module PgSync
     def display_message(result)
       messages = []
       messages << "- #{result[:time]}s" if result[:time]
-      messages << "(#{result[:message].gsub("\n", " ").strip})" if result[:message]
+      messages << "(#{result[:message].lines.first.to_s.strip.sub(/\AERROR:  /, "")})" if result[:message]
       messages.join(" ")
     end
 
