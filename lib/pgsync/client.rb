@@ -22,6 +22,26 @@ module PgSync
 
     protected
 
+    def init(opts)
+      @options = opts.to_hash
+      config_file = db_config_file(opts.arguments[0]) || self.send(:config_file) || ".pgsync.yml"
+
+      if File.exist?(config_file)
+        raise PgSync::Error, "#{config_file} exists."
+      else
+        contents = File.read(__dir__ + "/../../config.yml")
+
+        # TODO improve code when adding another app
+        if rails_app?
+          ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
+            contents.sub!("# #{line}", line)
+          end
+        end
+        File.write(config_file, contents)
+        log "#{config_file} created. Add your database credentials."
+      end
+    end
+
     def sync(options)
       args = options.arguments
       opts = options.to_hash
@@ -209,25 +229,6 @@ Options:}
         else
           {}
         end
-      end
-    end
-
-    def init(opts)
-      @options = opts.to_hash
-      config_file = db_config_file(opts.arguments[0]) || self.send(:config_file) || ".pgsync.yml"
-
-      if File.exist?(config_file)
-        raise PgSync::Error, "#{config_file} exists."
-      else
-        contents = File.read(__dir__ + "/../../config.yml")
-        # TODO improve code when adding another app
-        if rails_app?
-          ["exclude:", "  - schema_migrations", "  - ar_internal_metadata"].each do |line|
-            contents.sub!("# #{line}", line)
-          end
-        end
-        File.write(config_file, contents)
-        log "#{config_file} created. Add your database credentials."
       end
     end
 
