@@ -5,9 +5,6 @@ require "slop"
 require "tty-spinner"
 
 # stdlib
-require "cgi"
-require "erb"
-require "fileutils"
 require "set"
 require "shellwords"
 require "tempfile"
