@@ -114,8 +114,7 @@ module PgSync
     end
 
     def restore_command
-      psql_version = `psql --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
-      if_exists = Gem::Version.new(psql_version) >= Gem::Version.new("9.4.0")
+      if_exists = Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
       "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@url}"
     end
 
@@ -134,6 +133,12 @@ module PgSync
     end
 
     private
+
+    def pg_restore_version
+      `pg_restore --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
+    rescue Errno::ENOENT
+      raise Error, "pg_restore not found"
+    end
 
     def table_set
       @table_set ||= Set.new(tables)
