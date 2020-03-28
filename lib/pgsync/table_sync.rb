@@ -171,7 +171,9 @@ module PgSync
           # likely fine to show simplified message here
           # the full message will be shown when first trying to connect
           "Connection failed"
-        when Error, PG::Error
+        when PG::Error
+          e.message.sub("ERROR:  ", "")
+        when Error
           e.message
         else
           "#{e.class.name}: #{e.message}"
