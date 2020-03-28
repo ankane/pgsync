@@ -20,7 +20,7 @@ module PgSync
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
           else
-            raise PgSync::Error, "Group not found: #{group}"
+            raise Error, "Group not found: #{group}"
           end
         end
       end
@@ -29,7 +29,7 @@ module PgSync
         tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
-          raise PgSync::Error, "Cannot use parameters with tables" if id
+          raise Error, "Cannot use parameters with tables" if id
           add_table(tables, table, id, args[1])
         end
       end
@@ -43,7 +43,7 @@ module PgSync
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
           else
-            raise PgSync::Error, "Cannot use parameters with tables" if id
+            raise Error, "Cannot use parameters with tables" if id
             add_table(tables, group, id, args[1])
           end
         end
@@ -80,8 +80,8 @@ module PgSync
     def add_tables(tables, t, id, boom)
       if id
         # TODO show group name and value
-        $stderr.puts PgSync::Client.colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", 33) # yellow
-        $stderr.puts PgSync::Client.colorize("Use `pgsync group --var 1=value` instead.", 33) # yellow
+        $stderr.puts Client.colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", 33) # yellow
+        $stderr.puts Client.colorize("Use `pgsync group --var 1=value` instead.", 33) # yellow
       end
 
       t.each do |table|
@@ -126,7 +126,7 @@ module PgSync
             sql.gsub!("{#{k}}", cast(v)) if missing_vars.delete(k)
           end
 
-          raise PgSync::Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
+          raise Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
 
           tables[table][:sql] = sql
         end

@@ -96,7 +96,7 @@ module PgSync
           end
           PG::Connection.new(config)
         rescue URI::InvalidURIError
-          raise PgSync::Error, "Invalid connection string"
+          raise Error, "Invalid connection string"
         end
       end
     end
@@ -175,7 +175,7 @@ module PgSync
           command = m[2..-2]
           result = `#{command}`.chomp
           unless $?.success?
-            raise PgSync::Error, "Command exited with non-zero status:\n#{command}"
+            raise Error, "Command exited with non-zero status:\n#{command}"
           end
           result
         end

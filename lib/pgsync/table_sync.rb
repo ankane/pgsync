@@ -57,8 +57,8 @@ module PgSync
 
           copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
           if opts[:in_batches]
-            raise PgSync::Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
-            raise PgSync::Error, "No primary key" unless primary_key
+            raise Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
+            raise Error, "No primary key" unless primary_key
 
             destination.truncate(table) if opts[:truncate]
 
@@ -102,7 +102,7 @@ module PgSync
 
             log # add extra line for spinner
           elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-            raise PgSync::Error, "No primary key" unless primary_key
+            raise Error, "No primary key" unless primary_key
 
             temp_table = "pgsync_#{rand(1_000_000_000)}"
             file = Tempfile.new(temp_table)
@@ -169,7 +169,7 @@ module PgSync
           # likely fine to show simplified message here
           # the full message will be shown when first trying to connect
           "Connection failed"
-        when PgSync::Error
+        when Error
           e.message
         else
           "#{e.class.name}: #{e.message}"
@@ -194,7 +194,7 @@ module PgSync
         elsif rule.key?("statement")
           rule["statement"]
         else
-          raise PgSync::Error, "Unknown rule #{rule.inspect} for column #{column}"
+          raise Error, "Unknown rule #{rule.inspect} for column #{column}"
         end
       else
         case rule
@@ -221,7 +221,7 @@ module PgSync
         when "null", nil
           "NULL"
         else
-          raise PgSync::Error, "Unknown rule #{rule} for column #{column}"
+          raise Error, "Unknown rule #{rule} for column #{column}"
         end
       end
     end

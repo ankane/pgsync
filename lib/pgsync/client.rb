@@ -9,7 +9,7 @@ module PgSync
       opts = parse_args
 
       if opts.version?
-        log PgSync::VERSION
+        log VERSION
       elsif opts.help?
         log opts
       # TODO remove deprecated conditions (last two)
@@ -22,8 +22,8 @@ module PgSync
 
     def self.start
       new(ARGV).perform
-    rescue PgSync::Error, PG::ConnectionBad => e
-      abort PgSync::Client.colorize(e.message, 31) # red
+    rescue Error, PG::ConnectionBad => e
+      abort colorize(e.message, 31) # red
     end
 
     protected
@@ -33,7 +33,7 @@ module PgSync
       config_file = db_config_file(opts.arguments[0]) || self.send(:config_file) || ".pgsync.yml"
 
       if File.exist?(config_file)
-        raise PgSync::Error, "#{config_file} exists."
+        raise Error, "#{config_file} exists."
       else
         contents = File.read(__dir__ + "/../../config.yml")
 
@@ -65,14 +65,14 @@ module PgSync
       start_time = Time.now
 
       if args.size > 2
-        raise PgSync::Error, "Usage:\n    pgsync [options]"
+        raise Error, "Usage:\n    pgsync [options]"
       end
 
       source = DataSource.new(opts[:from])
-      raise PgSync::Error, "No source" unless source.exists?
+      raise Error, "No source" unless source.exists?
 
       destination = DataSource.new(opts[:to])
-      raise PgSync::Error, "No destination" unless destination.exists?
+      raise Error, "No destination" unless destination.exists?
 
       begin
         # start connections
@@ -80,7 +80,7 @@ module PgSync
         destination.host
 
         unless opts[:to_safe] || destination.local?
-          raise PgSync::Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
+          raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
         end
 
         print_description("From", source)
@@ -113,7 +113,7 @@ module PgSync
       else
         if opts[:schema_first] || opts[:schema_only]
           if opts[:preserve]
-            raise PgSync::Error, "Cannot use --preserve with --schema-first or --schema-only"
+            raise Error, "Cannot use --preserve with --schema-first or --schema-only"
           end
 
           log "* Dumping schema"
@@ -136,7 +136,7 @@ module PgSync
     def confirm_tables_exist(data_source, tables, description)
       tables.keys.each do |table|
         unless data_source.table_exists?(table)
-          raise PgSync::Error, "Table does not exist in #{description}: #{table}"
+          raise Error, "Table does not exist in #{description}: #{table}"
         end
       end
     ensure
@@ -178,7 +178,7 @@ module PgSync
       dump_command = source.dump_command(tables)
       restore_command = destination.restore_command
       unless system("#{dump_command} | #{restore_command}")
-        raise PgSync::Error, "Schema sync returned non-zero exit code"
+        raise Error, "Schema sync returned non-zero exit code"
       end
     end
 
@@ -221,7 +221,7 @@ Options:}
         o.boolean "-h", "--help", "prints help"
       end
     rescue Slop::Error => e
-      raise PgSync::Error, e.message
+      raise Error, e.message
     end
 
     def config
@@ -230,7 +230,7 @@ Options:}
           begin
             YAML.load_file(config_file) || {}
           rescue Psych::SyntaxError => e
-            raise PgSync::Error, e.message
+            raise Error, e.message
           end
         else
           {}
@@ -335,7 +335,7 @@ Options:}
     end
 
     def fail_sync(failed_tables)
-      raise PgSync::Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
+      raise Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
     def display_message(result)
