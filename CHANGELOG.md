@@ -1,10 +1,9 @@
 ## 0.5.2 (unreleased)
 
 - Added `--fail-fast` option
-- Automatically exclude tables when `--init` run inside Rails application
+- Automatically exclude tables when `--init` run inside Rails app
 - Improved error message
 - Fixed typo in error message
-- Deprecated `group:value` for variables
 
 ## 0.5.1 (2020-03-26)
 
