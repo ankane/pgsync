@@ -1,5 +1,7 @@
 module PgSync
   class TableSync
+    include Utils
+
     def sync(config, table, opts, source_url, destination_url)
       start_time = Time.now
       source = DataSource.new(source_url, timeout: 0)
@@ -229,10 +231,6 @@ module PgSync
     def quoted_primary_key(table, primary_key, rule)
       raise "Primary key required for this data rule: #{rule}" unless primary_key
       "#{quote_ident_full(table)}.#{quote_ident(primary_key)}"
-    end
-
-    def log(message = nil)
-      $stderr.puts message
     end
 
     def quote_ident_full(ident)
