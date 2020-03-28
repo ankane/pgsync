@@ -1,7 +1,6 @@
 ## 0.5.2 (unreleased)
 
 - Added `--fail-fast` option
-- Added `--var` option
 - Automatically exclude tables when `--init` run inside Rails application
 - Improved error message
 - Fixed typo in error message
