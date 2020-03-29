@@ -21,8 +21,8 @@ module PgSync
           else
             <<~EOS
               # exclude:
-              #   - schema_migrations
-              #   - ar_internal_metadata
+              #   - table1
+              #   - table2
             EOS
           end
 
