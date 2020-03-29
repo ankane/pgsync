@@ -12,8 +12,8 @@ module PgSync
       @groups = config["groups"] || {}
     end
 
-    def group?(tag)
-      @groups.key?(tag.split(":", 2).first)
+    def group?(group)
+      @groups.key?(group)
     end
 
     def tables
@@ -26,7 +26,8 @@ module PgSync
       if args[0]
         # could be a group, table, or mix
         to_arr(args[0]).each do |tag|
-          if group?(tag)
+          group, id = tag.split(":", 2)
+          if group?(group)
             groups << tag
           else
             tables2 << tag
