@@ -48,17 +48,17 @@ module PgSync
       end
 
       if !opts[:groups] && !opts[:tables] && !args[0]
-        tables = begin
-          exclude = to_arr(opts[:exclude])
-          exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
+        exclude = to_arr(opts[:exclude])
+        exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
 
-          tabs = source.tables
-          unless opts[:all_schemas]
-            schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
-            tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
-          end
+        tabs = source.tables
+        unless opts[:all_schemas]
+          schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
+          tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
+        end
 
-          Hash[(tabs - exclude).map { |k| [k, {}] }]
+        (tabs - exclude).each do |k|
+          tables[k] = {}
         end
       end
 
