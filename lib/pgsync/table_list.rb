@@ -94,6 +94,7 @@ module PgSync
       tables2 =
         if table.include?("*")
           regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
+          # TODO find without schema prefix
           source.tables.select { |t| regex.match(t) }
         else
           [table]
