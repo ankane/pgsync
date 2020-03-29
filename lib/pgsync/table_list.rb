@@ -12,12 +12,10 @@ module PgSync
     end
 
     def tables
-      tables = nil
+      tables = Hash.new { |hash, key| hash[key] = {} }
 
       if opts[:groups]
-        tables ||= Hash.new { |hash, key| hash[key] = {} }
-        specified_groups = to_arr(opts[:groups])
-        specified_groups.map do |tag|
+        to_arr(opts[:groups]).each do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
@@ -28,7 +26,6 @@ module PgSync
       end
 
       if opts[:tables]
-        tables ||= Hash.new { |hash, key| hash[key] = {} }
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
           raise Error, "Cannot use parameters with tables" if id
@@ -38,9 +35,7 @@ module PgSync
 
       if args[0]
         # could be a group, table, or mix
-        tables ||= Hash.new { |hash, key| hash[key] = {} }
-        specified_groups = to_arr(args[0])
-        specified_groups.map do |tag|
+        to_arr(args[0]).each do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
             add_tables(tables, t, id, args[1])
@@ -51,17 +46,19 @@ module PgSync
         end
       end
 
-      tables ||= begin
-        exclude = to_arr(opts[:exclude])
-        exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
+      if !opts[:groups] && !opts[:tables] && !args[0]
+        tables = begin
+          exclude = to_arr(opts[:exclude])
+          exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
 
-        tabs = source.tables
-        unless opts[:all_schemas]
-          schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
-          tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
+          tabs = source.tables
+          unless opts[:all_schemas]
+            schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
+            tabs.select! { |t| schemas.include?(t.split(".", 2)[0]) }
+          end
+
+          Hash[(tabs - exclude).map { |k| [k, {}] }]
         end
-
-        Hash[(tabs - exclude).map { |k| [k, {}] }]
       end
 
       source.fully_resolve_tables(tables)
