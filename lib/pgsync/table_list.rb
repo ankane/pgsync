@@ -13,12 +13,13 @@ module PgSync
 
     def tables
       tables = Hash.new { |hash, key| hash[key] = {} }
+      sql = args[1]
 
       if opts[:groups]
         to_arr(opts[:groups]).each do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1])
+            add_tables(tables, t, id, sql)
           else
             raise Error, "Group not found: #{group}"
           end
@@ -29,7 +30,7 @@ module PgSync
         to_arr(opts[:tables]).each do |tag|
           table, id = tag.split(":", 2)
           raise Error, "Cannot use parameters with tables" if id
-          add_table(tables, table, id, args[1])
+          add_table(tables, table, id, sql)
         end
       end
 
@@ -38,10 +39,10 @@ module PgSync
         to_arr(args[0]).each do |tag|
           group, id = tag.split(":", 2)
           if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, args[1])
+            add_tables(tables, t, id, sql)
           else
             raise Error, "Cannot use parameters with tables" if id
-            add_table(tables, group, id, args[1])
+            add_table(tables, group, id, sql)
           end
         end
       end
