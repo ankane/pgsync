@@ -99,8 +99,8 @@ module PgSync
           [table]
         end
 
-      tables2.each do |table|
-        add_table_no_wildcard(tables, table, id, sql)
+      tables2.each do |tab|
+        add_table_no_wildcard(tables, tab, id, sql)
       end
     end
 
