@@ -17,10 +17,7 @@ module PgSync
     end
 
     def config_file
-      unless defined?(@config_file)
-        @config_file = search_tree(db_config_file(@options[:db]) || @options[:config] || ".pgsync.yml")
-      end
-      @config_file
+      search_tree(db_config_file(@options[:db]) || @options[:config] || ".pgsync.yml")
     end
 
     def db_config_file(db)

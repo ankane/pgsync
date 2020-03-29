@@ -138,9 +138,10 @@ module PgSync
 
     def config
       @config ||= begin
-        if config_file
+        file = config_file
+        if file
           begin
-            YAML.load_file(config_file) || {}
+            YAML.load_file(file) || {}
           rescue Psych::SyntaxError => e
             raise Error, e.message
           end
