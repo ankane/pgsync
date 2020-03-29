@@ -9,42 +9,41 @@ module PgSync
       @opts = options
       @source = source
       @config = config
+      @groups = config["groups"] || {}
+    end
+
+    def group?(tag)
+      @groups.key?(tag.split(":", 2).first)
     end
 
     def tables
       tables = Hash.new { |hash, key| hash[key] = {} }
       sql = args[1]
 
-      if opts[:groups]
-        to_arr(opts[:groups]).each do |tag|
-          group, id = tag.split(":", 2)
-          if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, sql)
-          else
-            raise Error, "Group not found: #{group}"
-          end
-        end
-      end
-
-      if opts[:tables]
-        to_arr(opts[:tables]).each do |tag|
-          table, id = tag.split(":", 2)
-          raise Error, "Cannot use parameters with tables" if id
-          add_table(tables, table, id, sql)
-        end
-      end
+      groups = to_arr(opts[:groups])
+      tables2 = to_arr(opts[:tables])
 
       if args[0]
         # could be a group, table, or mix
         to_arr(args[0]).each do |tag|
-          group, id = tag.split(":", 2)
-          if (t = (config["groups"] || {})[group])
-            add_tables(tables, t, id, sql)
+          if group?(tag)
+            groups << tag
           else
-            raise Error, "Cannot use parameters with tables" if id
-            add_table(tables, group, id, sql)
+            tables2 << tag
           end
         end
+      end
+
+      groups.each do |tag|
+        group, id = tag.split(":", 2)
+        raise Error, "Group not found: #{group}" unless group?(group)
+        add_tables(tables, @groups[group], id, sql)
+      end
+
+      tables2.each do |tag|
+        table, id = tag.split(":", 2)
+        raise Error, "Cannot use parameters with tables" if id
+        add_table(tables, table, id, sql)
       end
 
       if !opts[:groups] && !opts[:tables] && !args[0]
