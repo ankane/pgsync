@@ -1,12 +1,18 @@
 module PgSync
   module Utils
+    COLOR_CODES = {
+      red: 31,
+      green: 32,
+      yellow: 33
+    }
+
     def log(message = nil)
       output.puts message
     end
 
-    def colorize(message, color_code)
+    def colorize(message, color)
       if output.tty?
-        "\e[#{color_code}m#{message}\e[0m"
+        "\e[#{COLOR_CODES[color]}m#{message}\e[0m"
       else
         message
       end
@@ -29,9 +35,7 @@ module PgSync
       # prevent infinite loop
       20.times do
         absolute_file = File.join(path, file)
-        if File.exist?(absolute_file)
-          break absolute_file
-        end
+        break absolute_file if File.exist?(absolute_file)
         path = File.dirname(path)
         break if path == "/"
       end

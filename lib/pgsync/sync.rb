@@ -225,13 +225,13 @@ module PgSync
     end
 
     def deprecated(message)
-      log colorize("[DEPRECATED] #{message}", 33) # yellow
+      log colorize("[DEPRECATED] #{message}", :yellow)
     end
 
     def log_completed(start_time)
       time = Time.now - start_time
       message = "Completed in #{time.round(1)}s"
-      log colorize(message, 32) # green
+      log colorize(message, :green)
     end
 
     def windows?

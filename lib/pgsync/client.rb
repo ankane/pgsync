@@ -22,7 +22,7 @@ module PgSync
       end
     rescue Error, PG::ConnectionBad => e
       raise e if testing
-      abort colorize(e.message, 31) # red
+      abort colorize(e.message, :red)
     end
 
     def self.start

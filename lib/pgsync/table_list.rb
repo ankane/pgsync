@@ -82,8 +82,8 @@ module PgSync
     def add_tables(tables, t, id, boom)
       # if id
       #   # TODO show group name and value
-      #   log colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", 33) # yellow
-      #   log colorize("Use `pgsync group --var 1=value` instead.", 33) # yellow
+      #   log colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", :yellow)
+      #   log colorize("Use `pgsync group --var 1=value` instead.", :yellow)
       # end
 
       t.each do |table|
