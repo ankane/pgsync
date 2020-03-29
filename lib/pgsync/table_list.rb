@@ -100,13 +100,9 @@ module PgSync
         end
 
       tables2.each do |tab|
-        add_table_no_wildcard(tables, tab, id, sql)
+        tables[tab] = {}
+        tables[tab][:sql] = table_sql(sql, id) if sql
       end
-    end
-
-    def add_table_no_wildcard(tables, table, id, sql)
-      tables[table] = {}
-      tables[table][:sql] = table_sql(sql, id) if sql
     end
 
     def table_sql(sql, id)
