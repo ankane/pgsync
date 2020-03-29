@@ -17,7 +17,7 @@ module PgSync
     end
 
     def tables
-      tables = Hash.new { |hash, key| hash[key] = {} }
+      tables = {}
       sql = args[1]
 
       groups = to_arr(opts[:groups])
@@ -38,7 +38,20 @@ module PgSync
       groups.each do |tag|
         group, id = tag.split(":", 2)
         raise Error, "Group not found: #{group}" unless group?(group)
-        add_tables(tables, @groups[group], id, sql)
+
+        # if id
+        #   # TODO show group name and value
+        #   log colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", :yellow)
+        #   log colorize("Use `pgsync group --var 1=value` instead.", :yellow)
+        # end
+
+        @groups[group].each do |table|
+          table_sql = nil
+          if table.is_a?(Array)
+            table, table_sql = table
+          end
+          add_table(tables, table, id, sql || table_sql)
+        end
       end
 
       tables2.each do |tag|
@@ -77,60 +90,51 @@ module PgSync
       end
     end
 
-    def add_tables(tables, t, id, boom)
-      # if id
-      #   # TODO show group name and value
-      #   log colorize("`pgsync group:value` is deprecated and will have a different function in 0.6.0.", :yellow)
-      #   log colorize("Use `pgsync group --var 1=value` instead.", :yellow)
-      # end
-
-      t.each do |table|
-        sql = nil
-        if table.is_a?(Array)
-          table, sql = table
+    def add_table(tables, table, id, sql)
+      tables2 =
+        if table.include?("*")
+          regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
+          source.tables.select { |t| regex.match(t) }
+        else
+          [table]
         end
-        add_table(tables, table, id, boom || sql)
+
+      tables2.each do |table|
+        add_table_no_wildcard(tables, table, id, sql)
       end
     end
 
-    def add_table(tables, table, id, boom, wildcard = false)
-      if table.include?("*") && !wildcard
-        regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
-        t2 = source.tables.select { |t| regex.match(t) }
-        t2.each do |tab|
-          add_table(tables, tab, id, boom, true)
-        end
-      else
-        tables[table] = {}
-        if boom
-          sql = boom.dup
-          # vars must match \w
-          missing_vars = sql.scan(/{\w+}/).map { |v| v[1..-2] }
+    def add_table_no_wildcard(tables, table, id, sql)
+      tables[table] = {}
+      tables[table][:sql] = table_sql(sql, id) if sql
+    end
 
-          vars = {}
+    def table_sql(sql, id)
+      # vars must match \w
+      missing_vars = sql.scan(/{\w+}/).map { |v| v[1..-2] }
 
-          # legacy
-          if id
-            vars["id"] = cast(id)
-            vars["1"] = cast(id)
-          end
+      vars = {}
 
-          # opts[:var].each do |value|
-          #   k, v = value.split("=", 2)
-          #   vars[k] = v
-          # end
-
-          sql = boom.dup
-          vars.each do |k, v|
-            # only sub if in var list
-            sql.gsub!("{#{k}}", cast(v)) if missing_vars.delete(k)
-          end
-
-          raise Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
-
-          tables[table][:sql] = sql
-        end
+      # legacy
+      if id
+        vars["id"] = cast(id)
+        vars["1"] = cast(id)
       end
+
+      # opts[:var].each do |value|
+      #   k, v = value.split("=", 2)
+      #   vars[k] = v
+      # end
+
+      sql = sql.dup
+      vars.each do |k, v|
+        # only sub if in var list
+        sql.gsub!("{#{k}}", cast(v)) if missing_vars.delete(k)
+      end
+
+      raise Error, "Missing variables: #{missing_vars.uniq.join(", ")}" if missing_vars.any?
+
+      sql
     end
 
     # TODO quote vars in next major version
