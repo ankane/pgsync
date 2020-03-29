@@ -42,6 +42,10 @@ class PgSyncTest < Minitest::Test
     assert_works "Users --from pgsync_test2 --to pgsync_test1"
   end
 
+  def test_table_unknown
+    assert_error "Table does not exist in source: bad", "bad --from pgsync_test2 --to pgsync_test1"
+  end
+
   def test_partial
     assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_test2 --to pgsync_test1"
   end
