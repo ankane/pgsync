@@ -129,8 +129,8 @@ module PgSync
             end
           end
         ensure
-           file.close
-           file.unlink
+          file.close
+          file.unlink
         end
       else
         destination.truncate(table)
