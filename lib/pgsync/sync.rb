@@ -156,7 +156,7 @@ module PgSync
     end
 
     def in_parallel(tables, first_schema:, &block)
-      spinners = TTY::Spinner::Multi.new(format: :dots)
+      spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
       item_spinners = {}
 
       start = lambda do |item, i|

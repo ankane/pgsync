@@ -4,7 +4,7 @@ module PgSync
 
     def initialize(args)
       @args = args
-      $stderr.sync = true
+      output.sync = true
     end
 
     def perform(testing: true)

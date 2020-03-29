@@ -1,15 +1,19 @@
 module PgSync
   module Utils
     def log(message = nil)
-      $stderr.puts message
+      output.puts message
     end
 
     def colorize(message, color_code)
-      if $stderr.tty?
+      if output.tty?
         "\e[#{color_code}m#{message}\e[0m"
       else
         message
       end
+    end
+
+    def output
+      $stderr
     end
 
     def config_file
