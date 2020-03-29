@@ -12,7 +12,7 @@ module PgSync
         raise Error, "#{file} exists."
       else
         exclude =
-          if rails_app?
+          if rails?
             <<~EOS
               exclude:
                 - schema_migrations
@@ -39,8 +39,7 @@ module PgSync
       `git remote -v`.include?("git.heroku.com") rescue false
     end
 
-    # TODO maybe check parent directories
-    def rails_app?
+    def rails?
       File.exist?("bin/rails")
     end
   end
