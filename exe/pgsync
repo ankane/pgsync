@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # disable Slop warning with Ruby 2.7
-# TODO remove when Slop > 4.7.0 is released
+# TODO remove when Slop > 4.8.0 is released
 $VERBOSE = nil
 
 # handle interrupts
