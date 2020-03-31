@@ -187,7 +187,7 @@ module PgSync
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, table_name, display_message(result)].compact.join(" ")
+          log [status, table_name, item.last[:sql], display_message(result)].compact.join(" ")
         end
       end
 
