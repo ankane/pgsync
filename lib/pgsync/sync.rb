@@ -164,8 +164,7 @@ module PgSync
         table, opts = item
         message = String.new(":spinner ")
         message << table.sub("#{first_schema}.", "")
-        # maybe output later
-        # message << " #{opts[:sql]}" if opts[:sql]
+        message << " #{opts[:sql]}" if opts[:sql]
         spinner = spinners.register(message)
         spinner.auto_spin
         item_spinners[item] = spinner
