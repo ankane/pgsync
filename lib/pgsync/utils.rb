@@ -31,6 +31,8 @@ module PgSync
     end
 
     def search_tree(file)
+      return file if File.exists?(file)
+
       path = Dir.pwd
       # prevent infinite loop
       20.times do
