@@ -60,7 +60,7 @@ class PgSyncTest < Minitest::Test
 
   def test_config_absolute_path
     path = File.expand_path("test/support/config.yml")
-    assert_works "Users --config #{path}"
+    assert_works "--config #{path}"
   end
 
   def test_config_and_db
