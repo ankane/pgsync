@@ -1,4 +1,4 @@
-## 0.5.3 (unreleased)
+## 0.5.3 (2020-04-03)
 
 - Improved Postgres error messages
 - Fixed behavior of wildcard without schema
