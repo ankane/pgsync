@@ -36,7 +36,7 @@ module PgSync
     end
 
     def heroku?
-      `git remote -v`.include?("git.heroku.com") rescue false
+      `git remote -v 2>&1`.include?("git.heroku.com") rescue false
     end
 
     def rails?

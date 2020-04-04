@@ -12,7 +12,7 @@ class PgSyncTest < Minitest::Test
   end
 
   def test_init
-    Dir.chdir(Dir.tmpdir) do
+    Dir.chdir(Dir.mktmpdir) do
       assert_works "--init"
       assert File.exist?(".pgsync.yml")
     end
