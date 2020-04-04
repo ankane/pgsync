@@ -1,7 +1,23 @@
 require_relative "test_helper"
-require "shellwords"
 
 class PgSyncTest < Minitest::Test
+  def test_help
+    assert_prints "Usage:", "-h"
+    assert_prints "Usage:", "--help"
+  end
+
+  def test_version
+    assert_prints PgSync::VERSION, "-v"
+    assert_prints PgSync::VERSION, "--version"
+  end
+
+  def test_init
+    Dir.chdir(Dir.tmpdir) do
+      assert_works "--init"
+      assert File.exist?(".pgsync.yml")
+    end
+  end
+
   def test_no_source
     assert_error "No source", ""
   end
@@ -84,16 +100,6 @@ class PgSyncTest < Minitest::Test
 
   def test_parallel
     assert_prints "Completed in", "--from pgsync_test1 --to pgsync_test2", debug: false
-  end
-
-  def test_version
-    assert_prints PgSync::VERSION, "-v"
-    assert_prints PgSync::VERSION, "--version"
-  end
-
-  def test_help
-    assert_prints "Usage:", "-h"
-    assert_prints "Usage:", "--help"
   end
 
   def test_schema_only

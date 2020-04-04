@@ -3,6 +3,8 @@ Bundler.require(:default)
 require "minitest/autorun"
 require "minitest/pride"
 require "pg"
+require "shellwords"
+require "tmpdir"
 
 conn1 = PG::Connection.open(dbname: "pgsync_test1")
 conn1.exec <<-SQL
