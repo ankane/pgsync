@@ -10,6 +10,9 @@ module PgSync
     def perform(testing: true)
       opts = parse_args
 
+      # TODO throw error in 0.6.0
+      warn "Specify either --db or --config, not both" if opts[:db] && opts[:config]
+
       if opts.version?
         log VERSION
       elsif opts.help?
