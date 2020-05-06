@@ -167,7 +167,8 @@ module PgSync
         message << " #{opts[:sql]}" if opts[:sql]
         spinner = spinners.register(message)
         if @options[:in_batches]
-          spinner.spin # just once
+          # log instead of spin for non-tty
+          log message.sub(":spinner", "⠋")
         else
           spinner.auto_spin
         end
