@@ -1,3 +1,7 @@
+## 0.5.4 (unreleased)
+
+- Fixed output for `--in-batches`
+
 ## 0.5.3 (2020-04-03)
 
 - Improved Postgres error messages

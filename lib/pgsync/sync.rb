@@ -166,7 +166,11 @@ module PgSync
         message << table.sub("#{first_schema}.", "")
         message << " #{opts[:sql]}" if opts[:sql]
         spinner = spinners.register(message)
-        spinner.auto_spin
+        if @options[:debug] || @options[:in_batches]
+          spinner.spin # just once
+        else
+          spinner.auto_spin
+        end
         item_spinners[item] = spinner
       end
 
