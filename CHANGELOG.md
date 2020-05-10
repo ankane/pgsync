@@ -1,4 +1,4 @@
-## 0.5.4 (unreleased)
+## 0.5.4 (2020-05-09)
 
 - Fixed output for `--in-batches`
 
