@@ -68,6 +68,7 @@ Options:}
         o.integer "--batch-size", "batch size", default: 10000, help: false
         o.float "--sleep", "sleep", default: 0, help: false
         o.boolean "--fail-fast", "stop on the first failed table", default: false
+        o.boolean "--defer-constraints", "defer constraints", default: false
         # o.array "--var", "pass a variable"
         o.boolean "-v", "--version", "print the version"
         o.boolean "-h", "--help", "prints help"

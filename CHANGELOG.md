@@ -1,3 +1,7 @@
+## 0.5.5 (unreleased)
+
+- Added experimental `--defer-constraints` option
+
 ## 0.5.4 (2020-05-09)
 
 - Fixed output for `--in-batches`
