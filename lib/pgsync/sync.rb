@@ -22,35 +22,21 @@ module PgSync
         raise Error, "Usage:\n    pgsync [options]"
       end
 
-      source = DataSource.new(opts[:from])
       raise Error, "No source" unless source.exists?
-
-      destination = DataSource.new(opts[:to])
       raise Error, "No destination" unless destination.exists?
 
-      begin
-        # start connections
-        source.host
-        destination.host
+      # start connections
+      source.host
+      destination.host
 
-        unless opts[:to_safe] || destination.local?
-          raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
-        end
-
-        print_description("From", source)
-        print_description("To", destination)
-      ensure
-        source.close
-        destination.close
+      unless opts[:to_safe] || destination.local?
+        raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
       end
 
-      tables = nil
-      begin
-        tables = TableList.new(args, opts, source, config).tables
-      ensure
-        source.close
-      end
+      print_description("From", source)
+      print_description("To", destination)
 
+      tables = TableList.new(args, opts, source, config).tables
       confirm_tables_exist(source, tables, "source")
 
       if opts[:list]
@@ -93,8 +79,6 @@ module PgSync
           raise Error, "Table does not exist in #{description}: #{table}"
         end
       end
-    ensure
-      data_source.close
     end
 
     def map_deprecations(args, opts)
@@ -240,6 +224,25 @@ module PgSync
 
     def windows?
       Gem.win_platform?
+    end
+
+    def source
+      @source ||= data_source(@options[:from])
+    end
+
+    def destination
+      @destination ||= data_source(@options[:to])
+    end
+
+    def data_source(url)
+      ds = DataSource.new(url)
+      ObjectSpace.define_finalizer(self, self.class.finalize(ds))
+      ds
+    end
+
+    def self.finalize(ds)
+      # must use proc instead of stabby lambda
+      proc { ds.close }
     end
   end
 end
