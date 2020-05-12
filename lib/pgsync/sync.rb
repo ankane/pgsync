@@ -64,9 +64,7 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tables, "destination")
 
-          in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts|
-            source.reconnect
-            destination.reconnect
+          in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts, source, destination|
             TableSync.new.sync(config, table, opts.merge(table_opts), source, destination)
           end
         end
@@ -192,7 +190,11 @@ module PgSync
       # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
       # see `fast_faster` branch
       # however, need to make sure connections are cleaned up properly
-      Parallel.each(tables, **options, &block)
+      Parallel.each(tables, **options) do |table, table_opts|
+        source.reconnect
+        destination.reconnect
+        yield table, table_opts, source, destination
+      end
 
       fail_sync(failed_tables) if failed_tables.any?
     end
