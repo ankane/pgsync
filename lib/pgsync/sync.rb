@@ -191,8 +191,10 @@ module PgSync
       # see `fast_faster` branch
       # however, need to make sure connections are cleaned up properly
       Parallel.each(tables, **options) do |table, table_opts|
-        source.reconnect
-        destination.reconnect
+        unless options[:in_processes] == 0
+          source.reconnect
+          destination.reconnect
+        end
         yield table, table_opts, source, destination
       end
 
