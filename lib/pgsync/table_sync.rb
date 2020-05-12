@@ -2,11 +2,8 @@ module PgSync
   class TableSync
     include Utils
 
-    def sync(config, table, opts, source_url, destination_url)
+    def sync(config, table, opts, source, destination)
       start_time = Time.now
-
-      source = DataSource.new(source_url, timeout: 0)
-      destination = DataSource.new(destination_url, timeout: 0)
 
       from_connection = source.conn
       to_connection = destination.conn
@@ -153,9 +150,6 @@ module PgSync
         end
 
       {status: "error", message: message}
-    ensure
-      source.close if source
-      destination.close if destination
     end
 
     private

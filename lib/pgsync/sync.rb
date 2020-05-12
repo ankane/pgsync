@@ -65,7 +65,9 @@ module PgSync
           confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts|
-            TableSync.new.sync(config, table, opts.merge(table_opts), source.url, destination.url)
+            source.reconnect
+            destination.reconnect
+            TableSync.new.sync(config, table, opts.merge(table_opts), source, destination)
           end
         end
 

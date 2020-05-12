@@ -108,6 +108,10 @@ module PgSync
       end
     end
 
+    def reconnect
+      @conn.reset
+    end
+
     def dump_command(tables)
       tables = tables ? tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ") : ""
       "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@url}"
