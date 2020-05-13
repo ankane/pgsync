@@ -90,10 +90,6 @@ class SyncTest < Minitest::Test
     assert_equal "secret#{row["Id"]}", row["token"]
   end
 
-  def test_parallel
-    assert_prints "Completed in", "--from pgsync_test1 --to pgsync_test2", debug: false
-  end
-
   def test_schema_only
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
   end

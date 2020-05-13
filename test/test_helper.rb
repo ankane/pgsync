@@ -44,8 +44,7 @@ class Minitest::Test
     assert_match message, output
   end
 
-  def assert_prints(message, command, debug: true)
-    command << " --debug" if debug
+  def assert_prints(message, command)
     output, status = run_command(command)
     assert_match message, output
   end
