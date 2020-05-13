@@ -12,7 +12,7 @@ module PgSync
         opts[opt] ||= config[opt.to_s]
       end
 
-      # TODO remove deprecations
+      # TODO remove deprecations in 0.6.0
       map_deprecations(args, opts)
 
       # start
