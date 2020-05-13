@@ -25,10 +25,6 @@ module PgSync
       raise Error, "No source" unless source.exists?
       raise Error, "No destination" unless destination.exists?
 
-      # start connections
-      source.host
-      destination.host
-
       unless opts[:to_safe] || destination.local?
         raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
       end
