@@ -20,7 +20,8 @@ class Minitest::Test
     ENV["VERBOSE"]
   end
 
-  def run_command(command)
+  def run_command(command, dbs: false)
+    command << " --from pgsync_test1 --to pgsync_test2" if dbs
     if verbose?
       puts
       puts "$ pgsync #{command}"
@@ -31,9 +32,10 @@ class Minitest::Test
     [output, status]
   end
 
-  def assert_works(command)
-    output, status = run_command(command)
+  def assert_works(command, dbs: false)
+    output, status = run_command(command, dbs: dbs)
     assert status.success?
+    output
   end
 
   def assert_error(message, command)

@@ -10,4 +10,9 @@ class CommandsTest < Minitest::Test
     assert_prints PgSync::VERSION, "-v"
     assert_prints PgSync::VERSION, "--version"
   end
+
+  def test_list
+    output = assert_works "--list", dbs: true
+    assert_match "public.posts", output
+  end
 end
