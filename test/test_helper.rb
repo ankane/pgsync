@@ -7,9 +7,11 @@ require "shellwords"
 require "tmpdir"
 
 $conn1 = PG::Connection.open(dbname: "pgsync_test1")
+$conn1.exec("SET client_min_messages TO WARNING")
 $conn1.exec(File.read("test/support/schema1.sql"))
 
 $conn2 = PG::Connection.open(dbname: "pgsync_test2")
+$conn2.exec("SET client_min_messages TO WARNING")
 $conn2.exec(File.read("test/support/schema2.sql"))
 
 class Minitest::Test
