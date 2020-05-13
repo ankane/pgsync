@@ -111,8 +111,8 @@ class SyncTest < Minitest::Test
   end
 
   def test_defer_constraints
-    $conn1.exec("INSERT INTO posts (id) VALUES (1)")
-    $conn1.exec("INSERT INTO comments (post_id) VALUES (1)")
+    insert($conn1, "posts", [{"id" => 1}])
+    insert($conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments,posts --from pgsync_test1 --to pgsync_test2 --debug"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
@@ -120,14 +120,14 @@ class SyncTest < Minitest::Test
   end
 
   def test_disable_user_triggers
-    $conn1.exec("INSERT INTO robots (name) VALUES ('Test')")
+    insert($conn1, "robots", [{"name" => "Test"}])
     assert_error "Sync failed for 1 table: robots", "robots --from pgsync_test1 --to pgsync_test2"
     assert_works "robots --from pgsync_test1 --to pgsync_test2 --disable-user-triggers"
   end
 
   def test_disable_integrity
-    $conn1.exec("INSERT INTO posts (id) VALUES (1)")
-    $conn1.exec("INSERT INTO comments (post_id) VALUES (1)")
+    insert($conn1, "posts", [{"id" => 1}])
+    insert($conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
     assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
   end
