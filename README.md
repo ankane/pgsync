@@ -222,10 +222,36 @@ The script will resume where it left off when run again, making it great for bac
 
 ## Foreign Keys
 
-By default, tables are copied in parallel. If you use foreign keys, this can cause violations. You can specify tables to be copied serially with:
+Foreign keys can make it difficult to sync data. There are three options to sync with foreign keys:
+
+1. Manually specify the order of tables
+2. Use deferrable constraints
+3. Disable triggers, which can silently break referential integrity
+
+If you manually specify the order, use the `--debug` flag so tables are copied one at a time.
 
 ```sh
-pgsync group1 --debug
+pgsync table1,table2,table3 --debug
+```
+
+For deferrable constraints, use: [master, experimental]
+
+```sh
+pgsync --defer-constraints
+```
+
+To disable triggers and potentially break referential integrity, use: [master, experimental]
+
+```sh
+pgsync --disable-all-triggers
+```
+
+## Triggers
+
+Disable user triggers with: [master, experimental]
+
+```sh
+pgsync --disable-user-triggers
 ```
 
 ## Reference

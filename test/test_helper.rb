@@ -39,6 +39,12 @@ CREATE TABLE comments (
   post_id INTEGER REFERENCES posts(id)
 );
 
+DROP TABLE IF EXISTS robots;
+CREATE TABLE robots (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+
 DROP SCHEMA IF EXISTS other CASCADE;
 CREATE SCHEMA other;
 CREATE TABLE other.pets (
@@ -76,5 +82,20 @@ CREATE TABLE comments (
   post_id INTEGER REFERENCES posts(id)
 );
 ALTER TABLE comments ALTER CONSTRAINT comments_post_id_fkey DEFERRABLE;
+
+DROP TABLE IF EXISTS robots;
+CREATE TABLE robots (
+  id SERIAL PRIMARY KEY,
+  name TEXT
+);
+CREATE OR REPLACE FUNCTION nope()
+RETURNS trigger AS
+$$
+BEGIN
+  RAISE EXCEPTION 'Nope!';
+END;
+$$
+LANGUAGE plpgsql;
+CREATE TRIGGER nope_trigger BEFORE INSERT OR UPDATE ON robots FOR EACH ROW EXECUTE FUNCTION nope();
 SQL
 conn2.close

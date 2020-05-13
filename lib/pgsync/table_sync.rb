@@ -2,11 +2,21 @@ module PgSync
   class TableSync
     include Utils
 
-    def sync(config, table, opts, source, destination)
-      start_time = Time.now
+    attr_reader :source, :destination
 
-      from_connection = source.conn
-      to_connection = destination.conn
+    def initialize(source:, destination:)
+      @source = source
+      @destination = destination
+    end
+
+    def sync(config, table, opts)
+      maybe_disable_triggers(table, opts) do
+        sync_data(config, table, opts)
+      end
+    end
+
+    def sync_data(config, table, opts)
+      start_time = Time.now
 
       from_fields = source.columns(table)
       to_fields = destination.columns(table)
@@ -76,13 +86,7 @@ module PgSync
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
           batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
-          to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
-            from_connection.copy_data batch_copy_to_command do
-              while (row = from_connection.get_copy_data)
-                to_connection.put_copy_data(row)
-              end
-            end
-          end
+          copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
           starting_id += batch_size
           i += 1
@@ -96,43 +100,31 @@ module PgSync
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
-        to_connection.exec("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS SELECT * FROM #{quote_ident_full(table)} WITH NO DATA")
+        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS SELECT * FROM #{quote_ident_full(table)} WITH NO DATA")
 
         # load data
-        to_connection.copy_data "COPY #{quote_ident_full(temp_table)} (#{fields}) FROM STDIN" do
-          from_connection.copy_data copy_to_command do
-            while (row = from_connection.get_copy_data)
-              to_connection.put_copy_data(row)
-            end
-          end
-        end
+        copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
         if opts[:preserve]
           # insert into
-          to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
+          destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
-          with_transaction(to_connection) do
-            to_connection.exec("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
-            to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
+          destination.transaction do
+            destination.execute("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
+            destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
           end
         end
       else
         # use delete instead of truncate for foreign keys
         if opts[:use_delete]
-          destination.conn.exec("DELETE FROM #{quote_ident_full(table)}")
+          destination.execute("DELETE FROM #{quote_ident_full(table)}")
         else
           destination.truncate(table)
         end
-        to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
-          from_connection.copy_data copy_to_command do
-            while (row = from_connection.get_copy_data)
-              to_connection.put_copy_data(row)
-            end
-          end
-        end
+        copy(copy_to_command, dest_table: table, dest_fields: fields)
       end
       seq_values.each do |seq, value|
-        to_connection.exec("SELECT setval(#{escape(seq)}, #{escape(value)})")
+        destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
       end
 
       message = nil
@@ -158,6 +150,17 @@ module PgSync
     end
 
     private
+
+    def copy(source_command, dest_table:, dest_fields:)
+      destination_command = "COPY #{quote_ident_full(dest_table)} (#{dest_fields}) FROM STDIN"
+      destination.conn.copy_data(destination_command) do
+        source.conn.copy_data(source_command) do
+          while (row = source.conn.get_copy_data)
+            destination.conn.put_copy_data(row)
+          end
+        end
+      end
+    end
 
     # TODO better performance
     def rule_match?(table, column, rule)
@@ -231,11 +234,27 @@ module PgSync
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
 
-    def with_transaction(conn)
-      if conn.transaction_status == 0
-        # not currently in transaction
-        conn.transaction do
-          yield
+    def maybe_disable_triggers(table, opts)
+      if opts[:disable_all_triggers] || opts[:disable_user_triggers]
+        destination.transaction do
+          triggers = destination.triggers(table)
+          triggers.select! { |t| t["enabled"] == "t" }
+          triggers.select! { |t| t["internal"] == "f" } unless opts[:disable_all_triggers]
+
+          # important!
+          # rely on Postgres to disable proper triggers
+          # we don't want to accidentally disable non-user triggers if logic above is off
+          type = opts[:disable_all_triggers] ? "ALL" : "USER"
+          destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER #{type}")
+
+          result = yield
+
+          # restore triggers that were previously enabled
+          triggers.each do |trigger|
+            destination.execute("ALTER TABLE #{quote_ident_full(table)} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
+          end
+
+          result
         end
       else
         yield

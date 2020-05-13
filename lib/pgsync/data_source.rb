@@ -84,6 +84,20 @@ module PgSync
       row && row["attname"]
     end
 
+    def triggers(table)
+      query = <<-SQL
+        SELECT
+          tgname AS name,
+          tgisinternal AS internal,
+          tgenabled != 'D' AS enabled
+        FROM
+          pg_trigger
+        WHERE
+          pg_trigger.tgrelid = $1::regclass
+      SQL
+      execute(query, [quote_ident_full(table)])
+    end
+
     def conn
       @conn ||= begin
         begin
@@ -135,6 +149,21 @@ module PgSync
       @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
     end
 
+    def execute(query, params = [])
+      conn.exec_params(query, params).to_a
+    end
+
+    def transaction
+      if conn.transaction_status == 0
+        # not currently in transaction
+        conn.transaction do
+          yield
+        end
+      else
+        yield
+      end
+    end
+
     private
 
     def pg_restore_version
@@ -153,10 +182,6 @@ module PgSync
 
     def quote_ident_full(ident)
       ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
-    end
-
-    def execute(query, params = [])
-      conn.exec_params(query, params).to_a
     end
 
     def quote_ident(value)

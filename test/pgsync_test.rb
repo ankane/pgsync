@@ -1,6 +1,17 @@
 require_relative "test_helper"
 
 class PgSyncTest < Minitest::Test
+  def setup
+    [source, dest].each do |conn|
+      conn.reset
+      conn.exec("SET client_min_messages TO WARNING")
+      conn.exec("TRUNCATE \"Users\"")
+      conn.exec("TRUNCATE posts CASCADE")
+      conn.exec("TRUNCATE comments CASCADE")
+      conn.exec("TRUNCATE robots")
+    end
+  end
+
   def test_help
     assert_prints "Usage:", "-h"
     assert_prints "Usage:", "--help"
@@ -111,29 +122,58 @@ class PgSyncTest < Minitest::Test
   end
 
   def test_defer_constraints
-    conn = PG::Connection.open(dbname: "pgsync_test1")
-    conn.exec("INSERT INTO posts (id) VALUES (1)")
-    conn.exec("INSERT INTO comments (post_id) VALUES (1)")
+    source.exec("INSERT INTO posts (id) VALUES (1)")
+    source.exec("INSERT INTO comments (post_id) VALUES (1)")
     assert_error "Sync failed for 1 table: comments", "comments,posts --from pgsync_test1 --to pgsync_test2 --debug"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --preserve"
-    conn.exec("TRUNCATE comments CASCADE")
-  ensure
-    conn.close if conn
+  end
+
+  def test_disable_user_triggers
+    source.exec("INSERT INTO robots (name) VALUES ('Test')")
+    assert_error "Sync failed for 1 table: robots", "robots --from pgsync_test1 --to pgsync_test2"
+    assert_works "robots --from pgsync_test1 --to pgsync_test2 --disable-user-triggers"
+  end
+
+  def test_disable_all_triggers
+    source.exec("INSERT INTO posts (id) VALUES (1)")
+    source.exec("INSERT INTO comments (post_id) VALUES (1)")
+    assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
+    assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-all-triggers"
   end
 
   private
 
+  # TODO close
+  def source
+    @source ||= PG::Connection.open(dbname: "pgsync_test1")
+  end
+
+  # TODO close
+  def dest
+    @dest ||= PG::Connection.open(dbname: "pgsync_test2")
+  end
+
+  def quietly
+    if ENV["VERBOSE"]
+      yield
+    else
+      capture_io do
+        yield
+      end
+    end
+  end
+
   def assert_works(args_str)
-    capture_io do
+    quietly do
       PgSync::Client.new(Shellwords.split(args_str)).perform
     end
   end
 
   def assert_error(message, args_str)
     error = nil
-    capture_io do
+    quietly do
       error = assert_raises { PgSync::Client.new(Shellwords.split(args_str)).perform }
     end
     assert_equal message, error.message

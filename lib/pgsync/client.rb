@@ -69,6 +69,8 @@ Options:}
         o.float "--sleep", "sleep", default: 0, help: false
         o.boolean "--fail-fast", "stop on the first failed table", default: false
         o.boolean "--defer-constraints", "defer constraints", default: false
+        o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
+        o.boolean "--disable-all-triggers", "disable all triggers", default: false
         # o.array "--var", "pass a variable"
         o.boolean "-v", "--version", "print the version"
         o.boolean "-h", "--help", "prints help"

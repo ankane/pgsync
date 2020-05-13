@@ -1,6 +1,8 @@
 ## 0.5.5 (unreleased)
 
 - Added experimental `--defer-constraints` option
+- Added experimental `--disable-user-triggers` option
+- Added experimental `--disable-all-triggers` option
 
 ## 0.5.4 (2020-05-09)
 

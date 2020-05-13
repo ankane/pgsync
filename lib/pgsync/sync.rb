@@ -65,7 +65,7 @@ module PgSync
           confirm_tables_exist(destination, tables, "destination")
 
           in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts, source, destination|
-            TableSync.new.sync(config, table, opts.merge(table_opts), source, destination)
+            TableSync.new(source: source, destination: destination).sync(config, table, opts.merge(table_opts))
           end
         end
 
@@ -188,12 +188,12 @@ module PgSync
       end
 
       if @options[:defer_constraints]
-        destination.conn.transaction do
-          destination.conn.exec("SET CONSTRAINTS ALL DEFERRED")
+        destination.transaction do
+          destination.execute("SET CONSTRAINTS ALL DEFERRED")
 
           # create a transaction on the source to ensure we get
           # a consistent snapshot of tables of all source tables
-          source.conn.transaction do
+          source.transaction do
             Parallel.each(tables, **options) do |table, table_opts|
               yield table, table_opts.merge(use_delete: true), source, destination
             end
