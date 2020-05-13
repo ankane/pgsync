@@ -117,12 +117,15 @@ class SyncTest < Minitest::Test
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --preserve"
+    assert_equal [{"id" => 1}], $conn2.exec("SELECT id FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
   def test_disable_user_triggers
     insert($conn1, "robots", [{"name" => "Test"}])
     assert_error "Sync failed for 1 table: robots", "robots --from pgsync_test1 --to pgsync_test2"
     assert_works "robots --from pgsync_test1 --to pgsync_test2 --disable-user-triggers"
+    assert_equal [{"name" => "Test"}], $conn2.exec("SELECT name FROM robots ORDER BY id").to_a
   end
 
   def test_disable_integrity
@@ -130,6 +133,8 @@ class SyncTest < Minitest::Test
     insert($conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
     assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
+    assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
   def assert_result(command, source, dest, expected)
