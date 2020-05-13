@@ -6,96 +6,41 @@ require "pg"
 require "shellwords"
 require "tmpdir"
 
-conn1 = PG::Connection.open(dbname: "pgsync_test1")
-conn1.exec <<-SQL
-DROP TABLE IF EXISTS "Users";
-DROP TYPE IF EXISTS mood;
-CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
-CREATE TABLE "Users" (
-  "Id" SERIAL PRIMARY KEY,
-  zip_code TEXT,
-  email TEXT,
-  phone TEXT,
-  token TEXT,
-  attempts INT,
-  created_on DATE,
-  updated_at TIMESTAMP,
-  ip TEXT,
-  name TEXT,
-  nonsense TEXT,
-  untouchable TEXT,
-  "column_with_punctuation?" BOOLEAN,
-  current_mood mood
-);
+$conn1 = PG::Connection.open(dbname: "pgsync_test1")
+$conn1.exec(File.read("test/support/schema1.sql"))
 
-DROP TABLE IF EXISTS posts CASCADE;
-CREATE TABLE posts (
-  id SERIAL PRIMARY KEY
-);
+$conn2 = PG::Connection.open(dbname: "pgsync_test2")
+$conn2.exec(File.read("test/support/schema2.sql"))
 
-DROP TABLE IF EXISTS comments;
-CREATE TABLE comments (
-  id SERIAL PRIMARY KEY,
-  post_id INTEGER REFERENCES posts(id)
-);
+class Minitest::Test
+  def quietly
+    if ENV["VERBOSE"]
+      yield
+    else
+      capture_io do
+        yield
+      end
+    end
+  end
 
-DROP TABLE IF EXISTS robots;
-CREATE TABLE robots (
-  id SERIAL PRIMARY KEY,
-  name TEXT
-);
+  def assert_works(args_str)
+    quietly do
+      PgSync::Client.new(Shellwords.split(args_str)).perform
+    end
+  end
 
-DROP SCHEMA IF EXISTS other CASCADE;
-CREATE SCHEMA other;
-CREATE TABLE other.pets (
-  id SERIAL PRIMARY KEY
-);
-SQL
-conn1.close
+  def assert_error(message, args_str)
+    quietly do
+      error = assert_raises { PgSync::Client.new(Shellwords.split(args_str)).perform }
+      assert_equal message, error.message
+    end
+  end
 
-conn2 = PG::Connection.open(dbname: "pgsync_test2")
-conn2.exec <<-SQL
-DROP TABLE IF EXISTS "Users";
-CREATE TABLE "Users" (
-  "Id" SERIAL PRIMARY KEY,
-  email TEXT,
-  phone TEXT,
-  token TEXT,
-  attempts INT,
-  created_on DATE,
-  updated_at TIMESTAMP,
-  ip TEXT,
-  name TEXT,
-  nonsense TEXT,
-  untouchable TEXT,
-  "column_with_punctuation?" BOOLEAN
-);
-
-DROP TABLE IF EXISTS posts CASCADE;
-CREATE TABLE posts (
-  id SERIAL PRIMARY KEY
-);
-
-DROP TABLE IF EXISTS comments;
-CREATE TABLE comments (
-  id SERIAL PRIMARY KEY,
-  post_id INTEGER REFERENCES posts(id)
-);
-ALTER TABLE comments ALTER CONSTRAINT comments_post_id_fkey DEFERRABLE;
-
-DROP TABLE IF EXISTS robots;
-CREATE TABLE robots (
-  id SERIAL PRIMARY KEY,
-  name TEXT
-);
-CREATE OR REPLACE FUNCTION nope()
-RETURNS trigger AS
-$$
-BEGIN
-  RAISE EXCEPTION 'Nope!';
-END;
-$$
-LANGUAGE plpgsql;
-CREATE TRIGGER nope_trigger BEFORE INSERT OR UPDATE ON robots FOR EACH ROW EXECUTE PROCEDURE nope();
-SQL
-conn2.close
+  def assert_prints(message, args_str, debug: true)
+    _, err = capture_io do
+      args_str << " --debug" if debug
+      PgSync::Client.new(Shellwords.split(args_str)).perform
+    end
+    assert_match message, err
+  end
+end
