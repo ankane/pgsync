@@ -117,7 +117,12 @@ module PgSync
           end
         end
       else
-        destination.truncate(table)
+        # use delete instead of truncate for foreign keys
+        if opts[:no_truncate]
+          destination.conn.exec("DELETE FROM #{quote_ident_full(table)}")
+        else
+          destination.truncate(table)
+        end
         to_connection.copy_data "COPY #{quote_ident_full(table)} (#{fields}) FROM STDIN" do
           from_connection.copy_data copy_to_command do
             while (row = from_connection.get_copy_data)

@@ -115,7 +115,9 @@ class PgSyncTest < Minitest::Test
     conn.exec("INSERT INTO posts (id) VALUES (1)")
     conn.exec("INSERT INTO comments (post_id) VALUES (1)")
     assert_error "Sync failed for 1 table: comments", "comments,posts --from pgsync_test1 --to pgsync_test2 --debug"
+    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
     assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
+    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --preserve"
     conn.exec("TRUNCATE comments CASCADE")
   ensure
     conn.close if conn

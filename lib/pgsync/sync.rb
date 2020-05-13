@@ -195,7 +195,7 @@ module PgSync
           # a consistent snapshot of tables of all source tables
           source.conn.transaction do
             Parallel.each(tables, **options) do |table, table_opts|
-              yield table, table_opts, source, destination
+              yield table, table_opts.merge(no_truncate: true), source, destination
             end
           end
         end
