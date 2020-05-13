@@ -66,11 +66,6 @@ class SyncTest < Minitest::Test
     assert_error "Group not found: bad", "--from pgsync_test2 --to pgsync_test1 --groups bad"
   end
 
-  def test_config_and_db
-    # TODO uncomment for 0.6.0
-    # assert_error "Specify either --db or --config, not both", "--db test --config .pgsync.yml"
-  end
-
   def test_data_rules
     conn1 = PG::Connection.open(dbname: "pgsync_test1")
     2.times do
