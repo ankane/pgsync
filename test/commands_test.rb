@@ -15,4 +15,9 @@ class CommandsTest < Minitest::Test
     output = assert_works "--list", dbs: true
     assert_match "public.posts", output
   end
+
+  def test_config_absolute_path
+    path = File.expand_path("test/support/config.yml")
+    assert_works "--config #{path}"
+  end
 end
