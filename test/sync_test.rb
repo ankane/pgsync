@@ -14,51 +14,28 @@ class SyncTest < Minitest::Test
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
     expected = source
-
-    insert($conn1, "posts", source)
-    insert($conn2, "posts", dest)
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
-
-    assert_works "posts", dbs: true
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_result("", source, dest, expected)
   end
 
   def test_overwrite
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
     expected = source + [dest[1]]
-
-    insert($conn1, "posts", source)
-    insert($conn2, "posts", dest)
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
-
-    assert_works "posts --overwrite", dbs: true
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_result("--overwrite", source, dest, expected)
   end
 
   def test_preserve
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
     expected = [dest[0]] + source[1..-1] + [dest[1]]
+    assert_result("--preserve", source, dest, expected)
+  end
 
-    insert($conn1, "posts", source)
-    insert($conn2, "posts", dest)
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
-
-    assert_works "posts --preserve", dbs: true
-
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+  def test_where
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = []
+    expected = [source[0]]
+    assert_result(" 'WHERE id = 1'", source, dest, expected)
   end
 
   def test_no_source
@@ -155,7 +132,22 @@ class SyncTest < Minitest::Test
     assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
   end
 
+  def assert_result(command, source, dest, expected)
+    insert($conn1, "posts", source)
+    insert($conn2, "posts", dest)
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+
+    assert_works "posts #{command}", dbs: true
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+  end
+
   def insert(conn, table, rows)
+    return if rows.empty?
+
     keys = rows.flat_map { |r| r.keys }.uniq
     values = rows.map { |r| keys.map { |k| r[k] } }
     params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
