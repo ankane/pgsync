@@ -187,6 +187,28 @@ module PgSync
         options[:in_threads] = 4 if windows?
       end
 
+      maybe_defer_constraints do
+        # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
+        # see `fast_faster` branch
+        # however, need to make sure connections are cleaned up properly
+        Parallel.each(tables, **options) do |table, table_opts|
+          # must reconnect for new thread or process
+          # TODO only reconnect first time
+          unless options[:in_processes] == 0
+            source.reconnect
+            destination.reconnect
+          end
+
+          # TODO warn if there are non-deferrable constraints on the table
+
+          yield table, table_opts, source, destination
+        end
+      end
+
+      fail_sync(failed_tables) if failed_tables.any?
+    end
+
+    def maybe_defer_constraints
       if @options[:defer_constraints]
         destination.transaction do
           destination.execute("SET CONSTRAINTS ALL DEFERRED")
@@ -194,25 +216,12 @@ module PgSync
           # create a transaction on the source to ensure we get
           # a consistent snapshot of tables of all source tables
           source.transaction do
-            Parallel.each(tables, **options) do |table, table_opts|
-              yield table, table_opts.merge(use_delete: true), source, destination
-            end
+            yield
           end
         end
       else
-        # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
-        # see `fast_faster` branch
-        # however, need to make sure connections are cleaned up properly
-        Parallel.each(tables, **options) do |table, table_opts|
-          unless options[:in_processes] == 0
-            source.reconnect
-            destination.reconnect
-          end
-          yield table, table_opts, source, destination
-        end
+        yield
       end
-
-      fail_sync(failed_tables) if failed_tables.any?
     end
 
     def fail_sync(failed_tables)
