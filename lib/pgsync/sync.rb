@@ -213,8 +213,8 @@ module PgSync
         destination.transaction do
           destination.execute("SET CONSTRAINTS ALL DEFERRED")
 
-          # create a transaction on the source to ensure we get
-          # a consistent snapshot of tables of all source tables
+          # create a transaction on the source
+          # to ensure we get a consistent snapshot
           source.transaction do
             yield
           end
