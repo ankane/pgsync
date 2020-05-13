@@ -133,6 +133,7 @@ class SyncTest < Minitest::Test
     insert($conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
     assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
+    # integrity is lost! (as expected)
     assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
