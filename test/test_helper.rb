@@ -11,15 +11,12 @@ def connect(dbname)
   conn = PG::Connection.open(dbname: dbname)
   conn.exec("SET client_min_messages TO WARNING")
   conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
+  conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
   conn
 end
 
 $conn1 = connect("pgsync_test1")
-$conn1.exec(File.read("test/support/schema1.sql"))
-
 $conn2 = connect("pgsync_test2")
-$conn2.exec(File.read("test/support/schema2.sql"))
-
 $conn3 = connect("pgsync_test3")
 
 class Minitest::Test
