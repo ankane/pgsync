@@ -187,14 +187,11 @@ module PgSync
         warn "--jobs ignored" if jobs
         jobs = 0
       end
-      jobs ||= 4 if windows?
 
-      if jobs
-        if windows?
-          options[:in_threads] = jobs
-        else
-          options[:in_processes] = jobs
-        end
+      if windows?
+        options[:in_threads] = jobs || 4
+      else
+        options[:in_processes] = jobs if jobs
       end
 
       maybe_defer_constraints do
