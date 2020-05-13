@@ -234,7 +234,7 @@ If you manually specify the order, use the `--debug` flag so tables are copied o
 pgsync table1,table2,table3 --debug
 ```
 
-For deferrable constraints, use: [master, experimental]
+For [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use: [master, experimental]
 
 ```sh
 pgsync --defer-constraints
