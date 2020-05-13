@@ -11,38 +11,53 @@ class SyncTest < Minitest::Test
   end
 
   def test_truncate
-    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
-    $conn2.exec("INSERT INTO posts (id, title) VALUES (4, 'Post 4')")
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal [{"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = source
+
+    insert($conn1, "posts", source)
+    insert($conn2, "posts", dest)
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+
     assert_works "posts", dbs: true
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
   end
 
   def test_overwrite
-    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
-    $conn2.exec("INSERT INTO posts (id, title) VALUES (1, 'First Post'), (4, 'Post 4')")
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = source + [dest[1]]
+
+    insert($conn1, "posts", source)
+    insert($conn2, "posts", dest)
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+
     assert_works "posts --overwrite", dbs: true
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    expected << {"id" => 4, "title" => "Post 4"}
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
   end
 
   def test_preserve
-    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
-    $conn2.exec("INSERT INTO posts (id, title) VALUES (1, 'First Post'), (4, 'Post 4')")
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = [dest[0]] + source[1..-1] + [dest[1]]
+
+    insert($conn1, "posts", source)
+    insert($conn2, "posts", dest)
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+
     assert_works "posts --preserve", dbs: true
-    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    expected << {"id" => 4, "title" => "Post 4"}
-    expected[0]["title"] = "First Post"
+
+    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
   end
 
@@ -138,5 +153,13 @@ class SyncTest < Minitest::Test
     $conn1.exec("INSERT INTO comments (post_id) VALUES (1)")
     assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
     assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
+  end
+
+  def insert(conn, table, rows)
+    keys = rows.flat_map { |r| r.keys }.uniq
+    values = rows.map { |r| keys.map { |k| r[k] } }
+    params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
+    # don't worry about escaping columns for tests
+    conn.exec_params("INSERT INTO #{table} (#{keys.join(", ")}) VALUES #{params_str}", values.flatten)
   end
 end
