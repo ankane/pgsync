@@ -65,7 +65,7 @@ Or truncate them
 pgsync products "where store_id = 1" --truncate
 ```
 
-### Exclude Tables
+## Exclude Tables
 
 ```sh
 pgsync --exclude users
@@ -87,7 +87,7 @@ exclude:
   - ar_internal_metadata
 ```
 
-### Groups
+## Groups
 
 Define groups in `.pgsync.yml`:
 
@@ -123,7 +123,7 @@ And run:
 pgsync product:123
 ```
 
-### Schema
+## Schema
 
 **Note:** pgsync is designed to sync data. You should use a schema migration tool to manage schema changes. The methods in this section are provided for convenience but not recommended.
 
@@ -210,16 +210,6 @@ To keep you from accidentally overwriting production, the destination is limited
 
 To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
-## Large Tables
-
-For extremely large tables, sync in batches.
-
-```sh
-pgsync large_table --in-batches
-```
-
-The script will resume where it left off when run again, making it great for backfills.
-
 ## Foreign Keys
 
 Foreign keys can make it difficult to sync data. Three options are:
@@ -254,6 +244,16 @@ Disable user triggers with: [master, experimental]
 pgsync --disable-user-triggers
 ```
 
+## Append-Only Tables
+
+For extremely large, append-only tables, sync in batches.
+
+```sh
+pgsync large_table --in-batches
+```
+
+The script will resume where it left off when run again, making it great for backfills.
+
 ## Reference
 
 Help
@@ -266,6 +266,12 @@ Version
 
 ```sh
 pgsync --version
+```
+
+List tables
+
+```sh
+pgsync --list
 ```
 
 ## Scripts
