@@ -118,7 +118,7 @@ module PgSync
         end
       else
         # use delete instead of truncate for foreign keys
-        if opts[:no_truncate]
+        if opts[:use_delete]
           destination.conn.exec("DELETE FROM #{quote_ident_full(table)}")
         else
           destination.truncate(table)
