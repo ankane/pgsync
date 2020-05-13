@@ -103,11 +103,15 @@ class SyncTest < Minitest::Test
   end
 
   def test_schema_only
+    insert($conn1, "posts", [{"id" => 1}])
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
+    assert_equal [], $conn3.exec("SELECT * FROM posts").to_a
   end
 
   def test_schema_first
+    insert($conn1, "posts", [{"id" => 1}])
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first --all-schemas"
+    assert_equal [{"id" => 1}], $conn3.exec("SELECT id FROM posts").to_a
   end
 
   def test_defer_constraints

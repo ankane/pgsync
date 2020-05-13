@@ -7,15 +7,20 @@ require "shellwords"
 require "tmpdir"
 require "open3"
 
-$conn1 = PG::Connection.open(dbname: "pgsync_test1")
-$conn1.exec("SET client_min_messages TO WARNING")
-$conn1.exec(File.read("test/support/schema1.sql"))
-$conn1.type_map_for_results = PG::BasicTypeMapForResults.new($conn1)
+def connect(dbname)
+  conn = PG::Connection.open(dbname: dbname)
+  conn.exec("SET client_min_messages TO WARNING")
+  conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
+  conn
+end
 
-$conn2 = PG::Connection.open(dbname: "pgsync_test2")
-$conn2.exec("SET client_min_messages TO WARNING")
+$conn1 = connect("pgsync_test1")
+$conn1.exec(File.read("test/support/schema1.sql"))
+
+$conn2 = connect("pgsync_test2")
 $conn2.exec(File.read("test/support/schema2.sql"))
-$conn2.type_map_for_results = PG::BasicTypeMapForResults.new($conn2)
+
+$conn3 = connect("pgsync_test3")
 
 class Minitest::Test
   def verbose?
