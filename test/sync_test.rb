@@ -21,6 +21,31 @@ class SyncTest < Minitest::Test
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
   end
 
+  def test_overwrite
+    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
+    $conn2.exec("INSERT INTO posts (id, title) VALUES (1, 'First Post'), (4, 'Post 4')")
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_works "posts --overwrite", dbs: true
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    expected << {"id" => 4, "title" => "Post 4"}
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+  end
+
+  def test_preserve
+    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
+    $conn2.exec("INSERT INTO posts (id, title) VALUES (1, 'First Post'), (4, 'Post 4')")
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_works "posts --preserve", dbs: true
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    expected << {"id" => 4, "title" => "Post 4"}
+    expected[0]["title"] = "First Post"
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+  end
+
   def test_no_source
     assert_error "No source", ""
   end
@@ -51,10 +76,6 @@ class SyncTest < Minitest::Test
 
   def test_extra_column
     assert_prints "Extra columns: zip_code", "--from pgsync_test2 --to pgsync_test1"
-  end
-
-  def test_overwrite
-    assert_works "--from pgsync_test2 --to pgsync_test1 --overwrite"
   end
 
   def test_table
