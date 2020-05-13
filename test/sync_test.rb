@@ -4,8 +4,7 @@ class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
       %w(Users posts comments robots).each do |table|
-        # inspect fine here
-        conn.exec("TRUNCATE #{table.inspect} CASCADE")
+        conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
       end
     end
   end
@@ -92,14 +91,25 @@ class SyncTest < Minitest::Test
 
   def test_data_rules
     2.times do
-      $conn1.exec("INSERT INTO \"Users\" (email, phone, token, attempts, created_on, updated_at, ip, name, nonsense, untouchable)
-      VALUES ('hi@example.org', '555-555-5555', 'token123', 1, NOW(), NOW(), '127.0.0.1', 'Hi', 'Text', 'rock');")
+      insert($conn1, "Users", [{
+        "email" => "hi@example.org",
+        "phone" => "555-555-5555",
+        "token" => "token123",
+        "attempts" => 1,
+        "created_on" => Date.today,
+        "updated_at" => Time.now,
+        "ip" => "127.0.0.1",
+        "name" => "Hi",
+        "nonsense" => "Text",
+        "untouchable" => "rock"
+      }])
     end
     assert_works "Users --from pgsync_test1 --to pgsync_test2 --config test/support/config.yml"
     result = $conn2.exec("SELECT * FROM \"Users\"").to_a
     row = result.first
     assert_equal "email#{row["Id"]}@example.org", row["email"]
     assert_equal "secret#{row["Id"]}", row["token"]
+    assert_equal "rock", row["untouchable"]
   end
 
   def test_schema_only
@@ -160,8 +170,14 @@ class SyncTest < Minitest::Test
 
     keys = rows.flat_map { |r| r.keys }.uniq
     values = rows.map { |r| keys.map { |k| r[k] } }
+
+    key_str = keys.map { |k| quote_ident(k) }.join(", ")
     params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
-    # don't worry about escaping columns for tests
-    conn.exec_params("INSERT INTO #{table} (#{keys.join(", ")}) VALUES #{params_str}", values.flatten)
+    insert_str = "INSERT INTO #{quote_ident(table)} (#{key_str}) VALUES #{params_str}"
+    conn.exec_params(insert_str, values.flatten)
+  end
+
+  def quote_ident(ident)
+    PG::Connection.quote_ident(ident)
   end
 end
