@@ -149,10 +149,6 @@ pgsync --schema-only
 
 pgsync does not try to sync Postgres extensions.
 
-## Data Protection
-
-Always make sure your [connection is secure](https://ankane.org/postgres-sslmode-explained) when connecting to a database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full`. If you don’t do this, your database credentials can be compromised.
-
 ## Sensitive Information
 
 Prevent sensitive information like email addresses from leaving the remote server.
@@ -189,26 +185,6 @@ Options for replacement are:
 - `untouched`
 
 Rules starting with `unique_` require the table to have a primary key. `unique_phone` requires a numeric primary key.
-
-## Multiple Databases
-
-To use with multiple databases, run:
-
-```sh
-pgsync --init db2
-```
-
-This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:
-
-```sh
-pgsync --db db2
-```
-
-## Safety
-
-To keep you from accidentally overwriting production, the destination is limited to `localhost` or `127.0.0.1` by default.
-
-To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
 ## Foreign Keys
 
@@ -254,7 +230,31 @@ pgsync large_table --in-batches
 
 The script will resume where it left off when run again, making it great for backfills.
 
-## Reference
+## Connection Security
+
+Always make sure your [connection is secure](https://ankane.org/postgres-sslmode-explained) when connecting to a database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full`. If you don’t do this, your database credentials can be compromised.
+
+## Safety
+
+To keep you from accidentally overwriting production, the destination is limited to `localhost` or `127.0.0.1` by default.
+
+To use another host, add `to_safe: true` to your `.pgsync.yml`.
+
+## Multiple Databases
+
+To use with multiple databases, run:
+
+```sh
+pgsync --init db2
+```
+
+This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands with:
+
+```sh
+pgsync --db db2
+```
+
+## Other Commands
 
 Help
 
