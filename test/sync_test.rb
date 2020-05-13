@@ -10,6 +10,16 @@ class SyncTest < Minitest::Test
     end
   end
 
+  def test_works
+    expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_works "posts", dbs: true
+    assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+  end
+
   def test_no_source
     assert_error "No source", ""
   end
@@ -27,7 +37,7 @@ class SyncTest < Minitest::Test
   # end
 
   def test_nonexistent_source
-    assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to db2"
+    assert_error "FATAL:  database \"db1\" does not exist\n", "--from db1 --to pgsync_test2"
   end
 
   def test_nonexistent_destination

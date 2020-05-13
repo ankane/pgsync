@@ -10,10 +10,12 @@ require "open3"
 $conn1 = PG::Connection.open(dbname: "pgsync_test1")
 $conn1.exec("SET client_min_messages TO WARNING")
 $conn1.exec(File.read("test/support/schema1.sql"))
+$conn1.type_map_for_results = PG::BasicTypeMapForResults.new($conn1)
 
 $conn2 = PG::Connection.open(dbname: "pgsync_test2")
 $conn2.exec("SET client_min_messages TO WARNING")
 $conn2.exec(File.read("test/support/schema2.sql"))
+$conn2.type_map_for_results = PG::BasicTypeMapForResults.new($conn2)
 
 class Minitest::Test
   def verbose?
