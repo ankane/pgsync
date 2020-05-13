@@ -114,13 +114,19 @@ class SyncTest < Minitest::Test
 
   def test_schema_only
     insert($conn1, "posts", [{"id" => 1}])
+    recreate_schema
+    assert_equal [], tables($conn3)
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
+    assert_equal ["other.pets", "public.Users", "public.comments", "public.posts", "public.robots"], tables($conn3)
     assert_equal [], $conn3.exec("SELECT * FROM posts").to_a
   end
 
   def test_schema_first
     insert($conn1, "posts", [{"id" => 1}])
+    recreate_schema
+    assert_equal [], tables($conn3)
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first --all-schemas"
+    assert_equal ["other.pets", "public.Users", "public.comments", "public.posts", "public.robots"], tables($conn3)
     assert_equal [{"id" => 1}], $conn3.exec("SELECT id FROM posts").to_a
   end
 
@@ -175,6 +181,14 @@ class SyncTest < Minitest::Test
     params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
     insert_str = "INSERT INTO #{quote_ident(table)} (#{key_str}) VALUES #{params_str}"
     conn.exec_params(insert_str, values.flatten)
+  end
+
+  def recreate_schema
+    $conn3.exec(File.read("test/support/schema3.sql"))
+  end
+
+  def tables(conn)
+    conn.exec("SELECT table_schema || '.' || table_name AS table FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1").map { |v| v["table"] }
   end
 
   def quote_ident(ident)
