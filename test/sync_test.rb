@@ -188,7 +188,8 @@ class SyncTest < Minitest::Test
   end
 
   def tables(conn)
-    conn.exec("SELECT table_schema || '.' || table_name AS table FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1").map { |v| v["table"] }
+    # sort in Ruby, as Postgres can return different order on different platforms
+    conn.exec("SELECT table_schema || '.' || table_name AS table FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog')").map { |v| v["table"] }.sort
   end
 
   def quote_ident(ident)
