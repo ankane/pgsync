@@ -243,7 +243,7 @@ pgsync --defer-constraints
 To disable triggers and potentially break referential integrity, use: [master, experimental]
 
 ```sh
-pgsync --disable-all-triggers
+pgsync --disable-integrity
 ```
 
 ## Triggers

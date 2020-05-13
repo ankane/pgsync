@@ -89,7 +89,8 @@ module PgSync
         SELECT
           tgname AS name,
           tgisinternal AS internal,
-          tgenabled != 'D' AS enabled
+          tgenabled != 'D' AS enabled,
+          tgconstraint != 0 AS integrity
         FROM
           pg_trigger
         WHERE

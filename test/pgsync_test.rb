@@ -136,11 +136,11 @@ class PgSyncTest < Minitest::Test
     assert_works "robots --from pgsync_test1 --to pgsync_test2 --disable-user-triggers"
   end
 
-  def test_disable_all_triggers
+  def test_disable_integrity
     source.exec("INSERT INTO posts (id) VALUES (1)")
     source.exec("INSERT INTO comments (post_id) VALUES (1)")
     assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
-    assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-all-triggers"
+    assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
   end
 
   private

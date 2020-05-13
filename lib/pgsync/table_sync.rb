@@ -235,22 +235,33 @@ module PgSync
     end
 
     def maybe_disable_triggers(table, opts)
-      if opts[:disable_all_triggers] || opts[:disable_user_triggers]
+      if opts[:disable_integrity] || opts[:disable_user_triggers]
         destination.transaction do
           triggers = destination.triggers(table)
           triggers.select! { |t| t["enabled"] == "t" }
-          triggers.select! { |t| t["internal"] == "f" } unless opts[:disable_all_triggers]
+          internal_triggers, user_triggers = triggers.partition { |t| t["internal"] == "t" }
+          integrity_triggers = internal_triggers.select { |t| t["integrity"] == "t" }
+          restore_triggers = []
 
-          # important!
-          # rely on Postgres to disable proper triggers
-          # we don't want to accidentally disable non-user triggers if logic above is off
-          type = opts[:disable_all_triggers] ? "ALL" : "USER"
-          destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER #{type}")
+          if opts[:disable_integrity]
+            integrity_triggers.each do |trigger|
+              destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
+            end
+            restore_triggers.concat(integrity_triggers)
+          end
+
+          if opts[:disable_user_triggers]
+            # important!
+            # rely on Postgres to disable user triggers
+            # we don't want to accidentally disable non-user triggers if logic above is off
+            destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER USER")
+            restore_triggers.concat(user_triggers)
+          end
 
           result = yield
 
           # restore triggers that were previously enabled
-          triggers.each do |trigger|
+          restore_triggers.each do |trigger|
             destination.execute("ALTER TABLE #{quote_ident_full(table)} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 

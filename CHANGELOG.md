@@ -3,7 +3,7 @@
 - Added `--jobs` option
 - Added experimental `--defer-constraints` option
 - Added experimental `--disable-user-triggers` option
-- Added experimental `--disable-all-triggers` option
+- Added experimental `--disable-integrity` option
 
 ## 0.5.4 (2020-05-09)
 
