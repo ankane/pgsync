@@ -16,10 +16,18 @@ $conn2.exec("SET client_min_messages TO WARNING")
 $conn2.exec(File.read("test/support/schema2.sql"))
 
 class Minitest::Test
+  def verbose?
+    ENV["VERBOSE"]
+  end
+
   def run_command(args_str)
+    if verbose?
+      puts
+      puts "$ pgsync #{args_str}"
+    end
     exe = File.expand_path("../exe/pgsync", __dir__)
     output, status = Open3.capture2e(exe, *Shellwords.split(args_str))
-    puts output if ENV["VERBOSE"]
+    puts output if verbose?
     [output, status]
   end
 
