@@ -43,6 +43,7 @@ Options:}
         o.string "-d", "--db", "database"
         o.string "-t", "--tables", "tables to sync"
         o.string "-g", "--groups", "groups to sync"
+        o.integer "-j", "--jobs", "number of tables to sync at a time"
         o.string "--schemas", "schemas to sync"
         o.string "--from", "source"
         o.string "--to", "destination"

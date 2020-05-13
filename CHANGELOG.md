@@ -1,5 +1,6 @@
 ## 0.5.5 (unreleased)
 
+- Added `--jobs` option
 - Added experimental `--defer-constraints` option
 - Added experimental `--disable-user-triggers` option
 - Added experimental `--disable-all-triggers` option

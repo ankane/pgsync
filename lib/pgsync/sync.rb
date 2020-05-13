@@ -181,10 +181,20 @@ module PgSync
       end
 
       options = {start: start, finish: finish}
+
+      jobs = @options[:jobs]
       if @options[:debug] || @options[:in_batches] || @options[:defer_constraints]
-        options[:in_processes] = 0
-      else
-        options[:in_threads] = 4 if windows?
+        warn "--jobs ignored" if jobs
+        jobs = 0
+      end
+      jobs ||= 4 if windows?
+
+      if jobs
+        if windows?
+          options[:in_threads] = jobs
+        else
+          options[:in_processes] = jobs
+        end
       end
 
       maybe_defer_constraints do

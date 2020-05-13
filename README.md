@@ -228,10 +228,10 @@ Foreign keys can make it difficult to sync data. Three options are:
 2. Use deferrable constraints
 3. Disable triggers, which can silently break referential integrity
 
-If you manually specify the order, use the `--debug` flag so tables are copied one at a time.
+When manually specifying the order, use `--jobs 1` so tables are synced one-at-a-time. [master]
 
 ```sh
-pgsync table1,table2,table3 --debug
+pgsync table1,table2,table3 --jobs 1
 ```
 
 For [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use: [master, experimental]
