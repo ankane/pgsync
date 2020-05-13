@@ -10,11 +10,12 @@ class SyncTest < Minitest::Test
     end
   end
 
-  def test_works
+  def test_truncate
     expected = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     $conn1.exec("INSERT INTO posts (id, title) VALUES (1, 'Post 1'), (2, 'Post 2'), (3, 'Post 3')")
+    $conn2.exec("INSERT INTO posts (id, title) VALUES (4, 'Post 4')")
     assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"id" => 4, "title" => "Post 4"}], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_works "posts", dbs: true
     assert_equal expected, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
