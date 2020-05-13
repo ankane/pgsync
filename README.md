@@ -222,7 +222,7 @@ The script will resume where it left off when run again, making it great for bac
 
 ## Foreign Keys
 
-Foreign keys can make it difficult to sync data. There are three options to sync with foreign keys:
+Foreign keys can make it difficult to sync data. Three options are:
 
 1. Manually specify the order of tables
 2. Use deferrable constraints
