@@ -234,7 +234,7 @@ When manually specifying the order, use `--jobs 1` so tables are synced one-at-a
 pgsync table1,table2,table3 --jobs 1
 ```
 
-For [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use: [master, experimental]
+If your tables have [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use: [master, experimental]
 
 ```sh
 pgsync --defer-constraints
