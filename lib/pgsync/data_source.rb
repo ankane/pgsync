@@ -178,7 +178,13 @@ module PgSync
     end
 
     def conninfo
-      @conninfo ||= conn.conninfo_hash
+      @conninfo ||= begin
+        if conn.respond_to?(:conninfo_hash)
+          conn.conninfo_hash
+        else
+          raise Error, "libpq is too old. Upgrade it and run `gem install pg`"
+        end
+      end
     end
 
     def quote_ident_full(ident)
