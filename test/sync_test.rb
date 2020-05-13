@@ -3,8 +3,6 @@ require_relative "test_helper"
 class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
-      conn.reset
-      conn.exec("SET client_min_messages TO WARNING")
       conn.exec("TRUNCATE \"Users\"")
       conn.exec("TRUNCATE posts CASCADE")
       conn.exec("TRUNCATE comments CASCADE")

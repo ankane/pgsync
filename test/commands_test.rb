@@ -1,6 +1,6 @@
 require_relative "test_helper"
 
-class CliTest < Minitest::Test
+class CommandsTest < Minitest::Test
   def test_help
     assert_prints "Usage:", "-h"
     assert_prints "Usage:", "--help"
