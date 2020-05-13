@@ -110,6 +110,17 @@ class PgSyncTest < Minitest::Test
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first --all-schemas"
   end
 
+  def test_defer_constraints
+    conn = PG::Connection.open(dbname: "pgsync_test1")
+    conn.exec("INSERT INTO posts (id) VALUES (1)")
+    conn.exec("INSERT INTO comments (post_id) VALUES (1)")
+    assert_error "Sync failed for 1 table: comments", "comments,posts --from pgsync_test1 --to pgsync_test2 --debug"
+    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
+    conn.exec("TRUNCATE comments CASCADE")
+  ensure
+    conn.close if conn
+  end
+
   private
 
   def assert_works(args_str)

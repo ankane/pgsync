@@ -111,7 +111,7 @@ module PgSync
           # insert into
           to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
-          to_connection.transaction do
+          with_transaction(to_connection) do
             to_connection.exec("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
             to_connection.exec("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
           end
@@ -224,6 +224,17 @@ module PgSync
     # activerecord
     def quote_string(s)
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
+    end
+
+    def with_transaction(conn)
+      if conn.transaction_status == 0
+        # not currently in transaction
+        conn.transaction do
+          yield
+        end
+      else
+        yield
+      end
     end
   end
 end

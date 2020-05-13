@@ -28,9 +28,20 @@ CREATE TABLE "Users" (
   current_mood mood
 );
 
+DROP TABLE IF EXISTS posts CASCADE;
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY
+);
+
+DROP TABLE IF EXISTS comments;
+CREATE TABLE comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER REFERENCES posts(id)
+);
+
 DROP SCHEMA IF EXISTS other CASCADE;
 CREATE SCHEMA other;
-CREATE TABLE other.posts (
+CREATE TABLE other.pets (
   id SERIAL PRIMARY KEY
 );
 SQL
@@ -53,5 +64,17 @@ CREATE TABLE "Users" (
   untouchable TEXT,
   "column_with_punctuation?" BOOLEAN
 );
+
+DROP TABLE IF EXISTS posts CASCADE;
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY
+);
+
+DROP TABLE IF EXISTS comments;
+CREATE TABLE comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER REFERENCES posts(id)
+);
+ALTER TABLE comments ALTER CONSTRAINT comments_post_id_fkey DEFERRABLE;
 SQL
 conn2.close
