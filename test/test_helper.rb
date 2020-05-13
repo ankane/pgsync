@@ -20,31 +20,31 @@ class Minitest::Test
     ENV["VERBOSE"]
   end
 
-  def run_command(args_str)
+  def run_command(command)
     if verbose?
       puts
-      puts "$ pgsync #{args_str}"
+      puts "$ pgsync #{command}"
     end
     exe = File.expand_path("../exe/pgsync", __dir__)
-    output, status = Open3.capture2e(exe, *Shellwords.split(args_str))
+    output, status = Open3.capture2e(exe, *Shellwords.split(command))
     puts output if verbose?
     [output, status]
   end
 
-  def assert_works(args_str)
-    output, status = run_command(args_str)
+  def assert_works(command)
+    output, status = run_command(command)
     assert status.success?
   end
 
-  def assert_error(message, args_str)
-    output, status = run_command(args_str)
+  def assert_error(message, command)
+    output, status = run_command(command)
     assert !status.success?
     assert_match message, output
   end
 
-  def assert_prints(message, args_str, debug: true)
-    args_str << " --debug" if debug
-    output, status = run_command(args_str)
+  def assert_prints(message, command, debug: true)
+    command << " --debug" if debug
+    output, status = run_command(command)
     assert_match message, output
   end
 end
