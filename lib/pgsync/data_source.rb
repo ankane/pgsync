@@ -110,7 +110,7 @@ module PgSync
           end
           PG::Connection.new(config)
         rescue URI::InvalidURIError
-          raise Error, "Invalid connection string"
+          raise Error, "Invalid connection string. Make sure it works with `psql`"
         end
       end
     end
