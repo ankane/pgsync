@@ -194,31 +194,37 @@ Foreign keys can make it difficult to sync data. Three options are:
 2. Use deferrable constraints
 3. Disable triggers, which can silently break referential integrity
 
-When manually specifying the order, use `--jobs 1` so tables are synced one-at-a-time. [master]
+When manually specifying the order, use `--jobs 1` so tables are synced one-at-a-time.
 
 ```sh
 pgsync table1,table2,table3 --jobs 1
 ```
 
-If your tables have [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use: [master, experimental]
+If your tables have [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use:
 
 ```sh
 pgsync --defer-constraints
 ```
 
-To disable triggers and potentially break referential integrity, use: [master, experimental]
+**Note:** This feature is currently experimental.
+
+To disable triggers and potentially break referential integrity, use:
 
 ```sh
 pgsync --disable-integrity
 ```
 
+**Note:** This feature is currently experimental.
+
 ## Triggers
 
-Disable user triggers with: [master, experimental]
+Disable user triggers with:
 
 ```sh
 pgsync --disable-user-triggers
 ```
+
+**Note:** This feature is currently experimental.
 
 ## Append-Only Tables
 

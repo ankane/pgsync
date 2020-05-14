@@ -1,4 +1,4 @@
-## 0.5.5 (unreleased)
+## 0.5.5 (2020-05-13)
 
 - Added `--jobs` option
 - Added experimental `--defer-constraints` option
