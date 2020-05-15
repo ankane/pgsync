@@ -14,6 +14,11 @@ class SchemaTest < Minitest::Test
     assert_equal [], $conn3.exec("SELECT * FROM posts").to_a
   end
 
+  def test_schema_only_table
+    assert_works "posts --from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
+    assert_equal ["public.posts"], tables($conn3)
+  end
+
   def test_schema_first
     insert($conn1, "posts", [{"id" => 1}])
     assert_equal [], tables($conn3)

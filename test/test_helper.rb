@@ -38,7 +38,7 @@ class Minitest::Test
 
   def assert_works(command, dbs: false)
     output, status = run_command(command, dbs: dbs)
-    assert status.success?
+    assert status.success?, "Command failed"
     output
   end
 
