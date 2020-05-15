@@ -52,4 +52,24 @@ class Minitest::Test
     output, status = run_command(command)
     assert_match message, output
   end
+
+  def truncate(conn, table)
+    conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
+  end
+
+  def insert(conn, table, rows)
+    return if rows.empty?
+
+    keys = rows.flat_map { |r| r.keys }.uniq
+    values = rows.map { |r| keys.map { |k| r[k] } }
+
+    key_str = keys.map { |k| quote_ident(k) }.join(", ")
+    params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
+    insert_str = "INSERT INTO #{quote_ident(table)} (#{key_str}) VALUES #{params_str}"
+    conn.exec_params(insert_str, values.flatten)
+  end
+
+  def quote_ident(ident)
+    PG::Connection.quote_ident(ident)
+  end
 end

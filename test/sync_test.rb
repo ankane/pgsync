@@ -4,7 +4,7 @@ class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
       %w(Users posts comments robots).each do |table|
-        conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
+        truncate($conn1, table)
       end
     end
   end
@@ -112,24 +112,6 @@ class SyncTest < Minitest::Test
     assert_equal "rock", row["untouchable"]
   end
 
-  def test_schema_only
-    insert($conn1, "posts", [{"id" => 1}])
-    recreate_schema
-    assert_equal [], tables($conn3)
-    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
-    assert_equal ["other.pets", "public.Users", "public.comments", "public.posts", "public.robots"], tables($conn3)
-    assert_equal [], $conn3.exec("SELECT * FROM posts").to_a
-  end
-
-  def test_schema_first
-    insert($conn1, "posts", [{"id" => 1}])
-    recreate_schema
-    assert_equal [], tables($conn3)
-    assert_works "--from pgsync_test1 --to pgsync_test3 --schema-first --all-schemas"
-    assert_equal ["other.pets", "public.Users", "public.comments", "public.posts", "public.robots"], tables($conn3)
-    assert_equal [{"id" => 1}], $conn3.exec("SELECT id FROM posts").to_a
-  end
-
   def test_defer_constraints
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments", [{"post_id" => 1}])
@@ -176,30 +158,5 @@ class SyncTest < Minitest::Test
 
     assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
-  end
-
-  def insert(conn, table, rows)
-    return if rows.empty?
-
-    keys = rows.flat_map { |r| r.keys }.uniq
-    values = rows.map { |r| keys.map { |k| r[k] } }
-
-    key_str = keys.map { |k| quote_ident(k) }.join(", ")
-    params_str = values.size.times.map { |i| "(" + keys.size.times.map { |j| "$#{i * keys.size + j + 1}" }.join(", ") + ")" }.join(", ")
-    insert_str = "INSERT INTO #{quote_ident(table)} (#{key_str}) VALUES #{params_str}"
-    conn.exec_params(insert_str, values.flatten)
-  end
-
-  def recreate_schema
-    $conn3.exec(File.read("test/support/schema3.sql"))
-  end
-
-  def tables(conn)
-    # sort in Ruby, as Postgres can return different order on different platforms
-    conn.exec("SELECT table_schema || '.' || table_name AS table FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog')").map { |v| v["table"] }.sort
-  end
-
-  def quote_ident(ident)
-    PG::Connection.quote_ident(ident)
   end
 end
