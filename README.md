@@ -149,9 +149,9 @@ pgsync --schema-only
 
 pgsync does not try to sync Postgres extensions.
 
-## Sensitive Information
+## Sensitive Data
 
-Prevent sensitive information like email addresses from leaving the remote server.
+Prevent sensitive data like email addresses from leaving the remote server.
 
 Define rules in `.pgsync.yml`:
 
