@@ -4,7 +4,7 @@ class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
       %w(Users posts comments robots).each do |table|
-        truncate($conn1, table)
+        truncate(conn, table)
       end
     end
   end
