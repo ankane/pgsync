@@ -62,23 +62,15 @@ class SyncTest < Minitest::Test
   end
 
   def test_missing_column
-    assert_prints "Missing columns: zip_code", "--from pgsync_test1 --to pgsync_test2"
+    assert_prints "Missing columns: zip_code", "Users --from pgsync_test1 --to pgsync_test2"
   end
 
   def test_extra_column
-    assert_prints "Extra columns: zip_code", "--from pgsync_test2 --to pgsync_test1"
-  end
-
-  def test_table
-    assert_works "Users --from pgsync_test2 --to pgsync_test1"
+    assert_prints "Extra columns: zip_code", "Users --from pgsync_test2 --to pgsync_test1"
   end
 
   def test_table_unknown
     assert_error "Table does not exist in source: bad", "bad --from pgsync_test2 --to pgsync_test1"
-  end
-
-  def test_partial
-    assert_works "Users 'WHERE \"Id\" > 100' --from pgsync_test2 --to pgsync_test1"
   end
 
   def test_group
