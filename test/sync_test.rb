@@ -141,6 +141,13 @@ class SyncTest < Minitest::Test
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
+  def test_defer_constraints_not_deferrable
+    insert($conn1, "posts", [{"id" => 1}])
+    insert($conn1, "comments2", [{"post_id" => 1}])
+    # TODO show warning messages when non-deferrable constraints
+    assert_error "violates foreign key constraint", "comments2,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
+  end
+
   def test_disable_user_triggers
     insert($conn1, "robots", [{"name" => "Test"}])
     assert_error "Sync failed for 1 table: robots", "robots --from pgsync_test1 --to pgsync_test2"

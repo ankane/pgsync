@@ -26,6 +26,12 @@ CREATE TABLE comments (
   post_id INTEGER REFERENCES posts(id) DEFERRABLE
 );
 
+DROP TABLE IF EXISTS comments2;
+CREATE TABLE comments2 (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER REFERENCES posts(id)
+);
+
 DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,
