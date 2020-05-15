@@ -23,9 +23,8 @@ CREATE TABLE posts (
 DROP TABLE IF EXISTS comments;
 CREATE TABLE comments (
   id SERIAL PRIMARY KEY,
-  post_id INTEGER REFERENCES posts(id)
+  post_id INTEGER REFERENCES posts(id) DEFERRABLE
 );
-ALTER TABLE comments ALTER CONSTRAINT comments_post_id_fkey DEFERRABLE;
 
 DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
