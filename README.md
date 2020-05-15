@@ -192,7 +192,7 @@ Foreign keys can make it difficult to sync data. Three options are:
 
 1. Manually specify the order of tables
 2. Use deferrable constraints
-3. Disable triggers, which can silently break referential integrity
+3. Disable foreign key triggers, which can silently break referential integrity
 
 When manually specifying the order, use `--jobs 1` so tables are synced one-at-a-time.
 
@@ -208,7 +208,7 @@ pgsync --defer-constraints
 
 **Note:** This feature is currently experimental.
 
-To disable triggers and potentially break referential integrity, use:
+To disable foreign key triggers and potentially break referential integrity, use:
 
 ```sh
 pgsync --disable-integrity
