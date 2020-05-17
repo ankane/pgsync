@@ -42,14 +42,14 @@ class Minitest::Test
     output
   end
 
-  def assert_error(message, command)
-    output, status = run_command(command)
+  def assert_error(message, command, dbs: false)
+    output, status = run_command(command, dbs: dbs)
     assert !status.success?
     assert_match message, output
   end
 
-  def assert_prints(message, command)
-    output, status = run_command(command)
+  def assert_prints(message, command, dbs: false)
+    output, status = run_command(command, dbs: dbs)
     assert_match message, output
   end
 

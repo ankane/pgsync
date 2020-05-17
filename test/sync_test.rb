@@ -62,7 +62,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_missing_column
-    assert_prints "Missing columns: zip_code", "Users --from pgsync_test1 --to pgsync_test2"
+    assert_prints "Missing columns: zip_code", "Users", dbs: true
   end
 
   def test_extra_column
@@ -70,15 +70,15 @@ class SyncTest < Minitest::Test
   end
 
   def test_table_unknown
-    assert_error "Table does not exist in source: bad", "bad --from pgsync_test2 --to pgsync_test1"
+    assert_error "Table does not exist in source: bad", "bad", dbs: true
   end
 
   def test_group
-    assert_works "group1 --from pgsync_test2 --to pgsync_test1 --config test/support/config.yml"
+    assert_works "group1 --config test/support/config.yml", dbs: true
   end
 
   def test_group_unknown
-    assert_error "Group not found: bad", "--from pgsync_test2 --to pgsync_test1 --groups bad"
+    assert_error "Group not found: bad", "--groups bad", dbs: true
   end
 
   def test_data_rules
@@ -96,7 +96,7 @@ class SyncTest < Minitest::Test
         "untouchable" => "rock"
       }])
     end
-    assert_works "Users --from pgsync_test1 --to pgsync_test2 --config test/support/config.yml"
+    assert_works "Users --config test/support/config.yml", dbs: true
     result = $conn2.exec("SELECT * FROM \"Users\"").to_a
     row = result.first
     assert_equal "email#{row["Id"]}@example.org", row["email"]
@@ -107,10 +107,10 @@ class SyncTest < Minitest::Test
   def test_defer_constraints
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments", [{"post_id" => 1}])
-    assert_error "Sync failed for 1 table: comments", "comments,posts --from pgsync_test1 --to pgsync_test2 --debug"
-    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
-    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --overwrite"
-    assert_works "comments,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints --preserve"
+    assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", dbs: true
+    assert_works "comments,posts --defer-constraints", dbs: true
+    assert_works "comments,posts --defer-constraints --overwrite", dbs: true
+    assert_works "comments,posts --defer-constraints --preserve", dbs: true
     assert_equal [{"id" => 1}], $conn2.exec("SELECT id FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
@@ -119,21 +119,21 @@ class SyncTest < Minitest::Test
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments2", [{"post_id" => 1}])
     # TODO show warning messages when non-deferrable constraints
-    assert_error "violates foreign key constraint", "comments2,posts --from pgsync_test1 --to pgsync_test2 --defer-constraints"
+    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", dbs: true
   end
 
   def test_disable_user_triggers
     insert($conn1, "robots", [{"name" => "Test"}])
-    assert_error "Sync failed for 1 table: robots", "robots --from pgsync_test1 --to pgsync_test2"
-    assert_works "robots --from pgsync_test1 --to pgsync_test2 --disable-user-triggers"
+    assert_error "Sync failed for 1 table: robots", "robots", dbs: true
+    assert_works "robots --disable-user-triggers", dbs: true
     assert_equal [{"name" => "Test"}], $conn2.exec("SELECT name FROM robots ORDER BY id").to_a
   end
 
   def test_disable_integrity
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments", [{"post_id" => 1}])
-    assert_error "Sync failed for 1 table: comments", "comments --from pgsync_test1 --to pgsync_test2"
-    assert_works "comments --from pgsync_test1 --to pgsync_test2 --disable-integrity"
+    assert_error "Sync failed for 1 table: comments", "comments", dbs: true
+    assert_works "comments --disable-integrity", dbs: true
     # integrity is lost! (as expected)
     assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
