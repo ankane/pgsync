@@ -206,15 +206,11 @@ If your tables have [deferrable constraints](https://begriffs.com/posts/2017-08-
 pgsync --defer-constraints
 ```
 
-**Note:** This feature is currently experimental.
-
 To disable foreign key triggers and potentially break referential integrity, use:
 
 ```sh
 pgsync --disable-integrity
 ```
-
-**Note:** This feature is currently experimental.
 
 ## Triggers
 
@@ -223,8 +219,6 @@ Disable user triggers with:
 ```sh
 pgsync --disable-user-triggers
 ```
-
-**Note:** This feature is currently experimental.
 
 ## Append-Only Tables
 

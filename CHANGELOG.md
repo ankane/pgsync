@@ -1,9 +1,9 @@
 ## 0.5.5 (2020-05-13)
 
 - Added `--jobs` option
-- Added experimental `--defer-constraints` option
-- Added experimental `--disable-user-triggers` option
-- Added experimental `--disable-integrity` option
+- Added `--defer-constraints` option
+- Added `--disable-user-triggers` option
+- Added `--disable-integrity` option
 - Improved error message for older libpq
 
 ## 0.5.4 (2020-05-09)
