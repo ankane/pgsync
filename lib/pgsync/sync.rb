@@ -48,7 +48,7 @@ module PgSync
           if args[0] == "groups"
             (config["groups"] || {}).keys
           else
-            tables.keys
+            tables.map { |t| t[:table] }
           end
 
         pretty_list list_items
