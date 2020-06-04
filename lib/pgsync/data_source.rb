@@ -130,6 +130,7 @@ module PgSync
           else
             config = {dbname: @url}
           end
+          @concurrent_id = concurrent_id
           PG::Connection.new(config)
         rescue URI::InvalidURIError
           raise Error, "Invalid connection string. Make sure it works with `psql`"
@@ -144,8 +145,9 @@ module PgSync
       end
     end
 
-    def reconnect
-      @conn.reset
+    # reconnect for new thread or process
+    def reconnect_if_needed
+      reconnect if @concurrent_id != concurrent_id
     end
 
     def search_path
@@ -180,6 +182,15 @@ module PgSync
     end
 
     private
+
+    def concurrent_id
+      [Process.pid, Thread.current.object_id]
+    end
+
+    def reconnect
+      @conn.reset
+      @concurrent_id = concurrent_id
+    end
 
     def table_set
       @table_set ||= Set.new(tables)

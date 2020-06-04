@@ -221,12 +221,8 @@ module PgSync
         # see `fast_faster` branch
         # however, need to make sure connections are cleaned up properly
         Parallel.each(table_syncs, **options) do |table_sync|
-          # must reconnect for new thread or process
-          # TODO only reconnect first time
-          unless options[:in_processes] == 0
-            source.reconnect
-            destination.reconnect
-          end
+          source.reconnect_if_needed
+          destination.reconnect_if_needed
 
           # TODO warn if there are non-deferrable constraints on the table
 
