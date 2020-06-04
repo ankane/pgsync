@@ -67,8 +67,8 @@ module PgSync
           confirm_tables_exist(destination, tables, "destination")
 
           table_syncs =
-            tables.map do |table, table_opts|
-              TableSync.new(source: source, destination: destination, config: config, table: table, opts: opts.merge(table_opts))
+            tables.map do |table|
+              TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(table[:opts]))
             end
 
           in_parallel(table_syncs) do |table_sync|
@@ -85,7 +85,7 @@ module PgSync
     end
 
     def confirm_tables_exist(data_source, tables, description)
-      tables.keys.each do |table|
+      tables.map { |t| t[:table] }.each do |table|
         unless data_source.table_exists?(table)
           raise Error, "Table does not exist in #{description}: #{table}"
         end

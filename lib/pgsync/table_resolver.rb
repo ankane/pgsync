@@ -75,7 +75,9 @@ module PgSync
         end
       end
 
-      fully_resolve_tables(tables)
+      fully_resolve_tables(tables).map do |k, v|
+        {table: k, opts: v}
+      end
     end
 
     private
