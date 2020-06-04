@@ -2,8 +2,8 @@ module PgSync
   class DataSource
     attr_reader :url
 
-    def initialize(source)
-      @url = resolve_url(source)
+    def initialize(url)
+      @url = url
     end
 
     def exists?
@@ -201,21 +201,6 @@ module PgSync
     # activerecord
     def quote_string(s)
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
-    end
-
-    def resolve_url(source)
-      if source
-        source = source.dup
-        source.gsub!(/\$\([^)]+\)/) do |m|
-          command = m[2..-2]
-          result = `#{command}`.chomp
-          unless $?.success?
-            raise Error, "Command exited with non-zero status:\n#{command}"
-          end
-          result
-        end
-      end
-      source
     end
   end
 end

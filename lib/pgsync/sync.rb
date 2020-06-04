@@ -7,8 +7,13 @@ module PgSync
       opts = options.to_hash
       @options = opts
 
-      # merge config
-      [:to, :from, :to_safe, :exclude, :schemas].each do |opt|
+      # only resolve commands from config, not CLI arguments
+      [:to, :from].each do |opt|
+        opts[opt] ||= resolve_source(config[opt.to_s])
+      end
+
+      # merge other config
+      [:to_safe, :exclude, :schemas].each do |opt|
         opts[opt] ||= config[opt.to_s]
       end
 
@@ -272,6 +277,21 @@ module PgSync
       ds = DataSource.new(url)
       ObjectSpace.define_finalizer(self, self.class.finalize(ds))
       ds
+    end
+
+    def resolve_source(source)
+      if source
+        source = source.dup
+        source.gsub!(/\$\([^)]+\)/) do |m|
+          command = m[2..-2]
+          result = `#{command}`.chomp
+          unless $?.success?
+            raise Error, "Command exited with non-zero status:\n#{command}"
+          end
+          result
+        end
+      end
+      source
     end
 
     def self.finalize(ds)

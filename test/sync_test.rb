@@ -72,7 +72,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_source_command_error
-    assert_error "Command exited with non-zero status:\nexit 1", "--from '$(exit 1)'"
+    assert_error "Command exited with non-zero status:\nexit 1", "--config test/support/bad.yml"
   end
 
   # def test_destination_danger
