@@ -65,13 +65,12 @@ module PgSync
     end
 
     def sync_data
+      raise Error, "This should never happen. Please file a bug." if shared_fields.empty?
+
       start_time = Time.now
 
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
-
-      # TODO show warning earlier
-      return {status: "success"} if shared_fields.empty?
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
