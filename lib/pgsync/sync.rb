@@ -60,8 +60,31 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tables, "destination")
 
-          in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts, source, destination|
-            TableSync.new(source: source, destination: destination).sync(config, table, opts.merge(table_opts))
+          # TODO add columns here
+          table_syncs =
+            tables.map do |table, table_opts|
+              # TODO always keep schema and table separate
+              schema, table = table.split(".", 2)
+
+              source_table =
+                Table.new(
+                  data_source: source,
+                  schema: schema,
+                  table: table
+                )
+
+              destination_table =
+                Table.new(
+                  data_source: destination,
+                  schema: schema,
+                  table: table
+                )
+
+              TableSync.new(source_table: source_table, destination_table: destination_table, config: config, opts: opts.merge(table_opts))
+            end
+
+          in_parallel(table_syncs, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table_sync|
+            table_sync.sync
           end
         end
 
@@ -141,7 +164,8 @@ module PgSync
       item_spinners = {}
 
       start = lambda do |item, i|
-        table, opts = item
+        table = item.table
+        opts = item.opts
         message = String.new(":spinner ")
         message << table.sub("#{first_schema}.", "")
         message << " #{opts[:sql]}" if opts[:sql]
@@ -159,7 +183,7 @@ module PgSync
 
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
-        table_name = item.first.sub("#{first_schema}.", "")
+        table_name = item.table.sub("#{first_schema}.", "")
 
         if result[:status] == "success"
           spinner.success(display_message(result))
@@ -172,7 +196,7 @@ module PgSync
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, table_name, item.last[:sql], display_message(result)].compact.join(" ")
+          log [status, table_name, item.opts[:sql], display_message(result)].compact.join(" ")
         end
       end
 

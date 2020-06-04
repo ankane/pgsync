@@ -1,3 +1,4 @@
+# TODO fix this monstrosity
 module PgSync
   class TableList
     include Utils
