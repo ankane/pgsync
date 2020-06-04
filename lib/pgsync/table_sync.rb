@@ -45,25 +45,23 @@ module PgSync
     end
 
     def notes
-      @notes ||= begin
-        notes = []
-        if shared_fields.empty?
-          notes << "No fields to copy"
-        else
-          extra_fields = to_fields - from_fields
-          notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+      notes = []
+      if shared_fields.empty?
+        notes << "No fields to copy"
+      else
+        extra_fields = to_fields - from_fields
+        notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
 
-          missing_fields = from_fields - to_fields
-          notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+        missing_fields = from_fields - to_fields
+        notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
 
-          extra_sequences = to_sequences - from_sequences
-          notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+        extra_sequences = to_sequences - from_sequences
+        notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
 
-          missing_sequences = from_sequences - to_sequences
-          notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
-        end
-        notes
+        missing_sequences = from_sequences - to_sequences
+        notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
       end
+      notes
     end
 
     def sync_data
