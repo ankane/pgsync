@@ -76,6 +76,17 @@ module PgSync
               TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(table[:opts]))
             end
 
+          # show notes before we start
+          table_syncs.each do |ts|
+            ts.notes.each do |note|
+              warning "#{ts.table.sub("#{first_schema}.", "")}: #{note}"
+            end
+          end
+
+          # don't sync tables with no shared fields
+          # we show a warning message above
+          table_syncs.reject! { |ts| ts.shared_fields.empty? }
+
           in_parallel(table_syncs) do |table_sync|
             table_sync.sync
           end
@@ -148,7 +159,7 @@ module PgSync
       log "#{prefix}: #{source.dbname}#{location}"
     end
 
-    def in_parallel(tables, &block)
+    def in_parallel(table_syncs, &block)
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
       item_spinners = {}
 
@@ -203,7 +214,7 @@ module PgSync
         # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
         # see `fast_faster` branch
         # however, need to make sure connections are cleaned up properly
-        Parallel.each(tables, **options) do |table_sync|
+        Parallel.each(table_syncs, **options) do |table_sync|
           # must reconnect for new thread or process
           # TODO only reconnect first time
           unless options[:in_processes] == 0
@@ -244,7 +255,6 @@ module PgSync
       messages = []
       messages << item.table.sub("#{first_schema}.", "")
       messages << item.opts[:sql] if item.opts[:sql]
-      messages << "(#{item.notes.join(", ")})" if item.notes.any?
       messages.join(" ")
     end
 

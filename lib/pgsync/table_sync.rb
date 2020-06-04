@@ -10,7 +10,6 @@ module PgSync
       @config = config
       @table = table
       @opts = opts
-      notes # eager load notes
     end
 
     def sync
