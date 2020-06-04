@@ -107,6 +107,10 @@ class SyncTest < Minitest::Test
     assert_error "Group not found: bad", "--groups bad", dbs: true
   end
 
+  def test_in_batches_overwrite
+    assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", dbs: true
+  end
+
   def test_data_rules
     2.times do
       insert($conn1, "Users", [{
