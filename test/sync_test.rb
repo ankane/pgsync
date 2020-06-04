@@ -114,6 +114,13 @@ class SyncTest < Minitest::Test
     assert_result("--in-batches --batch-size 1", source, dest, expected)
   end
 
+  def test_in_batches_existing_data
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = dest
+    assert_result("--in-batches --batch-size 1", source, dest, expected)
+  end
+
   def test_in_batches_overwrite
     assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", dbs: true
   end
