@@ -11,5 +11,13 @@ module PgSync
     def full_name
       [@schema, @table].join(".")
     end
+
+    def columns
+      @data_source.columns(full_name)
+    end
+
+    def sequences(shared_fields)
+      @data_source.sequences(full_name, shared_fields)
+    end
   end
 end

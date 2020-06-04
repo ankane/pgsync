@@ -32,8 +32,8 @@ module PgSync
     def sync_data
       start_time = Time.now
 
-      from_fields = source.columns(table)
-      to_fields = destination.columns(table)
+      from_fields = @source_table.columns
+      to_fields = @destination_table.columns
       shared_fields = to_fields & from_fields
       extra_fields = to_fields - from_fields
       missing_fields = from_fields - to_fields
@@ -42,8 +42,8 @@ module PgSync
         from_sequences = []
         to_sequences = []
       else
-        from_sequences = source.sequences(table, shared_fields)
-        to_sequences = destination.sequences(table, shared_fields)
+        from_sequences = @source_table.sequences(shared_fields)
+        to_sequences = @destination_table.sequences(shared_fields)
       end
 
       shared_sequences = to_sequences & from_sequences
