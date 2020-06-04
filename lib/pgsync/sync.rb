@@ -71,6 +71,8 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tables, "destination")
 
+          # TODO query columns, sequences, primary keys, etc
+          # for all tables at once and pass on initialization
           table_syncs =
             tables.map do |table|
               TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(table[:opts]))
