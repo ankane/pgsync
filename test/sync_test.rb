@@ -30,6 +30,13 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected)
   end
 
+  def test_update
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = source[0..-1] + [dest[1]]
+    assert_result("--update", source, dest, expected)
+  end
+
   def test_where
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = []
