@@ -13,6 +13,8 @@ module PgSync
       # TODO throw error in 0.6.0
       warn "Specify either --db or --config, not both" if opts[:db] && opts[:config]
 
+      raise Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite] && opts[:in_batches]
+
       if opts.version?
         log VERSION
       elsif opts.help?
