@@ -34,11 +34,8 @@ module PgSync
         raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
       end
 
-      if opts[:preserve] || opts[:overwrite]
-        server_version_num = destination.server_version_num
-        if server_version_num < 90500
-          raise Error, "Postgres 9.5+ is required for --preserve and --overwrite"
-        end
+      if (opts[:preserve] || opts[:overwrite]) && destination.server_version_num < 90500
+        raise Error, "Postgres 9.5+ is required for --preserve and --overwrite"
       end
 
       print_description("From", source)
