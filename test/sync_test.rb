@@ -88,11 +88,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_missing_column
-    assert_prints "Missing columns: zip_code", "Users", dbs: true
+    assert_prints "Missing columns: current_mood, zip_code", "Users", dbs: true
   end
 
   def test_extra_column
-    assert_prints "Extra columns: zip_code", "Users --from pgsync_test2 --to pgsync_test1"
+    assert_prints "Extra columns: current_mood, zip_code", "Users --from pgsync_test2 --to pgsync_test1"
   end
 
   def test_table_unknown

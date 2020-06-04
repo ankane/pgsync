@@ -29,7 +29,17 @@ module PgSync
     # gets visible tables
     def tables
       @tables ||= begin
-        query = "SELECT table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
+        query = <<~SQL
+          SELECT
+            table_schema,
+            table_name
+          FROM
+            information_schema.tables
+          WHERE
+            table_type = 'BASE TABLE' AND
+            table_schema NOT IN ('information_schema', 'pg_catalog')
+          ORDER BY 1, 2
+        SQL
         execute(query).map { |row| "#{row["table_schema"]}.#{row["table_name"]}" }
       end
     end
@@ -39,7 +49,16 @@ module PgSync
     end
 
     def columns(table)
-      query = "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2"
+      query = <<~SQL
+        SELECT
+          column_name
+        FROM
+          information_schema.columns
+        WHERE
+          table_schema = $1 AND
+          table_name = $2
+        ORDER BY 1
+      SQL
       execute(query, table.split(".", 2)).map { |row| row["column_name"] }
     end
 
@@ -56,7 +75,7 @@ module PgSync
     end
 
     def last_value(seq)
-      execute("select last_value from #{seq}")[0]["last_value"]
+      execute("SELECT last_value from #{seq}")[0]["last_value"]
     end
 
     def truncate(table)
@@ -66,7 +85,7 @@ module PgSync
     # https://stackoverflow.com/a/20537829
     # TODO can simplify with array_position in Postgres 9.5+
     def primary_key(table)
-      query = <<-SQL
+      query = <<~SQL
         SELECT
           pg_attribute.attname,
           format_type(pg_attribute.atttypid, pg_attribute.atttypmod),
@@ -88,7 +107,7 @@ module PgSync
     end
 
     def triggers(table)
-      query = <<-SQL
+      query = <<~SQL
         SELECT
           tgname AS name,
           tgisinternal AS internal,
