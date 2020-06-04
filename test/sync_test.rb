@@ -56,6 +56,10 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected, "books")
   end
 
+  def test_no_shared_fields
+    assert_prints "authors: No fields to copy", "authors", dbs: true
+  end
+
   def test_where
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = []

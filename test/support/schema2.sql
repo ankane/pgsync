@@ -40,6 +40,11 @@ CREATE TABLE books (
   PRIMARY KEY (id, id2)
 );
 
+DROP TABLE IF EXISTS authors;
+CREATE TABLE authors (
+  last_name TEXT
+);
+
 DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,
