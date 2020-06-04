@@ -32,7 +32,7 @@ module PgSync
       print_description("From", source)
       print_description("To", destination)
 
-      tables = TableList.new(args, opts, source, config).tables
+      tables = TableResolver.new(args, opts, source, config).tables
       confirm_tables_exist(source, tables, "source")
 
       if opts[:list]
