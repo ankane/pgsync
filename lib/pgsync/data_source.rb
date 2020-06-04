@@ -152,6 +152,10 @@ module PgSync
       @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
     end
 
+    def server_version_num
+      @server_version_num ||= execute("SHOW server_version_num").first["server_version_num"].to_i
+    end
+
     def execute(query, params = [])
       conn.exec_params(query, params).to_a
     end
