@@ -13,8 +13,10 @@ module PgSync
     end
 
     def sync
-      maybe_disable_triggers do
-        sync_data
+      handle_errors do
+        maybe_disable_triggers do
+          sync_data
+        end
       end
     end
 
@@ -156,6 +158,13 @@ module PgSync
       end
 
       {status: "success", time: (Time.now - start_time).round(1)}
+    end
+
+    private
+
+    # TODO add retries
+    def handle_errors
+      yield
     rescue => e
       message =
         case e
@@ -173,8 +182,6 @@ module PgSync
 
       {status: "error", message: message}
     end
-
-    private
 
     def copy(source_command, dest_table:, dest_fields:)
       destination_command = "COPY #{quote_ident_full(dest_table)} (#{dest_fields}) FROM STDIN"
