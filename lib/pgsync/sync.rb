@@ -153,9 +153,7 @@ module PgSync
       item_spinners = {}
 
       start = lambda do |item, i|
-        message = String.new(":spinner ")
-        message << item.table.sub("#{first_schema}.", "")
-        message << " #{item.opts[:sql]}" if item.opts[:sql]
+        message = ":spinner #{display_item(item)}"
         spinner = spinners.register(message)
         if @options[:in_batches]
           # log instead of spin for non-tty
@@ -170,20 +168,20 @@ module PgSync
 
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
-        table_name = item.table.sub("#{first_schema}.", "")
+        result_message = display_result(result)
 
         if result[:status] == "success"
-          spinner.success(display_message(result))
+          spinner.success(result_message)
         else
           # TODO add option to fail fast
-          spinner.error(display_message(result))
-          failed_tables << table_name
+          spinner.error(result_message)
+          failed_tables << item.table.sub("#{first_schema}.", "")
           fail_sync(failed_tables) if @options[:fail_fast]
         end
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, table_name, item.opts[:sql], display_message(result)].compact.join(" ")
+          log [status, display_item(item), result_message].join(" ")
         end
       end
 
@@ -242,7 +240,15 @@ module PgSync
       raise Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
-    def display_message(result)
+    def display_item(item)
+      messages = []
+      messages << item.table.sub("#{first_schema}.", "")
+      messages << item.opts[:sql] if item.opts[:sql]
+      messages << "(#{item.notes.join(", ")})" if item.notes.any?
+      messages.join(" ")
+    end
+
+    def display_result(result)
       messages = []
       messages << "- #{result[:time]}s" if result[:time]
       messages << "(#{result[:message].lines.first.to_s.strip})" if result[:message]

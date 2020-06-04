@@ -10,6 +10,7 @@ module PgSync
       @config = config
       @table = table
       @opts = opts
+      notes # eager load notes
     end
 
     def sync
@@ -18,37 +19,60 @@ module PgSync
       end
     end
 
+    def from_fields
+      @from_fields ||= source.columns(table)
+    end
+
+    def to_fields
+      @to_fields ||= destination.columns(table)
+    end
+
+    def shared_fields
+      @shared_fields ||= to_fields & from_fields
+    end
+
+    def from_sequences
+      @from_sequences ||= opts[:no_sequences] ? [] : source.sequences(table, shared_fields)
+    end
+
+    def to_sequences
+      @to_sequences ||= opts[:no_sequences] ? [] : destination.sequences(table, shared_fields)
+    end
+
+    def shared_sequences
+      @shared_sequences ||= to_sequences & from_sequences
+    end
+
+    def notes
+      @notes ||= begin
+        notes = []
+        if shared_fields.empty?
+          notes << "No fields to copy"
+        else
+          extra_fields = to_fields - from_fields
+          notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
+
+          missing_fields = from_fields - to_fields
+          notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+
+          extra_sequences = to_sequences - from_sequences
+          notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+
+          missing_sequences = from_sequences - to_sequences
+          notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+        end
+        notes
+      end
+    end
+
     def sync_data
       start_time = Time.now
-
-      from_fields = source.columns(table)
-      to_fields = destination.columns(table)
-      shared_fields = to_fields & from_fields
-      extra_fields = to_fields - from_fields
-      missing_fields = from_fields - to_fields
-
-      if opts[:no_sequences]
-        from_sequences = []
-        to_sequences = []
-      else
-        from_sequences = source.sequences(table, shared_fields)
-        to_sequences = destination.sequences(table, shared_fields)
-      end
-
-      shared_sequences = to_sequences & from_sequences
-      extra_sequences = to_sequences - from_sequences
-      missing_sequences = from_sequences - to_sequences
 
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
 
-      notes = []
-      notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
-      notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
-      notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
-      notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
-
-      return {status: "success", message: "No fields to copy"} if shared_fields.empty?
+      # TODO show warning earlier
+      return {status: "success"} if shared_fields.empty?
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
@@ -133,10 +157,7 @@ module PgSync
         destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
       end
 
-      message = nil
-      message = notes.join(", ") if notes.any?
-
-      {status: "success", message: message, time: (Time.now - start_time).round(1)}
+      {status: "success", time: (Time.now - start_time).round(1)}
     rescue => e
       message =
         case e
