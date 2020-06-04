@@ -3,7 +3,7 @@ require_relative "test_helper"
 class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
-      %w(Users posts comments robots).each do |table|
+      %w(Users posts comments books robots).each do |table|
         truncate(conn, table)
       end
     end
@@ -28,6 +28,32 @@ class SyncTest < Minitest::Test
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
     expected = [dest[0]] + source[1..-1] + [dest[1]]
     assert_result("--preserve", source, dest, expected)
+  end
+
+  def test_overwrite_multiple_primary_keys
+    skip
+
+    source = [
+      {"id" => 1, "id2" => 1, "title" => "Post 1"},
+      {"id" => 1, "id2" => 2, "title" => "Post 2"},
+      {"id" => 1, "id2" => 3, "title" => "Post 3"},
+    ]
+    dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 1, "id2" => 4, "title" => "Post 4"}]
+    expected = source + [dest[1]]
+    assert_result("--overwrite", source, dest, expected, "books")
+  end
+
+  def test_preserve_multiple_primary_keys
+    skip
+
+    source = [
+      {"id" => 1, "id2" => 1, "title" => "Post 1"},
+      {"id" => 1, "id2" => 2, "title" => "Post 2"},
+      {"id" => 2, "id2" => 4, "title" => "Post 3"},
+    ]
+    dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 3, "id2" => 4, "title" => "Post 4"}]
+    expected = [dest[0]] + source[1..-1] + [dest[1]]
+    assert_result("--preserve", source, dest, expected, "books")
   end
 
   def test_where
@@ -139,16 +165,16 @@ class SyncTest < Minitest::Test
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
-  def assert_result(command, source, dest, expected)
-    insert($conn1, "posts", source)
-    insert($conn2, "posts", dest)
+  def assert_result(command, source, dest, expected, table = "posts")
+    insert($conn1, table, source)
+    insert($conn2, table, dest)
 
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
 
-    assert_works "posts #{command}", dbs: true
+    assert_works "#{table} #{command}", dbs: true
 
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
   end
 end
