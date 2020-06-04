@@ -33,6 +33,12 @@ module PgSync
       print_description("To", destination)
 
       tables = TableResolver.new(args, opts, source, config).tables
+
+      # TODO uncomment for 0.6.0
+      # if opts[:in_batches] && tables.size > 1
+      #   raise Error, "Cannot use --in-batches with multiple tables"
+      # end
+
       confirm_tables_exist(source, tables, "source")
 
       if opts[:list]

@@ -23,7 +23,7 @@ class CommandsTest < Minitest::Test
 
   def test_config_not_found
     skip "TODO uncomment for 0.6.0"
-    assert_error "Config file not found", "--config not_found.yml"
+    assert_error "Config file not found", "--config bad.yml"
   end
 
   def test_config_absolute_path

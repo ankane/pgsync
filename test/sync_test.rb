@@ -125,6 +125,11 @@ class SyncTest < Minitest::Test
     assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", dbs: true
   end
 
+  def test_in_batches_multiple_tables
+    skip "TODO uncomment for 0.6.0"
+    assert_error "Cannot use --in-batches with multiple tables", "--in-batches", dbs: true
+  end
+
   def test_data_rules
     2.times do
       insert($conn1, "Users", [{
