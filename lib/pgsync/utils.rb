@@ -18,6 +18,14 @@ module PgSync
       end
     end
 
+    def warning(message)
+      log colorize(message, :yellow)
+    end
+
+    def deprecated(message)
+      warning "[DEPRECATED] #{message}"
+    end
+
     def output
       $stderr
     end

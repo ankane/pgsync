@@ -186,7 +186,7 @@ module PgSync
 
       jobs = @options[:jobs]
       if @options[:debug] || @options[:in_batches] || @options[:defer_constraints]
-        warn "--jobs ignored" if jobs
+        warning "--jobs ignored" if jobs
         jobs = 0
       end
 
@@ -248,10 +248,6 @@ module PgSync
       items.each do |item|
         log item
       end
-    end
-
-    def deprecated(message)
-      log colorize("[DEPRECATED] #{message}", :yellow)
     end
 
     def log_completed(start_time)
