@@ -1,5 +1,5 @@
 module PgSync
-  class TableList
+  class TableResolver
     include Utils
 
     attr_reader :args, :opts, :source, :config
@@ -62,7 +62,7 @@ module PgSync
 
       if !opts[:groups] && !opts[:tables] && !args[0]
         exclude = to_arr(opts[:exclude])
-        exclude = source.fully_resolve_tables(exclude).keys if exclude.any?
+        exclude = fully_resolve_tables(exclude).keys if exclude.any?
 
         tabs = source.tables
         unless opts[:all_schemas]
@@ -75,10 +75,20 @@ module PgSync
         end
       end
 
-      source.fully_resolve_tables(tables)
+      fully_resolve_tables(tables)
     end
 
     private
+
+    def fully_resolve_tables(tables)
+      no_schema_tables = {}
+      search_path_index = Hash[source.search_path.map.with_index.to_a]
+      source.tables.group_by { |t| t.split(".", 2)[-1] }.each do |group, t2|
+        no_schema_tables[group] = t2.sort_by { |t| [search_path_index[t.split(".", 2)[0]] || 1000000, t] }[0]
+      end
+
+      Hash[tables.map { |k, v| [no_schema_tables[k] || k, v] }]
+    end
 
     def to_arr(value)
       if value.is_a?(Array)

@@ -126,16 +126,6 @@ module PgSync
       @conn.reset
     end
 
-    def fully_resolve_tables(tables)
-      no_schema_tables = {}
-      search_path_index = Hash[search_path.map.with_index.to_a]
-      self.tables.group_by { |t| t.split(".", 2)[-1] }.each do |group, t2|
-        no_schema_tables[group] = t2.sort_by { |t| [search_path_index[t.split(".", 2)[0]] || 1000000, t] }[0]
-      end
-
-      Hash[tables.map { |k, v| [no_schema_tables[k] || k, v] }]
-    end
-
     def search_path
       @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
     end
