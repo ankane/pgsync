@@ -17,8 +17,13 @@ class CommandsTest < Minitest::Test
   end
 
   def test_config_and_db
-    # TODO uncomment for 0.6.0
-    # assert_error "Specify either --db or --config, not both", "--db test --config .pgsync.yml"
+    skip "TODO uncomment for 0.6.0"
+    assert_error "Specify either --db or --config, not both", "--db test --config .pgsync.yml"
+  end
+
+  def test_config_not_found
+    skip "TODO uncomment for 0.6.0"
+    assert_error "Config file not found", "--config not_found.yml"
   end
 
   def test_config_absolute_path
