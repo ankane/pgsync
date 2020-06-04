@@ -126,16 +126,6 @@ module PgSync
       @conn.reset
     end
 
-    def dump_command(tables)
-      tables = tables ? tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ") : ""
-      "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@url}"
-    end
-
-    def restore_command
-      if_exists = Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
-      "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@url}"
-    end
-
     def fully_resolve_tables(tables)
       no_schema_tables = {}
       search_path_index = Hash[search_path.map.with_index.to_a]
@@ -165,13 +155,15 @@ module PgSync
       end
     end
 
-    private
-
-    def pg_restore_version
-      `pg_restore --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
-    rescue Errno::ENOENT
-      raise Error, "pg_restore not found"
+    def quote_ident_full(ident)
+      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
     end
+
+    def quote_ident(value)
+      PG::Connection.quote_ident(value)
+    end
+
+    private
 
     def table_set
       @table_set ||= Set.new(tables)
@@ -184,14 +176,6 @@ module PgSync
         end
         conn.conninfo_hash
       end
-    end
-
-    def quote_ident_full(ident)
-      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
-    end
-
-    def quote_ident(value)
-      PG::Connection.quote_ident(value)
     end
 
     def escape(value)

@@ -54,7 +54,7 @@ module PgSync
 
           log "* Dumping schema"
           schema_tables = tables if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
-          sync_schema(source, destination, schema_tables)
+          SchemaSync.new(source: source, destination: destination, tables: schema_tables).perform
         end
 
         unless opts[:schema_only]
@@ -128,14 +128,6 @@ module PgSync
         opts[:sql] ||= String.new
         opts[:sql] << " LIMIT #{opts[:limit]}"
         deprecated "Use `\"LIMIT #{opts[:limit]}\"` instead"
-      end
-    end
-
-    def sync_schema(source, destination, tables = nil)
-      dump_command = source.dump_command(tables)
-      restore_command = destination.restore_command
-      unless system("#{dump_command} | #{restore_command}")
-        raise Error, "Schema sync returned non-zero exit code"
       end
     end
 
