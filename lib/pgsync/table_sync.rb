@@ -49,7 +49,7 @@ module PgSync
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
-      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
+      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key.first)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
       seq_values = {}
@@ -60,7 +60,9 @@ module PgSync
       copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
         raise Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
-        raise Error, "No primary key" unless primary_key
+
+        raise Error, "No primary key" if primary_key.empty?
+        primary_key = primary_key.first
 
         destination.truncate(table) if opts[:truncate]
 
@@ -96,7 +98,10 @@ module PgSync
           end
         end
       elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-        raise Error, "No primary key" unless primary_key
+        raise Error, "No primary key" if primary_key.empty?
+
+        # TODO handle multiple primary keys
+        primary_key = primary_key.first
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
