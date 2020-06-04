@@ -66,13 +66,22 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tables, "destination")
 
-          in_parallel(tables, first_schema: source.search_path.find { |sp| sp != "pg_catalog" }) do |table, table_opts, source, destination|
-            TableSync.new(source: source, destination: destination).sync(config, table, opts.merge(table_opts))
+          table_syncs =
+            tables.map do |table, table_opts|
+              TableSync.new(source: source, destination: destination, config: config, table: table, opts: opts.merge(table_opts))
+            end
+
+          in_parallel(table_syncs) do |table_sync|
+            table_sync.sync
           end
         end
 
         log_completed(start_time)
       end
+    end
+
+    def first_schema
+      @first_schema ||= source.search_path.find { |sp| sp != "pg_catalog" }
     end
 
     def confirm_tables_exist(data_source, tables, description)
@@ -134,15 +143,14 @@ module PgSync
       log "#{prefix}: #{source.dbname}#{location}"
     end
 
-    def in_parallel(tables, first_schema:, &block)
+    def in_parallel(tables, &block)
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
       item_spinners = {}
 
       start = lambda do |item, i|
-        table, opts = item
         message = String.new(":spinner ")
-        message << table.sub("#{first_schema}.", "")
-        message << " #{opts[:sql]}" if opts[:sql]
+        message << item.table.sub("#{first_schema}.", "")
+        message << " #{item.opts[:sql]}" if item.opts[:sql]
         spinner = spinners.register(message)
         if @options[:in_batches]
           # log instead of spin for non-tty
@@ -157,7 +165,7 @@ module PgSync
 
       finish = lambda do |item, i, result|
         spinner = item_spinners[item]
-        table_name = item.first.sub("#{first_schema}.", "")
+        table_name = item.table.sub("#{first_schema}.", "")
 
         if result[:status] == "success"
           spinner.success(display_message(result))
@@ -170,7 +178,7 @@ module PgSync
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, table_name, item.last[:sql], display_message(result)].compact.join(" ")
+          log [status, table_name, item.opts[:sql], display_message(result)].compact.join(" ")
         end
       end
 

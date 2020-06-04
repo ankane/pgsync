@@ -2,20 +2,23 @@ module PgSync
   class TableSync
     include Utils
 
-    attr_reader :source, :destination
+    attr_reader :source, :destination, :config, :table, :opts
 
-    def initialize(source:, destination:)
+    def initialize(source:, destination:, config:, table:, opts:)
       @source = source
       @destination = destination
+      @config = config
+      @table = table
+      @opts = opts
     end
 
-    def sync(config, table, opts)
-      maybe_disable_triggers(table, opts) do
-        sync_data(config, table, opts)
+    def sync
+      maybe_disable_triggers do
+        sync_data
       end
     end
 
-    def sync_data(config, table, opts)
+    def sync_data
       start_time = Time.now
 
       from_fields = source.columns(table)
@@ -237,7 +240,7 @@ module PgSync
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
 
-    def maybe_disable_triggers(table, opts)
+    def maybe_disable_triggers
       if opts[:disable_integrity] || opts[:disable_user_triggers]
         destination.transaction do
           triggers = destination.triggers(table)
