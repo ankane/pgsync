@@ -200,7 +200,7 @@ module PgSync
         # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
         # see `fast_faster` branch
         # however, need to make sure connections are cleaned up properly
-        Parallel.each(tables, **options) do |table, table_opts|
+        Parallel.each(tables, **options) do |table_sync|
           # must reconnect for new thread or process
           # TODO only reconnect first time
           unless options[:in_processes] == 0
@@ -210,7 +210,7 @@ module PgSync
 
           # TODO warn if there are non-deferrable constraints on the table
 
-          yield table, table_opts, source, destination
+          yield table_sync
         end
       end
 
