@@ -7,7 +7,7 @@ module PgSync
       output.sync = true
     end
 
-    def perform(testing: true)
+    def perform
       opts = parse_args
 
       # TODO throw error in 0.6.0
@@ -26,12 +26,11 @@ module PgSync
         Sync.new.perform(opts)
       end
     rescue Error, PG::ConnectionBad => e
-      raise e if testing
       abort colorize(e.message, :red)
     end
 
     def self.start
-      new(ARGV).perform(testing: false)
+      new(ARGV).perform
     end
 
     protected
