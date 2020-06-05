@@ -1,3 +1,7 @@
+## 0.6.0 (unreleased)
+
+- Removed deprecated options
+
 ## 0.5.5 (2020-05-13)
 
 - Added `--jobs` option

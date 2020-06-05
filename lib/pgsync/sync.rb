@@ -21,9 +21,6 @@ module PgSync
         opts[opt] ||= config[opt.to_s]
       end
 
-      # TODO remove deprecations in 0.6.0
-      map_deprecations(args, opts)
-
       # start
       start_time = Time.now
 
@@ -50,10 +47,9 @@ module PgSync
         TableSync.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
       end
 
-      # TODO uncomment for 0.6.0
-      # if opts[:in_batches] && tasks.size > 1
-      #   raise Error, "Cannot use --in-batches with multiple tables"
-      # end
+      if opts[:in_batches] && tasks.size > 1
+        raise Error, "Cannot use --in-batches with multiple tables"
+      end
 
       confirm_tables_exist(source, tasks, "source")
 
@@ -117,37 +113,6 @@ module PgSync
         unless data_source.table_exists?(table)
           raise Error, "Table does not exist in #{description}: #{table}"
         end
-      end
-    end
-
-    def map_deprecations(args, opts)
-      command = args[0]
-
-      case command
-      when "schema"
-        args.shift
-        opts[:schema_only] = true
-        deprecated "Use `psync --schema-only` instead"
-      when "tables"
-        args.shift
-        opts[:tables] = args.shift
-        deprecated "Use `pgsync #{opts[:tables]}` instead"
-      when "groups"
-        args.shift
-        opts[:groups] = args.shift
-        deprecated "Use `pgsync #{opts[:groups]}` instead"
-      end
-
-      if opts[:where]
-        opts[:sql] ||= String.new
-        opts[:sql] << " WHERE #{opts[:where]}"
-        deprecated "Use `\"WHERE #{opts[:where]}\"` instead"
-      end
-
-      if opts[:limit]
-        opts[:sql] ||= String.new
-        opts[:sql] << " LIMIT #{opts[:limit]}"
-        deprecated "Use `\"LIMIT #{opts[:limit]}\"` instead"
       end
     end
 

@@ -130,7 +130,6 @@ class SyncTest < Minitest::Test
   end
 
   def test_in_batches_multiple_tables
-    skip "TODO uncomment for 0.6.0"
     assert_error "Cannot use --in-batches with multiple tables", "--in-batches", dbs: true
   end
 
