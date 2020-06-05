@@ -147,14 +147,14 @@ module PgSync
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
         on_conflict = primary_key.map { |pk| quote_ident(pk) }.join(", ")
-        do_action =
+        action =
           if opts[:preserve]
             "NOTHING"
           else
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
             "UPDATE SET #{setter.join(", ")}"
           end
-        destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{do_action}")
+        destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints]
