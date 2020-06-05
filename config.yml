@@ -20,6 +20,10 @@ to: postgres://localhost:5432/myapp_development
 #     - table1
 #     - table2
 
+# sync specific schemas
+# schemas:
+#   - public
+
 # protect sensitive information
 data_rules:
   email: unique_email

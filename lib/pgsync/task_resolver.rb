@@ -2,15 +2,17 @@ module PgSync
   class TaskResolver
     include Utils
 
-    attr_reader :args, :opts, :source, :destination, :config
+    attr_reader :args, :opts, :source, :destination, :config, :first_schema, :notes
 
-    def initialize(args:, opts:, source:, destination:, config:)
+    def initialize(args:, opts:, source:, destination:, config:, first_schema:)
       @args = args
       @opts = opts
       @source = source
       @destination = destination
       @config = config
       @groups = config["groups"] || {}
+      @first_schema = first_schema
+      @notes = []
     end
 
     def tasks
@@ -89,10 +91,21 @@ module PgSync
       exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(t) }
 
       tables = source.tables
-      tables &= destination.tables unless opts[:schema_only] || opts[:schema_first]
-      unless opts[:all_schemas]
-        # only get tables in schema / search path
-        schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
+      unless opts[:schema_only] || opts[:schema_first]
+        from_tables = tables
+        to_tables = destination.tables
+
+        extra_tables = to_tables - from_tables
+        notes << "Extra tables: #{extra_tables.map { |t| friendly_name(t) }.join(", ")}" if extra_tables.any?
+
+        missing_tables = from_tables - to_tables
+        notes << "Missing tables: #{missing_tables.map { |t| friendly_name(t) }.join(", ")}" if missing_tables.any?
+
+        tables &= to_tables
+      end
+
+      if opts[:schemas]
+        schemas = Set.new(to_arr(opts[:schemas]))
         tables.select! { |t| schemas.include?(t.split(".", 2)[0]) }
       end
 
@@ -101,6 +114,10 @@ module PgSync
           table: table
         }
       end
+    end
+
+    def friendly_name(table)
+      table.sub("#{first_schema}.", "")
     end
 
     def process_args

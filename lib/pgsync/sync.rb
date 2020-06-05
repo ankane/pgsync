@@ -41,10 +41,11 @@ module PgSync
       print_description("From", source)
       print_description("To", destination)
 
-      tasks = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config).tasks
-      tasks.map! do |task|
-        Task.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
-      end
+      resolver = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config, first_schema: first_schema)
+      tasks =
+        resolver.tasks.map do |task|
+          Task.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
+        end
 
       if opts[:in_batches] && tasks.size > 1
         raise Error, "Cannot use --in-batches with multiple tables"
@@ -64,7 +65,7 @@ module PgSync
 
           log "* Dumping schema"
           schema_tasks =
-            if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
+            if opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
               tasks
             end
           SchemaSync.new(source: source, destination: destination, tasks: schema_tasks).perform
@@ -84,6 +85,9 @@ module PgSync
           end
 
           # show notes before we start
+          resolver.notes.each do |note|
+            warning note
+          end
           tasks.each do |task|
             task.notes.each do |note|
               warning "#{task_name(task)}: #{note}"
