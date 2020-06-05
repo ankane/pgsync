@@ -1,4 +1,9 @@
-DROP TABLE IF EXISTS "Users";
+DROP SCHEMA IF EXISTS public CASCADE;
+DROP SCHEMA IF EXISTS other CASCADE;
+
+CREATE SCHEMA public;
+CREATE SCHEMA other;
+
 DROP TYPE IF EXISTS mood;
 CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
 CREATE TABLE "Users" (
@@ -18,25 +23,21 @@ CREATE TABLE "Users" (
   current_mood mood
 );
 
-DROP TABLE IF EXISTS posts CASCADE;
 CREATE TABLE posts (
   id SERIAL PRIMARY KEY,
   title TEXT
 );
 
-DROP TABLE IF EXISTS comments;
 CREATE TABLE comments (
   id SERIAL PRIMARY KEY,
   post_id INTEGER REFERENCES posts(id)
 );
 
-DROP TABLE IF EXISTS comments2;
 CREATE TABLE comments2 (
   id SERIAL PRIMARY KEY,
   post_id INTEGER REFERENCES posts(id)
 );
 
-DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id SERIAL,
   id2 SERIAL,
@@ -44,29 +45,23 @@ CREATE TABLE books (
   PRIMARY KEY (id, id2)
 );
 
-DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   first_name TEXT
 );
 
-DROP TABLE IF EXISTS chapters;
 CREATE TABLE chapters (
   pages INT
 );
 
-DROP TABLE IF EXISTS stores;
 CREATE TABLE stores (
   name TEXT
 );
 
-DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,
   name TEXT
 );
 
-DROP SCHEMA IF EXISTS other CASCADE;
-CREATE SCHEMA other;
 CREATE TABLE other.pets (
   id SERIAL PRIMARY KEY
 );

@@ -1,4 +1,7 @@
-DROP TABLE IF EXISTS "Users";
+DROP SCHEMA IF EXISTS public CASCADE;
+
+CREATE SCHEMA public;
+
 CREATE TABLE "Users" (
   "Id" SERIAL PRIMARY KEY,
   email TEXT,
@@ -14,25 +17,21 @@ CREATE TABLE "Users" (
   "column_with_punctuation?" BOOLEAN
 );
 
-DROP TABLE IF EXISTS posts CASCADE;
 CREATE TABLE posts (
   id SERIAL PRIMARY KEY,
   title TEXT
 );
 
-DROP TABLE IF EXISTS comments;
 CREATE TABLE comments (
   id SERIAL PRIMARY KEY,
   post_id INTEGER REFERENCES posts(id) DEFERRABLE
 );
 
-DROP TABLE IF EXISTS comments2;
 CREATE TABLE comments2 (
   id SERIAL PRIMARY KEY,
   post_id INTEGER REFERENCES posts(id)
 );
 
-DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id SERIAL,
   id2 SERIAL,
@@ -40,17 +39,14 @@ CREATE TABLE books (
   PRIMARY KEY (id, id2)
 );
 
-DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   last_name TEXT
 );
 
-DROP TABLE IF EXISTS chapters;
 CREATE TABLE chapters (
   pages BIGINT
 );
 
-DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,
   name TEXT
