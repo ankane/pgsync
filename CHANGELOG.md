@@ -4,7 +4,7 @@ Breaking
 
 - Dropped support for Postgres < 9.5
 - Removed deprecated options
-- Raise an error when `--config` option provided and file not found
+- Raise an error when `--config` or `--db` option provided and config not found
 
 ## 0.5.5 (2020-05-13)
 

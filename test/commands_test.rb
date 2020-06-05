@@ -25,11 +25,15 @@ class CommandsTest < Minitest::Test
   end
 
   def test_config_not_found
-    assert_error "Config file not found", "--config bad.yml"
+    assert_error "Config file not found: bad.yml", "--config bad.yml"
   end
 
   def test_config_absolute_path
     path = File.expand_path("test/support/config.yml")
     assert_works "--config #{path}"
+  end
+
+  def test_db_not_found
+    assert_error "Config file not found: .pgsync-bad.yml", "--db bad"
   end
 end

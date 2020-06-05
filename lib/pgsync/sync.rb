@@ -124,9 +124,9 @@ module PgSync
             YAML.load_file(file) || {}
           rescue Psych::SyntaxError => e
             raise Error, e.message
+          rescue Errno::ENOENT
+            raise Error, "Config file not found: #{file}"
           end
-        elsif @options[:config]
-          raise Error, "Config file not found"
         else
           {}
         end

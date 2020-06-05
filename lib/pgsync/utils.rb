@@ -31,11 +31,18 @@ module PgSync
     end
 
     def config_file
-      search_tree(db_config_file(@options[:db]) || @options[:config] || ".pgsync.yml")
+      if @options[:config]
+        @options[:config]
+      elsif @options[:db]
+        file = db_config_file(@options[:db])
+        search_tree(file) || file
+      else
+        search_tree(".pgsync.yml")
+      end
     end
 
     def db_config_file(db)
-      ".pgsync-#{db}.yml" if db
+      ".pgsync-#{db}.yml"
     end
 
     def search_tree(file)
