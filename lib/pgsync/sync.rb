@@ -52,17 +52,10 @@ module PgSync
 
       confirm_tables_exist(source, tasks, "source")
 
+      # TODO remove?
       if opts[:list]
         confirm_tables_exist(destination, tasks, "destination")
-
-        list_items =
-          if args[0] == "groups"
-            (config["groups"] || {}).keys
-          else
-            tasks.map(&:table)
-          end
-
-        pretty_list list_items
+        pretty_list tasks.map(&:table)
       else
         if opts[:schema_first] || opts[:schema_only]
           if opts[:preserve]
