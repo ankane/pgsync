@@ -87,7 +87,7 @@ module PgSync
           # show notes before we start
           tasks.each do |task|
             task.notes.each do |note|
-              warning "#{task.table.sub("#{first_schema}.", "")}: #{note}"
+              warning "#{display_task(task)}: #{note}"
             end
           end
 
@@ -194,7 +194,7 @@ module PgSync
         else
           # TODO add option to fail fast
           spinner.error(result_message)
-          failed_tables << item.table.sub("#{first_schema}.", "")
+          failed_tables << display_task(item)
           fail_sync(failed_tables) if @options[:fail_fast]
         end
 
@@ -255,9 +255,13 @@ module PgSync
       raise Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
+    def display_task(task)
+      task.table.sub("#{first_schema}.", "")
+    end
+
     def display_item(item)
       messages = []
-      messages << item.table.sub("#{first_schema}.", "")
+      messages << display_task(item)
       messages << item.opts[:sql] if item.opts[:sql]
       messages.join(" ")
     end
