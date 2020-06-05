@@ -95,10 +95,8 @@ module PgSync
           end
           if opts[:defer_constraints]
             constraints = non_deferrable_constraints(destination)
-            tasks.each do |task|
-              c = constraints[task.table]
-              warning "#{task_name(task)}: Non-deferrable constraints: #{c.join(", ")}" if c
-            end
+            constraints = tasks.flat_map { |t| constraints[t.table] || [] }
+            warning "Non-deferrable constraints: #{constraints.join(", ")}" if constraints.any?
           end
 
           # don't sync tables with no shared fields
