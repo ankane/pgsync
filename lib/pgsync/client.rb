@@ -8,19 +8,21 @@ module PgSync
     end
 
     def perform
-      opts = parse_args
+      parsed_args = parse_args
+      arguments = parsed_args.arguments
+      options = parsed_args.to_h
 
-      raise Error, "Specify either --db or --config, not both" if opts[:db] && opts[:config]
-      raise Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite] && opts[:in_batches]
+      raise Error, "Specify either --db or --config, not both" if options[:db] && options[:config]
+      raise Error, "Cannot use --overwrite with --in-batches" if options[:overwrite] && options[:in_batches]
 
-      if opts.version?
+      if options[:version]
         log VERSION
-      elsif opts.help?
-        log opts
-      elsif opts.init?
-        Init.new(opts).perform
+      elsif options[:help]
+        log parsed_args
+      elsif options[:init]
+        Init.new(arguments, options).perform
       else
-        Sync.new(opts).perform
+        Sync.new(arguments, options).perform
       end
     rescue Error, PG::ConnectionBad => e
       abort colorize(e.message, :red)

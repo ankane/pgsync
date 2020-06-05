@@ -2,10 +2,9 @@ module PgSync
   class Init
     include Utils
 
-    def initialize(opts)
-      @arguments = opts.arguments
-      # needed for config_file method
-      @options = opts.to_hash
+    def initialize(arguments, options)
+      @arguments = arguments
+      @options = options
     end
 
     def perform

@@ -2,9 +2,9 @@ module PgSync
   class Sync
     include Utils
 
-    def initialize(opts)
-      @arguments = opts.arguments
-      @options = opts.to_hash
+    def initialize(arguments, options)
+      @arguments = arguments
+      @options = options
     end
 
     def perform
