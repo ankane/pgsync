@@ -55,7 +55,7 @@ module PgSync
       # TODO remove?
       if opts[:list]
         confirm_tables_exist(destination, tasks, "destination")
-        pretty_list tasks.map { |task| display_task(task) }
+        pretty_list tasks.map { |task| task_name(task) }
       else
         if opts[:schema_first] || opts[:schema_only]
           if opts[:preserve]
@@ -86,7 +86,7 @@ module PgSync
           # show notes before we start
           tasks.each do |task|
             task.notes.each do |note|
-              warning "#{display_task(task)}: #{note}"
+              warning "#{task_name(task)}: #{note}"
             end
           end
 
@@ -180,7 +180,7 @@ module PgSync
         else
           # TODO add option to fail fast
           spinner.error(result_message)
-          failed_tables << display_task(task)
+          failed_tables << task_name(task)
           fail_sync(failed_tables) if @options[:fail_fast]
         end
 
@@ -239,13 +239,13 @@ module PgSync
       raise Error, "Sync failed for #{failed_tables.size} table#{failed_tables.size == 1 ? nil : "s"}: #{failed_tables.join(", ")}"
     end
 
-    def display_task(task)
+    def task_name(task)
       task.table.sub("#{first_schema}.", "")
     end
 
     def display_item(item)
       messages = []
-      messages << display_task(item)
+      messages << task_name(item)
       messages << item.opts[:sql] if item.opts[:sql]
       messages.join(" ")
     end
