@@ -139,9 +139,6 @@ module PgSync
       elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
         raise Error, "No primary key" if primary_key.empty?
 
-        # TODO handle multiple primary keys
-        primary_key = primary_key.first
-
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
         destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_table} WITH NO DATA")
@@ -149,15 +146,15 @@ module PgSync
         # load data
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
-        if opts[:preserve]
-          # insert into
-          destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE #{quoted_table}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
-        else
-          setter = shared_fields
-            .filter { |field| not field.eql? primary_key }
-            .map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join ", "
-          destination.execute "INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)}) ON CONFLICT (#{primary_key}) DO UPDATE SET #{setter}"
-        end
+        on_conflict = primary_key.map { |pk| quote_ident(pk) }.join(", ")
+        do_action =
+          if opts[:preserve]
+            "NOTHING"
+          else
+            setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
+            "UPDATE SET #{setter.join(", ")}"
+          end
+        destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{do_action}")
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints]

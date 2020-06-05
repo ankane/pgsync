@@ -31,8 +31,6 @@ class SyncTest < Minitest::Test
   end
 
   def test_overwrite_multiple_primary_keys
-    skip
-
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
@@ -44,8 +42,6 @@ class SyncTest < Minitest::Test
   end
 
   def test_preserve_multiple_primary_keys
-    skip
-
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
