@@ -88,7 +88,8 @@ module PgSync
     def default_tasks
       exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(t) }
 
-      tables = source.tables & destination.tables
+      tables = source.tables
+      tables &= destination.tables unless opts[:schema_only] || opts[:schema_first]
       unless opts[:all_schemas]
         # only get tables in schema / search path
         schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
