@@ -17,7 +17,7 @@ class CommandsTest < Minitest::Test
 
   def test_list
     output = assert_works "--list", dbs: true
-    assert_match "public.posts", output
+    assert_match "posts", output
   end
 
   def test_config_and_db
