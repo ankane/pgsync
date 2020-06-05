@@ -18,7 +18,7 @@ require "pgsync/data_source"
 require "pgsync/init"
 require "pgsync/schema_sync"
 require "pgsync/sync"
-require "pgsync/table_resolver"
+require "pgsync/task_resolver"
 require "pgsync/table_sync"
 require "pgsync/version"
 

@@ -1,5 +1,5 @@
 module PgSync
-  class TableResolver
+  class TaskResolver
     include Utils
 
     attr_reader :args, :opts, :source, :config
@@ -12,7 +12,7 @@ module PgSync
       @groups = config["groups"] || {}
     end
 
-    def tables
+    def tasks
       tasks = []
 
       # get lists from args

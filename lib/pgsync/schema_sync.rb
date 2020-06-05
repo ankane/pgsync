@@ -21,7 +21,7 @@ module PgSync
     end
 
     def dump_command
-      tables = @tables ? @tables.map { |t| "-t #{Shellwords.escape(@source.quote_ident_full(t[:table]))}" }.join(" ") : ""
+      tables = @tables ? @tables.map { |t| "-t #{Shellwords.escape(@source.quote_ident_full(t))}" }.join(" ") : ""
       "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@source.url}"
     end
 

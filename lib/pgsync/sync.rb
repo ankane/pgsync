@@ -41,23 +41,26 @@ module PgSync
       print_description("From", source)
       print_description("To", destination)
 
-      tables = TableResolver.new(args, opts, source, config).tables
+      tasks = TaskResolver.new(args, opts, source, config).tasks
+      tasks.map! do |task|
+        TableSync.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
+      end
 
       # TODO uncomment for 0.6.0
-      # if opts[:in_batches] && tables.size > 1
+      # if opts[:in_batches] && tasks.size > 1
       #   raise Error, "Cannot use --in-batches with multiple tables"
       # end
 
-      confirm_tables_exist(source, tables, "source")
+      confirm_tables_exist(source, tasks, "source")
 
       if opts[:list]
-        confirm_tables_exist(destination, tables, "destination")
+        confirm_tables_exist(destination, tasks, "destination")
 
         list_items =
           if args[0] == "groups"
             (config["groups"] || {}).keys
           else
-            tables.map { |t| t[:table] }
+            tasks.map(&:table)
           end
 
         pretty_list list_items
@@ -68,33 +71,32 @@ module PgSync
           end
 
           log "* Dumping schema"
-          schema_tables = tables if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
+          schema_tables =
+            if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
+              tasks.map(&:table)
+            end
           SchemaSync.new(source: source, destination: destination, tables: schema_tables).perform
         end
 
         unless opts[:schema_only]
-          confirm_tables_exist(destination, tables, "destination")
+          confirm_tables_exist(destination, tasks, "destination")
 
           # TODO query columns, sequences, primary keys, etc
           # for all tables at once and pass on initialization
-          table_syncs =
-            tables.map do |table|
-              TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(sql: table[:sql]))
-            end
 
           # show notes before we start
-          table_syncs.each do |ts|
-            ts.notes.each do |note|
-              warning "#{ts.table.sub("#{first_schema}.", "")}: #{note}"
+          tasks.each do |task|
+            task.notes.each do |note|
+              warning "#{task.table.sub("#{first_schema}.", "")}: #{note}"
             end
           end
 
           # don't sync tables with no shared fields
           # we show a warning message above
-          table_syncs.reject! { |ts| ts.shared_fields.empty? }
+          tasks.reject! { |task| task.shared_fields.empty? }
 
-          in_parallel(table_syncs) do |table_sync|
-            table_sync.sync
+          in_parallel(tasks) do |task|
+            task.sync
           end
         end
 
@@ -106,8 +108,8 @@ module PgSync
       @first_schema ||= source.search_path.find { |sp| sp != "pg_catalog" }
     end
 
-    def confirm_tables_exist(data_source, tables, description)
-      tables.map { |t| t[:table] }.each do |table|
+    def confirm_tables_exist(data_source, tasks, description)
+      tasks.map(&:table).each do |table|
         unless data_source.table_exists?(table)
           raise Error, "Table does not exist in #{description}: #{table}"
         end
