@@ -62,7 +62,7 @@ module PgSync
       if table.schema == first_schema
         table.name
       else
-        "#{table.schema}.#{table.name}"
+        table.full_name
       end
     end
 
