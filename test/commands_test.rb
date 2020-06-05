@@ -11,6 +11,10 @@ class CommandsTest < Minitest::Test
     assert_prints PgSync::VERSION, "--version"
   end
 
+  def test_bad_option
+    assert_error "unknown option", "--bad"
+  end
+
   def test_list
     output = assert_works "--list", dbs: true
     assert_match "public.posts", output
