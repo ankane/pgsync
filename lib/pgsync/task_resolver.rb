@@ -2,12 +2,13 @@ module PgSync
   class TaskResolver
     include Utils
 
-    attr_reader :args, :opts, :source, :config
+    attr_reader :args, :opts, :source, :destination, :config
 
-    def initialize(args, options, source, config)
+    def initialize(args:, opts:, source:, destination:, config:)
       @args = args
-      @opts = options
+      @opts = opts
       @source = source
+      @destination = destination
       @config = config
       @groups = config["groups"] || {}
     end
@@ -83,10 +84,11 @@ module PgSync
       end
     end
 
+    # tables that exists in both source and destination
     def default_tasks
       exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(t) }
 
-      tables = source.tables
+      tables = source.tables & destination.tables
       unless opts[:all_schemas]
         # only get tables in schema / search path
         schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)

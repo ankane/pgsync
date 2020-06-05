@@ -41,7 +41,7 @@ module PgSync
       print_description("From", source)
       print_description("To", destination)
 
-      tasks = TaskResolver.new(args, opts, source, config).tasks
+      tasks = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config).tasks
       tasks.map! do |task|
         TableSync.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
       end

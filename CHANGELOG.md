@@ -5,6 +5,7 @@
 Breaking
 
 - Dropped support for Postgres < 9.5
+- Only sync tables in both source and destination when no tables specified
 - Removed deprecated options
 - Raise an error when `--config` or `--db` option provided and config not found
 
