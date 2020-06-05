@@ -158,6 +158,7 @@ module PgSync
     end
 
     def in_parallel(tasks, &block)
+      notices = []
       failed_tables = []
 
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
@@ -187,6 +188,8 @@ module PgSync
           failed_tables << task_name(task)
           fail_sync(failed_tables) if @options[:fail_fast]
         end
+
+        notices.concat(result[:notices])
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
@@ -218,6 +221,10 @@ module PgSync
 
           yield task
         end
+      end
+
+      notices.each do |notice|
+        warning notice
       end
 
       fail_sync(failed_tables) if failed_tables.any?

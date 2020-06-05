@@ -18,9 +18,11 @@ module PgSync
     end
 
     def perform
-      handle_errors do
-        maybe_disable_triggers do
-          sync_data
+      with_notices do
+        handle_errors do
+          maybe_disable_triggers do
+            sync_data
+          end
         end
       end
     end
@@ -172,6 +174,23 @@ module PgSync
     end
 
     private
+
+    def with_notices
+      notices = []
+      [source, destination].each do |data_source|
+        data_source.send(:conn).set_notice_processor do |message|
+          notices << message.strip
+        end
+      end
+      result = yield
+      result[:notices] = notices if result
+      result
+    ensure
+      # clear notice processor
+      [source, destination].each do |data_source|
+        data_source.send(:conn).set_notice_processor
+      end
+    end
 
     # TODO add retries
     def handle_errors
