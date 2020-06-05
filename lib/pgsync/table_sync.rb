@@ -149,9 +149,7 @@ module PgSync
         # load data
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
-        if opts[:update]
-
-        elsif opts[:preserve]
+        if opts[:preserve]
           # insert into
           destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE #{quoted_table}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
