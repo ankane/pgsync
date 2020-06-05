@@ -18,8 +18,8 @@ require "pgsync/data_source"
 require "pgsync/init"
 require "pgsync/schema_sync"
 require "pgsync/sync"
-require "pgsync/task_resolver"
 require "pgsync/table_sync"
+require "pgsync/task_resolver"
 require "pgsync/version"
 
 module PgSync
