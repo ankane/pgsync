@@ -72,7 +72,7 @@ module PgSync
         different_types = []
         shared_fields.each do |field|
           if from_types[field] != to_types[field]
-            different_types << "#{field} (#{from_types[field]} => #{to_types[field]})"
+            different_types << "#{field} (#{from_types[field]} -> #{to_types[field]})"
           end
         end
         notes << "Different column types: #{different_types.join(", ")}" if different_types.any?

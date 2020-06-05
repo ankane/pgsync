@@ -100,7 +100,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_different_column_types
-    assert_prints "Different column types: pages (integer => bigint)", "chapters", dbs: true
+    assert_prints "Different column types: pages (integer -> bigint)", "chapters", dbs: true
   end
 
   def test_table_unknown
