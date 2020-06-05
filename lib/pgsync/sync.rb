@@ -133,7 +133,7 @@ module PgSync
     def confirm_tables_exist(data_source, tasks, description)
       tasks.map(&:table).each do |table|
         unless data_source.table_exists?(table)
-          raise Error, "Table does not exist in #{description}: #{table}"
+          raise Error, "Table not found in #{description}: #{table}"
         end
       end
     end

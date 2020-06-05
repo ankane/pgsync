@@ -127,7 +127,7 @@ module PgSync
 
     def fully_resolve(table)
       return table if table.include?(".")
-      no_schema_tables[table] || (raise Error, "Table not found: #{table}")
+      no_schema_tables[table] || (raise Error, "Table not found in source: #{table}")
     end
 
     # parse command line arguments and YAML
