@@ -12,6 +12,10 @@ module PgSync
       @opts = opts
     end
 
+    def quoted_table
+      quote_ident_full(table)
+    end
+
     def sync
       handle_errors do
         maybe_disable_triggers do
@@ -74,7 +78,7 @@ module PgSync
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
-      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key.first)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
+      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key.first)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
       seq_values = {}
@@ -82,7 +86,7 @@ module PgSync
         seq_values[seq] = source.last_value(seq)
       end
 
-      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
+      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
         raise Error, "No primary key" if primary_key.empty?
         primary_key = primary_key.first
@@ -110,7 +114,7 @@ module PgSync
           # TODO be smarter for advance sql clauses
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
-          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
+          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
           copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
           starting_id += batch_size
@@ -128,24 +132,24 @@ module PgSync
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
-        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quote_ident_full(table)} WITH NO DATA")
+        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_table} WITH NO DATA")
 
         # load data
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
         if opts[:preserve]
           # insert into
-          destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
+          destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE #{quoted_table}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
           destination.transaction do
-            destination.execute("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
-            destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
+            destination.execute("DELETE FROM #{quoted_table} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
+            destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)})")
           end
         end
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints]
-          destination.execute("DELETE FROM #{quote_ident_full(table)}")
+          destination.execute("DELETE FROM #{quoted_table}")
         else
           destination.truncate(table)
         end
@@ -240,7 +244,7 @@ module PgSync
 
     def quoted_primary_key(table, primary_key, rule)
       raise "Primary key required for this data rule: #{rule}" unless primary_key
-      "#{quote_ident_full(table)}.#{quote_ident(primary_key)}"
+      "#{quoted_table}.#{quote_ident(primary_key)}"
     end
 
     def quote_ident_full(ident)
@@ -275,7 +279,7 @@ module PgSync
 
           if opts[:disable_integrity]
             integrity_triggers.each do |trigger|
-              destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
+              destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
             end
             restore_triggers.concat(integrity_triggers)
           end
@@ -284,7 +288,7 @@ module PgSync
             # important!
             # rely on Postgres to disable user triggers
             # we don't want to accidentally disable non-user triggers if logic above is off
-            destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER USER")
+            destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
             restore_triggers.concat(user_triggers)
           end
 
@@ -292,7 +296,7 @@ module PgSync
 
           # restore triggers that were previously enabled
           restore_triggers.each do |trigger|
-            destination.execute("ALTER TABLE #{quote_ident_full(table)} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
+            destination.execute("ALTER TABLE #{quoted_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 
           result
