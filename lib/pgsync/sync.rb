@@ -43,7 +43,7 @@ module PgSync
 
       tasks = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config).tasks
       tasks.map! do |task|
-        TableSync.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
+        Task.new(source: source, destination: destination, config: config, table: task[:table], opts: opts.merge(sql: task[:sql]))
       end
 
       if opts[:in_batches] && tasks.size > 1
@@ -95,7 +95,7 @@ module PgSync
           tasks.reject! { |task| task.shared_fields.empty? }
 
           in_parallel(tasks) do |task|
-            task.sync
+            task.perform
           end
         end
 

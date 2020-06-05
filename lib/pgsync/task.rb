@@ -1,5 +1,5 @@
 module PgSync
-  class TableSync
+  class Task
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
@@ -17,7 +17,7 @@ module PgSync
       quote_ident_full(table)
     end
 
-    def sync
+    def perform
       handle_errors do
         maybe_disable_triggers do
           sync_data
