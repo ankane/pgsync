@@ -73,7 +73,7 @@ module PgSync
       tables =
         if value.include?("*")
           regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
-          source.tables.select { |t| regex.match(t.full_name) || regex.match(t.name) }
+          shared_tables.select { |t| regex.match(t.full_name) || regex.match(t.name) }
         else
           [to_table(value)]
         end
@@ -104,8 +104,18 @@ module PgSync
       end
     end
 
-    # tables that exists in both source and destination
     def default_tasks
+      shared_tables.map do |table|
+        {
+          table: table
+        }
+      end
+    end
+
+    # tables that exists in both source and destination
+    # used when no tables specified, or a wildcard
+    # removes excluded tables and filters by schema
+    def shared_tables
       exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(to_table(t)) }
 
       tables = source.tables
@@ -127,11 +137,7 @@ module PgSync
         tables.select! { |t| schemas.include?(t.schema) }
       end
 
-      (tables - exclude).map do |table|
-        {
-          table: table
-        }
-      end
+      tables - exclude
     end
 
     def process_args
