@@ -3,8 +3,10 @@ to: pgsync_test2
 groups:
   group1:
     - Users
-  group2:
+  variable:
     posts: "WHERE id = {1}"
+  variable_id:
+    posts: "WHERE id = {id}"
 data_rules:
   email: unique_email
   phone: unique_phone

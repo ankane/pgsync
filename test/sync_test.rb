@@ -74,12 +74,21 @@ class SyncTest < Minitest::Test
     expected = [source[1]]
 
     insert($conn1, "posts", source)
-    assert_works "group2:2", config: true
+    assert_works "variable:2", config: true
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
+  end
+
+  def test_variable_id
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    expected = [source[1]]
+
+    insert($conn1, "posts", source)
+    assert_works "variable_id:2", config: true
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
   end
 
   def test_variable_missing
-    assert_error "Missing variables: 1", "group2", config: true
+    assert_error "Missing variables: 1", "variable", config: true
   end
 
   def test_variable_table

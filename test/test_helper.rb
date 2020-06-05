@@ -24,6 +24,8 @@ class Minitest::Test
     ENV["VERBOSE"]
   end
 
+  # shelling out for each test is slower
+  # but it prevents forking from messing up connections
   def run_command(command, dbs: false, config: false)
     command << " --from pgsync_test1 --to pgsync_test2" if dbs
     command << " --config test/support/config.yml" if config
