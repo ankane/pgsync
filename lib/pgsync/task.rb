@@ -272,27 +272,6 @@ module PgSync
       "#{quoted_table}.#{quote_ident(primary_key.first)}"
     end
 
-    def quote_ident_full(ident)
-      ident.split(".").map { |v| quote_ident(v) }.join(".")
-    end
-
-    def quote_ident(value)
-      PG::Connection.quote_ident(value)
-    end
-
-    def escape(value)
-      if value.is_a?(String)
-        "'#{quote_string(value)}'"
-      else
-        value
-      end
-    end
-
-    # activerecord
-    def quote_string(s)
-      s.gsub(/\\/, '\&\&').gsub(/'/, "''")
-    end
-
     def maybe_disable_triggers
       if opts[:disable_integrity] || opts[:disable_user_triggers]
         destination.transaction do

@@ -1,5 +1,7 @@
 module PgSync
   class DataSource
+    include Utils
+
     attr_reader :url
 
     def initialize(url)
@@ -159,14 +161,6 @@ module PgSync
       end
     end
 
-    def quote_ident_full(ident)
-      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
-    end
-
-    def quote_ident(value)
-      PG::Connection.quote_ident(value)
-    end
-
     private
 
     def concurrent_id
@@ -189,19 +183,6 @@ module PgSync
         end
         conn.conninfo_hash
       end
-    end
-
-    def escape(value)
-      if value.is_a?(String)
-        "'#{quote_string(value)}'"
-      else
-        value
-      end
-    end
-
-    # activerecord
-    def quote_string(s)
-      s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
   end
 end
