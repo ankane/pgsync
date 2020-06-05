@@ -81,8 +81,15 @@ module PgSync
         unless opts[:schema_only]
           confirm_tables_exist(destination, tasks, "destination")
 
-          # TODO query columns, sequences, primary keys, etc
-          # for all tables at once and pass on initialization
+          # TODO only query specific tables
+          # TODO add sequences, primary keys, etc
+          source_columns = columns(source)
+          destination_columns = columns(destination)
+
+          tasks.each do |task|
+            task.from_fields = source_columns[task.table] || []
+            task.to_fields = destination_columns[task.table] || []
+          end
 
           # show notes before we start
           tasks.each do |task|
@@ -102,6 +109,21 @@ module PgSync
 
         log_completed(start_time)
       end
+    end
+
+    def columns(data_source)
+      query = <<~SQL
+        SELECT
+          table_schema AS schema,
+          table_name AS table,
+          column_name AS column
+        FROM
+          information_schema.columns
+        ORDER BY 1, 2, 3
+      SQL
+      data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
+        [k.join("."), v.map { |r| r["column"] }]
+      end.to_h
     end
 
     def first_schema

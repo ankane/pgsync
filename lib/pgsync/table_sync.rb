@@ -3,6 +3,7 @@ module PgSync
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
+    attr_accessor :from_fields, :to_fields
 
     def initialize(source:, destination:, config:, table:, opts:)
       @source = source
@@ -22,14 +23,6 @@ module PgSync
           sync_data
         end
       end
-    end
-
-    def from_fields
-      @from_fields ||= source.columns(table)
-    end
-
-    def to_fields
-      @to_fields ||= destination.columns(table)
     end
 
     def shared_fields

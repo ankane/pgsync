@@ -48,20 +48,6 @@ module PgSync
       table_set.include?(table)
     end
 
-    def columns(table)
-      query = <<~SQL
-        SELECT
-          column_name
-        FROM
-          information_schema.columns
-        WHERE
-          table_schema = $1 AND
-          table_name = $2
-        ORDER BY 1
-      SQL
-      execute(query, table.split(".", 2)).map { |row| row["column_name"] }
-    end
-
     def sequences(table, columns)
       execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{quote_ident(f)}" }.join(", ")}")[0].values.compact
     end
