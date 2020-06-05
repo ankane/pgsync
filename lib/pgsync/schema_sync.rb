@@ -1,9 +1,9 @@
 module PgSync
   class SchemaSync
-    def initialize(source:, destination:, tables:)
+    def initialize(source:, destination:, tasks:)
       @source = source
       @destination = destination
-      @tables = tables
+      @tasks = tasks
     end
 
     def perform
@@ -21,7 +21,7 @@ module PgSync
     end
 
     def dump_command
-      tables = @tables ? @tables.map { |t| "-t #{Shellwords.escape(@source.quote_ident_full(t))}" }.join(" ") : ""
+      tables = @tasks ? @tasks.map { |task| "-t #{Shellwords.escape(task.quoted_table)}" }.join(" ") : ""
       "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@source.url}"
     end
 

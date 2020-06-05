@@ -71,11 +71,11 @@ module PgSync
           end
 
           log "* Dumping schema"
-          schema_tables =
+          schema_tasks =
             if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
-              tasks.map(&:table)
+              tasks
             end
-          SchemaSync.new(source: source, destination: destination, tables: schema_tables).perform
+          SchemaSync.new(source: source, destination: destination, tasks: schema_tasks).perform
         end
 
         unless opts[:schema_only]
