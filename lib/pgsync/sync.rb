@@ -125,6 +125,8 @@ module PgSync
           rescue Psych::SyntaxError => e
             raise Error, e.message
           end
+        elsif @options[:config]
+          raise Error, "Config file not found"
         else
           {}
         end
