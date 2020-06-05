@@ -163,6 +163,7 @@ module PgSync
 
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
       task_spinners = {}
+      started_at = {}
 
       start = lambda do |task, i|
         message = ":spinner #{display_item(task)}"
@@ -174,26 +175,34 @@ module PgSync
           spinner.auto_spin
         end
         task_spinners[task] = spinner
+        started_at[task] = Time.now
       end
 
       finish = lambda do |task, i, result|
         spinner = task_spinners[task]
-        result_message = display_result(result)
+        time = (Time.now - started_at[task]).round(1)
+
+        message =
+          if result[:message]
+            "(#{result[:message].lines.first.to_s.strip})"
+          else
+            "- #{time}s"
+          end
+
+        notices.concat(result[:notices])
 
         if result[:status] == "success"
-          spinner.success(result_message)
+          spinner.success(message)
         else
           # TODO add option to fail fast
-          spinner.error(result_message)
+          spinner.error(message)
           failed_tables << task_name(task)
           fail_sync(failed_tables) if @options[:fail_fast]
         end
 
-        notices.concat(result[:notices])
-
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, display_item(task), result_message].join(" ")
+          log [status, display_item(task), message].join(" ")
         end
       end
 
@@ -258,13 +267,6 @@ module PgSync
       messages = []
       messages << task_name(item)
       messages << item.opts[:sql] if item.opts[:sql]
-      messages.join(" ")
-    end
-
-    def display_result(result)
-      messages = []
-      messages << "- #{result[:time]}s" if result[:time]
-      messages << "(#{result[:message].lines.first.to_s.strip})" if result[:message]
       messages.join(" ")
     end
 

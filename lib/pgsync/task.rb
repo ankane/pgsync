@@ -85,8 +85,6 @@ module PgSync
     def sync_data
       raise Error, "This should never happen. Please file a bug." if shared_fields.empty?
 
-      start_time = Time.now
-
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
 
@@ -170,7 +168,7 @@ module PgSync
         destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
       end
 
-      {status: "success", time: (Time.now - start_time).round(1)}
+      {status: "success"}
     end
 
     private
