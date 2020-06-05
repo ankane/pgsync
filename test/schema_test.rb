@@ -40,6 +40,14 @@ class SchemaTest < Minitest::Test
 
   def tables(conn)
     # sort in Ruby, as Postgres can return different order on different platforms
-    conn.exec("SELECT table_schema || '.' || table_name AS table FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog')").map { |v| v["table"] }.sort
+    query = <<~SQL
+      SELECT
+        table_schema || '.' || table_name AS table
+      FROM
+        information_schema.tables
+      WHERE
+        table_schema NOT IN ('information_schema', 'pg_catalog')
+    SQL
+    conn.exec(query).map { |v| v["table"] }.sort
   end
 end
