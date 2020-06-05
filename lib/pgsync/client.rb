@@ -21,9 +21,9 @@ module PgSync
         log opts
       # TODO remove deprecated conditions (last two)
       elsif opts.init? || opts.setup? || opts.arguments[0] == "setup"
-        Init.new.perform(opts)
+        Init.new(opts).perform
       else
-        Sync.new.perform(opts)
+        Sync.new(opts).perform
       end
     rescue Error, PG::ConnectionBad => e
       abort colorize(e.message, :red)

@@ -2,10 +2,14 @@ module PgSync
   class Sync
     include Utils
 
-    def perform(options)
-      args = options.arguments
-      opts = options.to_hash
-      @options = opts
+    def initialize(opts)
+      @arguments = opts.arguments
+      @options = opts.to_hash
+    end
+
+    def perform
+      args = @arguments
+      opts = @options
 
       # only resolve commands from config, not CLI arguments
       [:to, :from].each do |opt|

@@ -2,11 +2,14 @@ module PgSync
   class Init
     include Utils
 
-    def perform(opts)
+    def initialize(opts)
+      @arguments = opts.arguments
       # needed for config_file method
       @options = opts.to_hash
+    end
 
-      file = db_config_file(opts.arguments[0]) || config_file || ".pgsync.yml"
+    def perform
+      file = db_config_file(@arguments[0]) || config_file || ".pgsync.yml"
 
       if File.exist?(file)
         raise Error, "#{file} exists."
