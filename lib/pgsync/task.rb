@@ -149,7 +149,7 @@ module PgSync
         action =
           if opts[:preserve]
             "NOTHING"
-          else
+          else # overwrite or sql clause
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
             "UPDATE SET #{setter.join(", ")}"
           end
