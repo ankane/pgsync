@@ -1,6 +1,8 @@
 ## 0.6.0 (unreleased)
 
 - Added message for different column types
+- Improved `--overwrite` and `--preserve` options for foreign keys
+- Fixed `--overwrite` and `--preserve` options for multicolumn primary keys
 
 Breaking
 
