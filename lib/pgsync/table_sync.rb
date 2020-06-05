@@ -90,7 +90,7 @@ module PgSync
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
-      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key.first)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
+      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
       seq_values = {}
@@ -255,8 +255,8 @@ module PgSync
     end
 
     def quoted_primary_key(table, primary_key, rule)
-      raise "Primary key required for this data rule: #{rule}" unless primary_key
-      "#{quoted_table}.#{quote_ident(primary_key)}"
+      raise Error, "Single column primary key required for this data rule: #{rule}" unless primary_key.size == 1
+      "#{quoted_table}.#{quote_ident(primary_key.first)}"
     end
 
     def quote_ident_full(ident)
