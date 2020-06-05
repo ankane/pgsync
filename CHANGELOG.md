@@ -1,5 +1,7 @@
 ## 0.6.0 (unreleased)
 
+- Added message for different column types
+
 Breaking
 
 - Dropped support for Postgres < 9.5
