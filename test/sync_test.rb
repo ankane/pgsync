@@ -52,6 +52,14 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected, "books")
   end
 
+  def test_overwrite_no_primary_key
+    assert_error "No primary key", "chapters --overwrite", dbs: true
+  end
+
+  def test_preserve_no_primary_key
+    assert_error "No primary key", "chapters --preserve", dbs: true
+  end
+
   def test_all
     assert_works "", dbs: true
   end
