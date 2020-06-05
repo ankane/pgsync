@@ -61,21 +61,21 @@ module PgSync
         end
 
         {
-          table: table,
+          table: to_table(table),
           sql: expand_sql(table_sql, param)
         }
       end
     end
 
-    def table_to_tasks(table)
-      raise Error, "Cannot use parameters with tables" if table.include?(":")
+    def table_to_tasks(value)
+      raise Error, "Cannot use parameters with tables" if value.include?(":")
 
       tables =
-        if table.include?("*")
-          regex = Regexp.new('\A' + Regexp.escape(table).gsub('\*','[^\.]*') + '\z')
-          source.tables.select { |t| regex.match(t) || regex.match(t.split(".", 2).last) }
+        if value.include?("*")
+          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
+          source.tables.select { |t| regex.match(t.full_name) || regex.match(t.name) }
         else
-          [table]
+          [to_table(value)]
         end
 
       tables.map do |table|
@@ -86,9 +86,18 @@ module PgSync
       end
     end
 
+    def to_table(value)
+      if value.include?(".")
+        Table.new(*value.split(".", 2))
+      else
+        # unknown schema
+        Table.new(nil, value)
+      end
+    end
+
     # tables that exists in both source and destination
     def default_tasks
-      exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(t) }
+      exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(to_table(t)) }
 
       tables = source.tables
       unless opts[:schema_only] || opts[:schema_first]
@@ -106,7 +115,7 @@ module PgSync
 
       if opts[:schemas]
         schemas = Set.new(to_arr(opts[:schemas]))
-        tables.select! { |t| schemas.include?(t.split(".", 2)[0]) }
+        tables.select! { |t| schemas.include?(t.schema) }
       end
 
       (tables - exclude).map do |table|
@@ -114,10 +123,6 @@ module PgSync
           table: table
         }
       end
-    end
-
-    def friendly_name(table)
-      table.sub("#{first_schema}.", "")
     end
 
     def process_args
@@ -139,15 +144,16 @@ module PgSync
     def no_schema_tables
       @no_schema_tables ||= begin
         search_path_index = source.search_path.map.with_index.to_h
-        source.tables.group_by { |t| t.split(".", 2)[-1] }.map do |group, t2|
-          [group, t2.sort_by { |t| [search_path_index[t.split(".", 2)[0]] || 1000000, t] }[0]]
+        source.tables.group_by(&:name).map do |group, t2|
+          [group, t2.select { |t| search_path_index[t.schema] }.sort_by { |t| search_path_index[t.schema] }.first]
         end.to_h
       end
     end
 
+    # for tables without a schema, find the table in the search path
     def fully_resolve(table)
-      return table if table.include?(".")
-      no_schema_tables[table] || (raise Error, "Table not found in source: #{table}")
+      return table if table.schema
+      no_schema_tables[table.name] || (raise Error, "Table not found in source: #{table.name}")
     end
 
     # parse command line arguments and YAML

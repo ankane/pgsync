@@ -193,6 +193,8 @@ module PgSync
     def handle_errors
       yield
     rescue => e
+      raise e if opts[:debug]
+
       message =
         case e
         when PG::ConnectionBad
@@ -224,7 +226,7 @@ module PgSync
     # TODO better performance
     def rule_match?(table, column, rule)
       regex = Regexp.new('\A' + Regexp.escape(rule).gsub('\*','[^\.]*') + '\z')
-      regex.match(column) || regex.match("#{table.split(".", 2)[-1]}.#{column}") || regex.match("#{table}.#{column}")
+      regex.match(column) || regex.match("#{table.name}.#{column}") || regex.match("#{table.schema}.#{table.name}.#{column}")
     end
 
     # TODO wildcard rules

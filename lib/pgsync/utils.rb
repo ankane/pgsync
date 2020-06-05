@@ -58,8 +58,20 @@ module PgSync
       end
     end
 
+    def friendly_name(table)
+      if table.schema == first_schema
+        table.name
+      else
+        "#{table.schema}.#{table.name}"
+      end
+    end
+
     def quote_ident_full(ident)
-      ident.split(".").map { |v| quote_ident(v) }.join(".")
+      if ident.is_a?(Table)
+        [quote_ident(ident.schema), quote_ident(ident.name)].join(".")
+      else # temp table names are strings
+        quote_ident(ident)
+      end
     end
 
     def quote_ident(value)

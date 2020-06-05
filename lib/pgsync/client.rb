@@ -24,7 +24,9 @@ module PgSync
       else
         Sync.new(arguments, options).perform
       end
-    rescue Error, PG::ConnectionBad, Slop::Error => e
+    rescue => e
+      # Error, PG::ConnectionBad, Slop::Error
+      raise e if options && options[:debug]
       abort colorize(e.message, :red)
     end
 

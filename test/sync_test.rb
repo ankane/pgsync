@@ -64,6 +64,11 @@ class SyncTest < Minitest::Test
     assert_works "", dbs: true
   end
 
+  # TODO improve test
+  def test_schemas
+    assert_works "--schemas public", dbs: true
+  end
+
   def test_no_shared_fields
     assert_prints "authors: No fields to copy", "authors", dbs: true
   end

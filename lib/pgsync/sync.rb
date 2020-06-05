@@ -123,8 +123,8 @@ module PgSync
           information_schema.columns
         ORDER BY 1, 2, 3
       SQL
-      data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
-        [k.join("."), v.map { |r| {name: r["column"], type: r["type"]} }]
+      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
+        [k, v.map { |r| {name: r["column"], type: r["type"]} }]
       end.to_h
     end
 
@@ -140,8 +140,8 @@ module PgSync
           constraint_type = 'FOREIGN KEY' AND
           is_deferrable = 'NO'
       SQL
-      data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
-        [k.join("."), v.map { |r| r["constraint_name"] }]
+      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
+        [k, v.map { |r| r["constraint_name"] }]
       end.to_h
     end
 
@@ -282,7 +282,7 @@ module PgSync
     end
 
     def task_name(task)
-      task.table.sub("#{first_schema}.", "")
+      friendly_name(task.table)
     end
 
     def display_item(item)

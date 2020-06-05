@@ -33,8 +33,8 @@ module PgSync
       @tables ||= begin
         query = <<~SQL
           SELECT
-            table_schema,
-            table_name
+            table_schema AS schema,
+            table_name AS table
           FROM
             information_schema.tables
           WHERE
@@ -42,7 +42,7 @@ module PgSync
             table_schema NOT IN ('information_schema', 'pg_catalog')
           ORDER BY 1, 2
         SQL
-        execute(query).map { |row| "#{row["table_schema"]}.#{row["table_name"]}" }
+        execute(query).map { |row| Table.new(row["schema"], row["table"]) }
       end
     end
 
@@ -90,7 +90,7 @@ module PgSync
           pg_attribute.attnum = any(pg_index.indkey) AND
           indisprimary
       SQL
-      rows = execute(query, table.split(".", 2))
+      rows = execute(query, [table.schema, table.name])
       rows.sort_by { |r| r["indkey"].split(" ").index(r["attnum"]) }.map { |r| r["attname"] }
     end
 
