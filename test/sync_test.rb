@@ -69,6 +69,10 @@ class SyncTest < Minitest::Test
     assert_works "--schemas public", dbs: true
   end
 
+  def test_variable_missing
+    assert_error "Missing variables: 1", "group2 --config test/support/config.yml", dbs: true
+  end
+
   def test_no_shared_fields
     assert_prints "authors: No fields to copy", "authors", dbs: true
   end
