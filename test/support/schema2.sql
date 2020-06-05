@@ -45,6 +45,11 @@ CREATE TABLE authors (
   last_name TEXT
 );
 
+DROP TABLE IF EXISTS chapters;
+CREATE TABLE chapters (
+  pages BIGINT
+);
+
 DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,

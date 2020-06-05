@@ -3,7 +3,7 @@ module PgSync
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
-    attr_accessor :from_fields, :to_fields
+    attr_accessor :from_columns, :to_columns
 
     def initialize(source:, destination:, config:, table:, opts:)
       @source = source
@@ -23,6 +23,14 @@ module PgSync
           sync_data
         end
       end
+    end
+
+    def from_fields
+      @from_fields ||= from_columns.map { |c| c[:name] }
+    end
+
+    def to_fields
+      @to_fields ||= to_columns.map { |c| c[:name] }
     end
 
     def shared_fields
@@ -58,6 +66,16 @@ module PgSync
 
         missing_sequences = from_sequences - to_sequences
         notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+
+        from_types = from_columns.map { |c| [c[:name], c[:type]] }.to_h
+        to_types = to_columns.map { |c| [c[:name], c[:type]] }.to_h
+        different_types = []
+        shared_fields.each do |field|
+          if from_types[field] != to_types[field]
+            different_types << "#{field} (#{from_types[field]} => #{to_types[field]})"
+          end
+        end
+        notes << "Different column types: #{different_types.join(", ")}" if different_types.any?
       end
       notes
     end

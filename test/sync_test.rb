@@ -99,6 +99,10 @@ class SyncTest < Minitest::Test
     assert_prints "Extra columns: current_mood, zip_code", "Users --from pgsync_test2 --to pgsync_test1"
   end
 
+  def test_different_column_types
+    assert_prints "Different column types: pages (integer => bigint)", "chapters", dbs: true
+  end
+
   def test_table_unknown
     assert_error "Table not found in source: bad", "bad", dbs: true
   end

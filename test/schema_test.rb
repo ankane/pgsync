@@ -33,7 +33,7 @@ class SchemaTest < Minitest::Test
   end
 
   def all_tables
-    ["other.pets", "public.Users", "public.authors", "public.books", "public.comments", "public.comments2", "public.posts", "public.robots"]
+    ["other.pets", "public.Users", "public.authors", "public.books", "public.chapters", "public.comments", "public.comments2", "public.posts", "public.robots"]
   end
 
   def tables(conn)

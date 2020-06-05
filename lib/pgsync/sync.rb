@@ -86,8 +86,8 @@ module PgSync
           destination_columns = columns(destination)
 
           tasks.each do |task|
-            task.from_fields = source_columns[task.table] || []
-            task.to_fields = destination_columns[task.table] || []
+            task.from_columns = source_columns[task.table] || []
+            task.to_columns = destination_columns[task.table] || []
           end
 
           # show notes before we start
@@ -115,13 +115,14 @@ module PgSync
         SELECT
           table_schema AS schema,
           table_name AS table,
-          column_name AS column
+          column_name AS column,
+          data_type AS type
         FROM
           information_schema.columns
         ORDER BY 1, 2, 3
       SQL
       data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
-        [k.join("."), v.map { |r| r["column"] }]
+        [k.join("."), v.map { |r| {name: r["column"], type: r["type"]} }]
       end.to_h
     end
 
