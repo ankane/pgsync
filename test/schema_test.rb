@@ -12,6 +12,8 @@ class SchemaTest < Minitest::Test
     assert_works "--from pgsync_test1 --to pgsync_test3 --schema-only --all-schemas"
     assert_equal all_tables, tables($conn3)
     assert_equal [], $conn3.exec("SELECT * FROM posts").to_a
+    # make sure all_tables itself isn't broken
+    assert all_tables.size >= 10
   end
 
   def test_schema_only_table
