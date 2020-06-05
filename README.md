@@ -74,10 +74,10 @@ pgsync products "where store_id = 1" --truncate
 ## Exclude Tables
 
 ```sh
-pgsync --exclude users
+pgsync --exclude table1,table2
 ```
 
-To always exclude, add to `.pgsync.yml`.
+Add to `.pgsync.yml` to exclude by default.
 
 ```yml
 exclude:
