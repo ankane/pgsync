@@ -21,8 +21,7 @@ module PgSync
         opts[opt] ||= config[opt.to_s]
       end
 
-      # start
-      start_time = Time.now
+      started_at = Time.now
 
       if args.size > 2
         raise Error, "Usage:\n    pgsync [options]"
@@ -107,7 +106,7 @@ module PgSync
           end
         end
 
-        log_completed(start_time)
+        log_completed(started_at)
       end
     end
 
@@ -270,8 +269,8 @@ module PgSync
       end
     end
 
-    def log_completed(start_time)
-      time = Time.now - start_time
+    def log_completed(started_at)
+      time = Time.now - started_at
       message = "Completed in #{time.round(1)}s"
       log colorize(message, :green)
     end
