@@ -140,7 +140,7 @@ module PgSync
     end
 
     def search_path
-      @search_path ||= execute("SELECT current_schemas(true)").first["current_schemas"][1..-2].split(",")
+      @search_path ||= execute("SELECT unnest(current_schemas(true)) AS schema").map { |r| r["schema"] }
     end
 
     def server_version_num
