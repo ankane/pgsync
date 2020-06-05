@@ -138,12 +138,14 @@ module PgSync
       log "#{prefix}: #{source.dbname}#{location}"
     end
 
-    def in_parallel(table_syncs, &block)
+    def in_parallel(tasks, &block)
+      failed_tables = []
+
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
       item_spinners = {}
 
-      start = lambda do |item, i|
-        message = ":spinner #{display_item(item)}"
+      start = lambda do |task, i|
+        message = ":spinner #{display_item(task)}"
         spinner = spinners.register(message)
         if @options[:in_batches]
           # log instead of spin for non-tty
@@ -151,13 +153,11 @@ module PgSync
         else
           spinner.auto_spin
         end
-        item_spinners[item] = spinner
+        item_spinners[task] = spinner
       end
 
-      failed_tables = []
-
-      finish = lambda do |item, i, result|
-        spinner = item_spinners[item]
+      finish = lambda do |task, i, result|
+        spinner = item_spinners[task]
         result_message = display_result(result)
 
         if result[:status] == "success"
@@ -165,13 +165,13 @@ module PgSync
         else
           # TODO add option to fail fast
           spinner.error(result_message)
-          failed_tables << display_task(item)
+          failed_tables << display_task(task)
           fail_sync(failed_tables) if @options[:fail_fast]
         end
 
         unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
-          log [status, display_item(item), result_message].join(" ")
+          log [status, display_item(task), result_message].join(" ")
         end
       end
 
@@ -193,13 +193,11 @@ module PgSync
         # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
         # see `fast_faster` branch
         # however, need to make sure connections are cleaned up properly
-        Parallel.each(table_syncs, **options) do |table_sync|
+        Parallel.each(tasks, **options) do |task|
           source.reconnect_if_needed
           destination.reconnect_if_needed
 
-          # TODO warn if there are non-deferrable constraints on the table
-
-          yield table_sync
+          yield task
         end
       end
 
