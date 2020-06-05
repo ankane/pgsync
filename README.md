@@ -33,13 +33,13 @@ This creates `.pgsync.yml` for you to customize. We recommend checking this into
 
 ## How to Use
 
+First, make sure your schema is set up in both databases. We recommend using a schema migration tool for this, but pgsync also provides a few [convenience methods](#schema). Once that’s done, you’re ready to sync data.
+
 Sync all tables
 
 ```sh
 pgsync
 ```
-
-**Note:** pgsync assumes your schema is setup in your `to` database. See the [schema section](#schema) if that’s not the case.
 
 Sync specific tables
 
@@ -131,15 +131,11 @@ pgsync product:123
 
 ## Schema
 
-**Note:** pgsync is designed to sync data. You should use a schema migration tool to manage schema changes. The methods in this section are provided for convenience but not recommended.
-
-Sync schema before the data
+Sync schema before the data (this wipes out existing data)
 
 ```sh
 pgsync --schema-first
 ```
-
-**Note:** This wipes out existing data
 
 Specify tables
 
