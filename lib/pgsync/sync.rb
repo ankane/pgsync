@@ -163,7 +163,7 @@ module PgSync
       failed_tables = []
 
       spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
-      item_spinners = {}
+      task_spinners = {}
 
       start = lambda do |task, i|
         message = ":spinner #{display_item(task)}"
@@ -174,11 +174,11 @@ module PgSync
         else
           spinner.auto_spin
         end
-        item_spinners[task] = spinner
+        task_spinners[task] = spinner
       end
 
       finish = lambda do |task, i, result|
-        spinner = item_spinners[task]
+        spinner = task_spinners[task]
         result_message = display_result(result)
 
         if result[:status] == "success"
