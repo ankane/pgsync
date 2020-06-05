@@ -55,7 +55,7 @@ module PgSync
       # TODO remove?
       if opts[:list]
         confirm_tables_exist(destination, tasks, "destination")
-        pretty_list tasks.map(&:table)
+        pretty_list tasks.map { |task| display_task(task) }
       else
         if opts[:schema_first] || opts[:schema_only]
           if opts[:preserve]
