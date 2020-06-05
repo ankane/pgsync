@@ -86,12 +86,21 @@ module PgSync
       end
     end
 
+    # treats identifiers as if they were quoted (Users == "Users")
+    # this is different from Postgres (Users == "users")
+    #
+    # TODO add support for quoted identifiers like "my.schema"."my.table"
+    # so it's possible to specify identifiers with "." in them
     def to_table(value)
-      if value.include?(".")
-        Table.new(*value.split(".", 2))
-      else
+      parts = value.split(".")
+      case parts.size
+      when 1
         # unknown schema
-        Table.new(nil, value)
+        Table.new(nil, parts[0])
+      when 2
+        Table.new(*parts)
+      else
+        raise Error, "Cannot resolve table: #{value}"
       end
     end
 

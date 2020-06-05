@@ -120,6 +120,10 @@ class SyncTest < Minitest::Test
     assert_error "Table not found in source: bad", "bad", dbs: true
   end
 
+  def test_table_invalid
+    assert_error "Cannot resolve table: bad.bad.bad", "bad.bad.bad", dbs: true
+  end
+
   def test_group
     assert_works "group1 --config test/support/config.yml", dbs: true
   end
