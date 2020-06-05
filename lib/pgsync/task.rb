@@ -51,7 +51,6 @@ module PgSync
       @shared_sequences ||= to_sequences & from_sequences
     end
 
-    # TODO add note when non-deferrable constraints on the table with --defer-constraints option
     def notes
       notes = []
       if shared_fields.empty?

@@ -174,7 +174,6 @@ class SyncTest < Minitest::Test
   def test_defer_constraints_not_deferrable
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments2", [{"post_id" => 1}])
-    # TODO show warning messages when non-deferrable constraints
     assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", dbs: true
   end
 

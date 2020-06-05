@@ -93,6 +93,13 @@ module PgSync
               warning "#{task_name(task)}: #{note}"
             end
           end
+          if opts[:defer_constraints]
+            constraints = non_deferrable_constraints(destination)
+            tasks.each do |task|
+              c = constraints[task.table]
+              warning "#{task_name(task)}: Non-deferrable constraints: #{c.join(", ")}" if c
+            end
+          end
 
           # don't sync tables with no shared fields
           # we show a warning message above
@@ -120,6 +127,23 @@ module PgSync
       SQL
       data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
         [k.join("."), v.map { |r| {name: r["column"], type: r["type"]} }]
+      end.to_h
+    end
+
+    def non_deferrable_constraints(data_source)
+      query = <<~SQL
+        SELECT
+          table_schema AS schema,
+          table_name AS table,
+          constraint_name
+        FROM
+          information_schema.table_constraints
+        WHERE
+          constraint_type = 'FOREIGN KEY' AND
+          is_deferrable = 'NO'
+      SQL
+      data_source.execute(query).group_by { |r| [r["schema"], r["table"]] }.map do |k, v|
+        [k.join("."), v.map { |r| r["constraint_name"] }]
       end.to_h
     end
 
