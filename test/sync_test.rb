@@ -30,7 +30,7 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected)
   end
 
-  def test_overwrite_multiple_primary_keys
+  def test_overwrite_multicolumn_primary_key
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
@@ -41,7 +41,7 @@ class SyncTest < Minitest::Test
     assert_result("--overwrite", source, dest, expected, "books")
   end
 
-  def test_preserve_multiple_primary_keys
+  def test_preserve_multicolumn_primary_key
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
