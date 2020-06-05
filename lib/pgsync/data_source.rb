@@ -51,19 +51,20 @@ module PgSync
     end
 
     def sequences(table, columns)
-      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{quote_ident(f)}" }.join(", ")}")[0].values.compact
+      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{quote_ident(f)}" }.join(", ")}").first.values.compact
     end
 
     def max_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}")[0]["max"].to_i
+      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["max"].to_i
     end
 
     def min_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}")[0]["min"].to_i
+      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["min"].to_i
     end
 
+    # this value comes from pg_get_serial_sequence which is already quoted
     def last_value(seq)
-      execute("SELECT last_value from #{seq}")[0]["last_value"]
+      execute("SELECT last_value FROM #{seq}").first["last_value"]
     end
 
     def truncate(table)
@@ -139,7 +140,7 @@ module PgSync
     end
 
     def search_path
-      @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
+      @search_path ||= execute("SELECT current_schemas(true)").first["current_schemas"][1..-2].split(",")
     end
 
     def server_version_num
