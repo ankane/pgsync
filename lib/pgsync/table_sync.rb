@@ -150,21 +150,15 @@ module PgSync
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
         if opts[:update]
-          setter = shared_fields
-                    .filter { |field| not field.eql? primary_key }
-                    .map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join ", "
-          destination.execute "
-          INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})
-          ON CONFLICT (#{primary_key})
-          DO UPDATE SET #{setter}"
+
         elsif opts[:preserve]
           # insert into
           destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE #{quoted_table}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
-          destination.transaction do
-            destination.execute("DELETE FROM #{quoted_table} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
-            destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)})")
-          end
+          setter = shared_fields
+            .filter { |field| not field.eql? primary_key }
+            .map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join ", "
+          destination.execute "INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)}) ON CONFLICT (#{primary_key}) DO UPDATE SET #{setter}"
         end
       else
         # use delete instead of truncate for foreign keys
