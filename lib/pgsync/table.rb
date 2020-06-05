@@ -1,3 +1,4 @@
+# minimal class to keep schema and table name separate
 module PgSync
   class Table
     attr_reader :schema, :name
@@ -15,6 +16,7 @@ module PgSync
       other.schema == schema && other.name == name
     end
 
+    # override hash when overriding eql?
     def hash
       [schema, name].hash
     end
