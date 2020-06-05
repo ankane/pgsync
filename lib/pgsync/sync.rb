@@ -79,7 +79,7 @@ module PgSync
           # for all tables at once and pass on initialization
           table_syncs =
             tables.map do |table|
-              TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(table[:opts]))
+              TableSync.new(source: source, destination: destination, config: config, table: table[:table], opts: opts.merge(sql: table[:sql]))
             end
 
           # show notes before we start

@@ -100,7 +100,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_table_unknown
-    assert_error "Table does not exist in source: bad", "bad", dbs: true
+    assert_error "Table not found: bad", "bad", dbs: true
   end
 
   def test_group
