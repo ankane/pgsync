@@ -1,0 +1,2 @@
+from: $(exit 1)
+to: pgsync_test2

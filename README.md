@@ -47,6 +47,12 @@ Sync specific tables
 pgsync table1,table2
 ```
 
+Works with wildcards as well
+
+```sh
+pgsync "public.*"
+```
+
 Sync specific rows (existing rows are overwritten)
 
 ```sh

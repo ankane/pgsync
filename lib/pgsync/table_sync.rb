@@ -2,54 +2,95 @@ module PgSync
   class TableSync
     include Utils
 
-    attr_reader :source, :destination
+    attr_reader :source, :destination, :config, :table, :opts
+    attr_accessor :from_columns, :to_columns
 
-    def initialize(source:, destination:)
+    def initialize(source:, destination:, config:, table:, opts:)
       @source = source
       @destination = destination
+      @config = config
+      @table = table
+      @opts = opts
     end
 
-    def sync(config, table, opts)
-      maybe_disable_triggers(table, opts) do
-        sync_data(config, table, opts)
+    def quoted_table
+      quote_ident_full(table)
+    end
+
+    def sync
+      handle_errors do
+        maybe_disable_triggers do
+          sync_data
+        end
       end
     end
 
-    def sync_data(config, table, opts)
-      start_time = Time.now
+    def from_fields
+      @from_fields ||= from_columns.map { |c| c[:name] }
+    end
 
-      from_fields = source.columns(table)
-      to_fields = destination.columns(table)
-      shared_fields = to_fields & from_fields
-      extra_fields = to_fields - from_fields
-      missing_fields = from_fields - to_fields
+    def to_fields
+      @to_fields ||= to_columns.map { |c| c[:name] }
+    end
 
-      if opts[:no_sequences]
-        from_sequences = []
-        to_sequences = []
+    def shared_fields
+      @shared_fields ||= to_fields & from_fields
+    end
+
+    def from_sequences
+      @from_sequences ||= opts[:no_sequences] ? [] : source.sequences(table, shared_fields)
+    end
+
+    def to_sequences
+      @to_sequences ||= opts[:no_sequences] ? [] : destination.sequences(table, shared_fields)
+    end
+
+    def shared_sequences
+      @shared_sequences ||= to_sequences & from_sequences
+    end
+
+    # TODO add note when non-deferrable constraints on the table with --defer-constraints option
+    def notes
+      notes = []
+      if shared_fields.empty?
+        notes << "No fields to copy"
       else
-        from_sequences = source.sequences(table, shared_fields)
-        to_sequences = destination.sequences(table, shared_fields)
-      end
+        extra_fields = to_fields - from_fields
+        notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
 
-      shared_sequences = to_sequences & from_sequences
-      extra_sequences = to_sequences - from_sequences
-      missing_sequences = from_sequences - to_sequences
+        missing_fields = from_fields - to_fields
+        notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
+
+        extra_sequences = to_sequences - from_sequences
+        notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
+
+        missing_sequences = from_sequences - to_sequences
+        notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
+
+        from_types = from_columns.map { |c| [c[:name], c[:type]] }.to_h
+        to_types = to_columns.map { |c| [c[:name], c[:type]] }.to_h
+        different_types = []
+        shared_fields.each do |field|
+          if from_types[field] != to_types[field]
+            different_types << "#{field} (#{from_types[field]} -> #{to_types[field]})"
+          end
+        end
+        notes << "Different column types: #{different_types.join(", ")}" if different_types.any?
+      end
+      notes
+    end
+
+    def sync_data
+      raise Error, "This should never happen. Please file a bug." if shared_fields.empty?
+
+      start_time = Time.now
 
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
 
-      notes = []
-      notes << "Extra columns: #{extra_fields.join(", ")}" if extra_fields.any?
-      notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
-      notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
-      notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
-
-      return {status: "success", message: "No fields to copy"} if shared_fields.empty?
-
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = destination.primary_key(table)
-      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quote_ident_full(table)}.#{quote_ident(f)}" }.join(", ")
+      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
       seq_values = {}
@@ -57,10 +98,10 @@ module PgSync
         seq_values[seq] = source.last_value(seq)
       end
 
-      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{sql_clause}) TO STDOUT"
+      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
-        raise Error, "Cannot use --overwrite with --in-batches" if opts[:overwrite]
-        raise Error, "No primary key" unless primary_key
+        raise Error, "No primary key" if primary_key.empty?
+        primary_key = primary_key.first
 
         destination.truncate(table) if opts[:truncate]
 
@@ -85,7 +126,7 @@ module PgSync
           # TODO be smarter for advance sql clauses
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
-          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quote_ident_full(table)}#{batch_sql_clause}) TO STDOUT"
+          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
           copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
           starting_id += batch_size
@@ -95,12 +136,15 @@ module PgSync
             sleep(opts[:sleep])
           end
         end
-      elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || opts[:update] || !sql_clause.empty?)
-        raise Error, "No primary key" unless primary_key
+      elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
+        raise Error, "No primary key" if primary_key.empty?
+
+        # TODO handle multiple primary keys
+        primary_key = primary_key.first
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
-        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quote_ident_full(table)} WITH NO DATA")
+        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_table} WITH NO DATA")
 
         # load data
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
@@ -115,17 +159,17 @@ module PgSync
           DO UPDATE SET #{setter}"
         elsif opts[:preserve]
           # insert into
-          destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quote_ident_full(table)} WHERE #{quote_ident_full(table)}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
+          destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident_full(temp_table)} WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE #{quoted_table}.#{quote_ident(primary_key)} = #{quote_ident_full(temp_table)}.#{quote_ident(primary_key)}))")
         else
           destination.transaction do
-            destination.execute("DELETE FROM #{quote_ident_full(table)} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
-            destination.execute("INSERT INTO #{quote_ident_full(table)} (SELECT * FROM #{quote_ident(temp_table)})")
+            destination.execute("DELETE FROM #{quoted_table} WHERE #{quote_ident(primary_key)} IN (SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(temp_table)})")
+            destination.execute("INSERT INTO #{quoted_table} (SELECT * FROM #{quote_ident(temp_table)})")
           end
         end
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints]
-          destination.execute("DELETE FROM #{quote_ident_full(table)}")
+          destination.execute("DELETE FROM #{quoted_table}")
         else
           destination.truncate(table)
         end
@@ -135,10 +179,14 @@ module PgSync
         destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
       end
 
-      message = nil
-      message = notes.join(", ") if notes.any?
+      {status: "success", time: (Time.now - start_time).round(1)}
+    end
 
-      {status: "success", message: message, time: (Time.now - start_time).round(1)}
+    private
+
+    # TODO add retries
+    def handle_errors
+      yield
     rescue => e
       message =
         case e
@@ -156,8 +204,6 @@ module PgSync
 
       {status: "error", message: message}
     end
-
-    private
 
     def copy(source_command, dest_table:, dest_fields:)
       destination_command = "COPY #{quote_ident_full(dest_table)} (#{dest_fields}) FROM STDIN"
@@ -217,8 +263,8 @@ module PgSync
     end
 
     def quoted_primary_key(table, primary_key, rule)
-      raise "Primary key required for this data rule: #{rule}" unless primary_key
-      "#{quote_ident_full(table)}.#{quote_ident(primary_key)}"
+      raise Error, "Single column primary key required for this data rule: #{rule}" unless primary_key.size == 1
+      "#{quoted_table}.#{quote_ident(primary_key.first)}"
     end
 
     def quote_ident_full(ident)
@@ -242,7 +288,7 @@ module PgSync
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
 
-    def maybe_disable_triggers(table, opts)
+    def maybe_disable_triggers
       if opts[:disable_integrity] || opts[:disable_user_triggers]
         destination.transaction do
           triggers = destination.triggers(table)
@@ -253,7 +299,7 @@ module PgSync
 
           if opts[:disable_integrity]
             integrity_triggers.each do |trigger|
-              destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
+              destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
             end
             restore_triggers.concat(integrity_triggers)
           end
@@ -262,7 +308,7 @@ module PgSync
             # important!
             # rely on Postgres to disable user triggers
             # we don't want to accidentally disable non-user triggers if logic above is off
-            destination.execute("ALTER TABLE #{quote_ident_full(table)} DISABLE TRIGGER USER")
+            destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
             restore_triggers.concat(user_triggers)
           end
 
@@ -270,7 +316,7 @@ module PgSync
 
           # restore triggers that were previously enabled
           restore_triggers.each do |trigger|
-            destination.execute("ALTER TABLE #{quote_ident_full(table)} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
+            destination.execute("ALTER TABLE #{quoted_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 
           result

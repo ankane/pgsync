@@ -8,6 +8,31 @@ class InitTest < Minitest::Test
     end
   end
 
+  def test_too_many_arguments
+    assert_error "Usage:", "--init arg1 arg2"
+  end
+
+  def test_db_argument
+    new_dir do
+      assert_works "--init db2"
+      assert File.exist?(".pgsync-db2.yml")
+    end
+  end
+
+  def test_db_option
+    new_dir do
+      assert_works "--init --db db2"
+      assert File.exist?(".pgsync-db2.yml")
+    end
+  end
+
+  def test_config
+    new_dir do
+      assert_works "--init --config hi.yml"
+      assert File.exist?("hi.yml")
+    end
+  end
+
   def test_rails
     new_dir do
       Dir.mkdir("bin")

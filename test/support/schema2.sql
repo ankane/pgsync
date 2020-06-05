@@ -32,6 +32,24 @@ CREATE TABLE comments2 (
   post_id INTEGER REFERENCES posts(id)
 );
 
+DROP TABLE IF EXISTS books;
+CREATE TABLE books (
+  id SERIAL,
+  id2 SERIAL,
+  title TEXT,
+  PRIMARY KEY (id, id2)
+);
+
+DROP TABLE IF EXISTS authors;
+CREATE TABLE authors (
+  last_name TEXT
+);
+
+DROP TABLE IF EXISTS chapters;
+CREATE TABLE chapters (
+  pages BIGINT
+);
+
 DROP TABLE IF EXISTS robots;
 CREATE TABLE robots (
   id SERIAL PRIMARY KEY,

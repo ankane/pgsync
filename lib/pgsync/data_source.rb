@@ -2,8 +2,8 @@ module PgSync
   class DataSource
     attr_reader :url
 
-    def initialize(source)
-      @url = resolve_url(source)
+    def initialize(url)
+      @url = url
     end
 
     def exists?
@@ -29,18 +29,23 @@ module PgSync
     # gets visible tables
     def tables
       @tables ||= begin
-        query = "SELECT table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY 1, 2"
+        query = <<~SQL
+          SELECT
+            table_schema,
+            table_name
+          FROM
+            information_schema.tables
+          WHERE
+            table_type = 'BASE TABLE' AND
+            table_schema NOT IN ('information_schema', 'pg_catalog')
+          ORDER BY 1, 2
+        SQL
         execute(query).map { |row| "#{row["table_schema"]}.#{row["table_name"]}" }
       end
     end
 
     def table_exists?(table)
       table_set.include?(table)
-    end
-
-    def columns(table)
-      query = "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2"
-      execute(query, table.split(".", 2)).map { |row| row["column_name"] }
     end
 
     def sequences(table, columns)
@@ -56,7 +61,7 @@ module PgSync
     end
 
     def last_value(seq)
-      execute("select last_value from #{seq}")[0]["last_value"]
+      execute("SELECT last_value from #{seq}")[0]["last_value"]
     end
 
     def truncate(table)
@@ -64,28 +69,31 @@ module PgSync
     end
 
     # https://stackoverflow.com/a/20537829
+    # TODO can simplify with array_position in Postgres 9.5+
     def primary_key(table)
-      query = <<-SQL
+      query = <<~SQL
         SELECT
           pg_attribute.attname,
-          format_type(pg_attribute.atttypid, pg_attribute.atttypmod)
+          format_type(pg_attribute.atttypid, pg_attribute.atttypmod),
+          pg_attribute.attnum,
+          pg_index.indkey
         FROM
           pg_index, pg_class, pg_attribute, pg_namespace
         WHERE
-          pg_class.oid = $2::regclass AND
-          indrelid = pg_class.oid AND
           nspname = $1 AND
+          relname = $2 AND
+          indrelid = pg_class.oid AND
           pg_class.relnamespace = pg_namespace.oid AND
           pg_attribute.attrelid = pg_class.oid AND
           pg_attribute.attnum = any(pg_index.indkey) AND
           indisprimary
       SQL
-      row = execute(query, [table.split(".", 2)[0], quote_ident_full(table)])[0]
-      row && row["attname"]
+      rows = execute(query, table.split(".", 2))
+      rows.sort_by { |r| r["indkey"].split(" ").index(r["attnum"]) }.map { |r| r["attname"] }
     end
 
     def triggers(table)
-      query = <<-SQL
+      query = <<~SQL
         SELECT
           tgname AS name,
           tgisinternal AS internal,
@@ -108,6 +116,7 @@ module PgSync
           else
             config = {dbname: @url}
           end
+          @concurrent_id = concurrent_id
           PG::Connection.new(config)
         rescue URI::InvalidURIError
           raise Error, "Invalid connection string. Make sure it works with `psql`"
@@ -122,32 +131,17 @@ module PgSync
       end
     end
 
-    def reconnect
-      @conn.reset
-    end
-
-    def dump_command(tables)
-      tables = tables ? tables.keys.map { |t| "-t #{Shellwords.escape(quote_ident_full(t))}" }.join(" ") : ""
-      "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables} -d #{@url}"
-    end
-
-    def restore_command
-      if_exists = Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
-      "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@url}"
-    end
-
-    def fully_resolve_tables(tables)
-      no_schema_tables = {}
-      search_path_index = Hash[search_path.map.with_index.to_a]
-      self.tables.group_by { |t| t.split(".", 2)[-1] }.each do |group, t2|
-        no_schema_tables[group] = t2.sort_by { |t| [search_path_index[t.split(".", 2)[0]] || 1000000, t] }[0]
-      end
-
-      Hash[tables.map { |k, v| [no_schema_tables[k] || k, v] }]
+    # reconnect for new thread or process
+    def reconnect_if_needed
+      reconnect if @concurrent_id != concurrent_id
     end
 
     def search_path
       @search_path ||= execute("SELECT current_schemas(true)")[0]["current_schemas"][1..-2].split(",")
+    end
+
+    def server_version_num
+      @server_version_num ||= execute("SHOW server_version_num").first["server_version_num"].to_i
     end
 
     def execute(query, params = [])
@@ -165,12 +159,23 @@ module PgSync
       end
     end
 
+    def quote_ident_full(ident)
+      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
+    end
+
+    def quote_ident(value)
+      PG::Connection.quote_ident(value)
+    end
+
     private
 
-    def pg_restore_version
-      `pg_restore --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
-    rescue Errno::ENOENT
-      raise Error, "pg_restore not found"
+    def concurrent_id
+      [Process.pid, Thread.current.object_id]
+    end
+
+    def reconnect
+      @conn.reset
+      @concurrent_id = concurrent_id
     end
 
     def table_set
@@ -186,14 +191,6 @@ module PgSync
       end
     end
 
-    def quote_ident_full(ident)
-      ident.split(".", 2).map { |v| quote_ident(v) }.join(".")
-    end
-
-    def quote_ident(value)
-      PG::Connection.quote_ident(value)
-    end
-
     def escape(value)
       if value.is_a?(String)
         "'#{quote_string(value)}'"
@@ -205,21 +202,6 @@ module PgSync
     # activerecord
     def quote_string(s)
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
-    end
-
-    def resolve_url(source)
-      if source
-        source = source.dup
-        source.gsub!(/\$\([^)]+\)/) do |m|
-          command = m[2..-2]
-          result = `#{command}`.chomp
-          unless $?.success?
-            raise Error, "Command exited with non-zero status:\n#{command}"
-          end
-          result
-        end
-      end
-      source
     end
   end
 end

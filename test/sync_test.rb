@@ -3,7 +3,7 @@ require_relative "test_helper"
 class SyncTest < Minitest::Test
   def setup
     [$conn1, $conn2].each do |conn|
-      %w(Users posts comments robots).each do |table|
+      %w(Users posts comments books robots).each do |table|
         truncate(conn, table)
       end
     end
@@ -30,11 +30,34 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected)
   end
 
-  def test_update
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
-    expected = source[0..-1] + [dest[1]]
-    assert_result("--update", source, dest, expected)
+  def test_overwrite_multiple_primary_keys
+    skip
+
+    source = [
+      {"id" => 1, "id2" => 1, "title" => "Post 1"},
+      {"id" => 1, "id2" => 2, "title" => "Post 2"},
+      {"id" => 1, "id2" => 3, "title" => "Post 3"},
+    ]
+    dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 1, "id2" => 4, "title" => "Post 4"}]
+    expected = source + [dest[1]]
+    assert_result("--overwrite", source, dest, expected, "books")
+  end
+
+  def test_preserve_multiple_primary_keys
+    skip
+
+    source = [
+      {"id" => 1, "id2" => 1, "title" => "Post 1"},
+      {"id" => 1, "id2" => 2, "title" => "Post 2"},
+      {"id" => 2, "id2" => 4, "title" => "Post 3"},
+    ]
+    dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 3, "id2" => 4, "title" => "Post 4"}]
+    expected = [dest[0]] + source[1..-1] + [dest[1]]
+    assert_result("--preserve", source, dest, expected, "books")
+  end
+
+  def test_no_shared_fields
+    assert_prints "authors: No fields to copy", "authors", dbs: true
   end
 
   def test_where
@@ -53,7 +76,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_source_command_error
-    assert_error "Command exited with non-zero status:\nexit 1", "--from '$(exit 1)'"
+    assert_error "Command exited with non-zero status:\nexit 1", "--config test/support/bad.yml"
   end
 
   # def test_destination_danger
@@ -69,15 +92,19 @@ class SyncTest < Minitest::Test
   end
 
   def test_missing_column
-    assert_prints "Missing columns: zip_code", "Users", dbs: true
+    assert_prints "Missing columns: current_mood, zip_code", "Users", dbs: true
   end
 
   def test_extra_column
-    assert_prints "Extra columns: zip_code", "Users --from pgsync_test2 --to pgsync_test1"
+    assert_prints "Extra columns: current_mood, zip_code", "Users --from pgsync_test2 --to pgsync_test1"
+  end
+
+  def test_different_column_types
+    assert_prints "Different column types: pages (integer -> bigint)", "chapters", dbs: true
   end
 
   def test_table_unknown
-    assert_error "Table does not exist in source: bad", "bad", dbs: true
+    assert_error "Table not found in source: bad", "bad", dbs: true
   end
 
   def test_group
@@ -86,6 +113,28 @@ class SyncTest < Minitest::Test
 
   def test_group_unknown
     assert_error "Group not found: bad", "--groups bad", dbs: true
+  end
+
+  def test_in_batches
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = []
+    expected = source
+    assert_result("--in-batches --batch-size 1", source, dest, expected)
+  end
+
+  def test_in_batches_existing_data
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
+    expected = dest
+    assert_result("--in-batches --batch-size 1", source, dest, expected)
+  end
+
+  def test_in_batches_overwrite
+    assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", dbs: true
+  end
+
+  def test_in_batches_multiple_tables
+    assert_error "Cannot use --in-batches with multiple tables", "--in-batches", dbs: true
   end
 
   def test_data_rules
@@ -146,16 +195,16 @@ class SyncTest < Minitest::Test
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
-  def assert_result(command, source, dest, expected)
-    insert($conn1, "posts", source)
-    insert($conn2, "posts", dest)
+  def assert_result(command, source, dest, expected, table = "posts")
+    insert($conn1, table, source)
+    insert($conn2, table, dest)
 
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
 
-    assert_works "posts #{command}", dbs: true
+    assert_works "#{table} #{command}", dbs: true
 
-    assert_equal source, $conn1.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
   end
 end
