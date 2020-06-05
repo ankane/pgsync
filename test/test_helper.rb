@@ -24,8 +24,9 @@ class Minitest::Test
     ENV["VERBOSE"]
   end
 
-  def run_command(command, dbs: false)
+  def run_command(command, dbs: false, config: false)
     command << " --from pgsync_test1 --to pgsync_test2" if dbs
+    command << " --config test/support/config.yml" if config
     if verbose?
       puts
       puts "$ pgsync #{command}"
@@ -36,20 +37,20 @@ class Minitest::Test
     [output, status]
   end
 
-  def assert_works(command, dbs: false)
-    output, status = run_command(command, dbs: dbs)
+  def assert_works(command, **options)
+    output, status = run_command(command, **options)
     assert status.success?, "Command failed"
     output
   end
 
-  def assert_error(message, command, dbs: false)
-    output, status = run_command(command, dbs: dbs)
+  def assert_error(message, command, **options)
+    output, status = run_command(command, **options)
     assert !status.success?
     assert_match message, output
   end
 
-  def assert_prints(message, command, dbs: false)
-    output, status = run_command(command, dbs: dbs)
+  def assert_prints(message, command, **options)
+    output, status = run_command(command, **options)
     assert_match message, output
   end
 

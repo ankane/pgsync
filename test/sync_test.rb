@@ -69,8 +69,17 @@ class SyncTest < Minitest::Test
     assert_works "--schemas public", dbs: true
   end
 
+  def test_variable
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    expected = [source[1]]
+
+    insert($conn1, "posts", source)
+    assert_works "group2:2", config: true
+    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
+  end
+
   def test_variable_missing
-    assert_error "Missing variables: 1", "group2 --config test/support/config.yml", dbs: true
+    assert_error "Missing variables: 1", "group2", config: true
   end
 
   def test_variable_table
