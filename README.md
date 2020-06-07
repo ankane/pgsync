@@ -262,6 +262,26 @@ This creates `.pgsync-db2.yml` for you to edit. Specify a database in commands w
 pgsync --db db2
 ```
 
+## Integrations
+
+### Rails
+
+If you run `pgsync --init` in a Rails project, `.pgsync.yml` will exclude schema migrations and Active Record metadata.
+
+```yml
+exclude:
+  - schema_migrations
+  - ar_internal_metadata
+```
+
+### Heroku
+
+If you run `pgsync --init` in a Heroku project, `.pgsync.yml` will set the `from` database.
+
+```yml
+from: $(heroku config:get DATABASE_URL)?sslmode=require
+```
+
 ## Other Commands
 
 Help
