@@ -190,7 +190,7 @@ Options for replacement are:
 - `null`
 - `untouched`
 
-Rules starting with `unique_` require the table to have a primary key. `unique_phone` requires a numeric primary key.
+Rules starting with `unique_` require the table to have a single column primary key. `unique_phone` requires a numeric primary key.
 
 ## Foreign Keys
 
