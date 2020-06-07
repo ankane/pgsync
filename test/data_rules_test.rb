@@ -12,7 +12,7 @@ class DataRulesTest < Minitest::Test
         "attempts" => 1,
         "created_on" => Date.today,
         "updated_at" => Time.now,
-        "ip" => "127.0.0.1",
+        "ip" => "1.1.1.1",
         "name" => "Hi",
         "nonsense" => "Text",
         "untouchable" => "rock"
@@ -26,6 +26,8 @@ class DataRulesTest < Minitest::Test
     row = result.first
     assert_equal "email#{row["Id"]}@example.org", row["email"]
     assert_equal "secret#{row["Id"]}", row["token"]
+    assert row["ip"].end_with?("0.0.1")
+    assert_equal 1, row["name"].size
     assert_equal "rock", row["untouchable"]
   end
 
@@ -34,7 +36,12 @@ class DataRulesTest < Minitest::Test
     result = conn2.exec("SELECT * FROM \"Users\"").to_a
     row = result.first
     assert_equal "hi@example.org", row["email"]
+    assert_equal "555-555-5555", row["phone"]
     assert_equal "token123", row["token"]
+    assert_equal 1, row["attempts"]
+    assert_equal "1.1.1.1", row["ip"]
+    assert_equal "Hi", row["name"]
+    assert_equal "Text", row["nonsense"]
     assert_equal "rock", row["untouchable"]
   end
 end
