@@ -43,7 +43,7 @@ module PgSync
 
         # create file
         contents = File.read(__dir__ + "/../../config.yml")
-        contents.sub!("$(echo $DATABASE_URL)", "$(heroku config:get DATABASE_URL)") if heroku?
+        contents.sub!("$(some_command)", "$(heroku config:get DATABASE_URL)") if heroku?
         File.write(file, contents % {exclude: exclude})
 
         log "#{file} created. Add your database credentials."
