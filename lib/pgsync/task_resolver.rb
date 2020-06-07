@@ -116,10 +116,11 @@ module PgSync
     # used when no tables specified, or a wildcard
     # removes excluded tables and filters by schema
     def shared_tables
-      tables = source.tables
+      tables = filter_tables(source.tables)
+
       unless opts[:schema_only] || opts[:schema_first]
         from_tables = tables
-        to_tables = destination.tables
+        to_tables = filter_tables(destination.tables)
 
         extra_tables = to_tables - from_tables
         notes << "Extra tables: #{extra_tables.map { |t| friendly_name(t) }.join(", ")}" if extra_tables.any?
@@ -129,6 +130,12 @@ module PgSync
 
         tables &= to_tables
       end
+
+      tables
+    end
+
+    def filter_tables(tables)
+      tables = tables.dup
 
       # could support wildcard schemas as well
       if opts[:schemas]
