@@ -1,4 +1,4 @@
-## 0.6.0 (unreleased)
+## 0.6.0 (2020-06-07)
 
 - Added messages for different column types and non-deferrable constraints
 - Added support for wildcards to `--exclude`
