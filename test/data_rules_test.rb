@@ -3,9 +3,7 @@ require_relative "test_helper"
 class DataRulesTest < Minitest::Test
   def setup
     truncate_tables ["Users"]
-  end
 
-  def test_data_rules
     2.times do
       insert($conn1, "Users", [{
         "email" => "hi@example.org",
@@ -20,11 +18,23 @@ class DataRulesTest < Minitest::Test
         "untouchable" => "rock"
       }])
     end
+  end
+
+  def test_rules
     assert_works "Users", config: true
     result = $conn2.exec("SELECT * FROM \"Users\"").to_a
     row = result.first
     assert_equal "email#{row["Id"]}@example.org", row["email"]
     assert_equal "secret#{row["Id"]}", row["token"]
+    assert_equal "rock", row["untouchable"]
+  end
+
+  def test_no_rules
+    assert_works "Users --no-rules", config: true
+    result = $conn2.exec("SELECT * FROM \"Users\"").to_a
+    row = result.first
+    assert_equal "hi@example.org", row["email"]
+    assert_equal "token123", row["token"]
     assert_equal "rock", row["untouchable"]
   end
 end
