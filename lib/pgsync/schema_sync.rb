@@ -7,8 +7,11 @@ module PgSync
     end
 
     def perform
-      unless system("#{dump_command} | #{restore_command}")
-        raise Error, "Schema sync returned non-zero exit code"
+      Open3.popen2e("#{dump_command} | #{restore_command}") do |stdin, stdout, wait_thr|
+        stdout.each do |line|
+          yield line
+        end
+        wait_thr.value.success?
       end
     end
 

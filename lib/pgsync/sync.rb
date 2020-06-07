@@ -63,12 +63,34 @@ module PgSync
             raise Error, "Cannot use --preserve with --schema-first or --schema-only"
           end
 
-          log "* Dumping schema"
+          show_spinner = output.tty? && !@options[:debug]
+
+          if show_spinner
+            spinner = TTY::Spinner.new(":spinner Syncing schema", format: :dots)
+            spinner.auto_spin
+          end
+
           schema_tasks =
             if opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
               tasks
             end
-          SchemaSync.new(source: source, destination: destination, tasks: schema_tasks).perform
+
+          success =
+            SchemaSync.new(source: source, destination: destination, tasks: schema_tasks).perform do |line|
+              unless show_spinner
+                log line
+              end
+            end
+
+          if show_spinner
+            if success
+              spinner.success
+            else
+              spinner.error
+            end
+          end
+
+          raise Error, "Schema sync returned non-zero exit code" unless success
         end
 
         unless opts[:schema_only]

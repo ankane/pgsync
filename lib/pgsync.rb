@@ -10,6 +10,7 @@ require "shellwords"
 require "tempfile"
 require "uri"
 require "yaml"
+require "open3"
 
 # modules
 require "pgsync/utils"
