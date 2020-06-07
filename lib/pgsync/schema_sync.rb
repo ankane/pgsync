@@ -39,7 +39,7 @@ module PgSync
           spinner.success
         else
           spinner.error
-          puts lines.join
+          log lines.join
         end
       end
 
@@ -51,7 +51,7 @@ module PgSync
     def run_command(command)
       Open3.popen2e(command) do |stdin, stdout, wait_thr|
         stdout.each do |line|
-          yield
+          yield line
         end
         wait_thr.value.success?
       end
@@ -65,7 +65,7 @@ module PgSync
 
     def dump_command
       tables =
-        if opts[:tables] || opts[:groups] || args[0] || opts[:exclude]
+        if opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
           @tasks.map { |task| "-t #{Shellwords.escape(task.quoted_table)}" }
         else
           []
