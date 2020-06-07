@@ -1,10 +1,11 @@
 ## 0.6.0 (unreleased)
 
-- Improved `--overwrite` and `--preserve` options for foreign keys
-- Fixed `--overwrite` and `--preserve` options for multicolumn primary keys
-- Fixed output for notices
 - Added messages for different column types and non-deferrable constraints
 - Added support for wildcards to `--exclude`
+- Improved `--overwrite` and `--preserve` options for foreign keys
+- Improved output for schema sync
+- Fixed `--overwrite` and `--preserve` options for multicolumn primary keys
+- Fixed output for notices
 
 Breaking
 
