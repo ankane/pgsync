@@ -38,6 +38,7 @@ class InitTest < Minitest::Test
       Dir.mkdir("bin")
       File.write("bin/rails", "")
       assert_works "--init"
+      assert_match "ar_internal_metadata", File.read(".pgsync.yml")
       assert_match "schema_migrations", File.read(".pgsync.yml")
     end
   end
