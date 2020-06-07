@@ -80,6 +80,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_notice
+    skip if ENV["TRAVIS"]
     assert_prints "NOTICE:  truncate cascades to table \"comments\"", "posts", config: true
   end
 
