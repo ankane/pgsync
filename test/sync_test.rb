@@ -26,6 +26,13 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected)
   end
 
+  def test_where
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = []
+    expected = [source[0]]
+    assert_result(" 'WHERE id = 1'", source, dest, expected)
+  end
+
   def test_overwrite_multicolumn_primary_key
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
@@ -60,13 +67,6 @@ class SyncTest < Minitest::Test
     assert_prints "authors: No fields to copy", "authors", config: true
   end
 
-  def test_where
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    dest = []
-    expected = [source[0]]
-    assert_result(" 'WHERE id = 1'", source, dest, expected)
-  end
-
   def test_missing_column
     assert_prints "Missing columns: current_mood, zip_code", "Users", config: true
   end
@@ -77,29 +77,6 @@ class SyncTest < Minitest::Test
 
   def test_different_column_types
     assert_prints "Different column types: pages (integer -> bigint)", "chapters", config: true
-  end
-
-  def test_data_rules
-    2.times do
-      insert($conn1, "Users", [{
-        "email" => "hi@example.org",
-        "phone" => "555-555-5555",
-        "token" => "token123",
-        "attempts" => 1,
-        "created_on" => Date.today,
-        "updated_at" => Time.now,
-        "ip" => "127.0.0.1",
-        "name" => "Hi",
-        "nonsense" => "Text",
-        "untouchable" => "rock"
-      }])
-    end
-    assert_works "Users", config: true
-    result = $conn2.exec("SELECT * FROM \"Users\"").to_a
-    row = result.first
-    assert_equal "email#{row["Id"]}@example.org", row["email"]
-    assert_equal "secret#{row["Id"]}", row["token"]
-    assert_equal "rock", row["untouchable"]
   end
 
   def test_defer_constraints
