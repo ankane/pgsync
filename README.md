@@ -53,12 +53,6 @@ Works with wildcards as well
 pgsync "table*"
 ```
 
-Specify the schema
-
-```sh
-pgsync public.table1
-```
-
 Sync specific rows (existing rows are overwritten)
 
 ```sh
@@ -137,6 +131,26 @@ And run:
 
 ```sh
 pgsync product:123
+```
+
+## Tables
+
+Sync tables from all schemas (by default, only the search path is synced)
+
+```sh
+pgsync --all-schemas
+```
+
+Or from specific schemas
+
+```sh
+pgsync --schemas public,other
+```
+
+Specify the schema for specific tables
+
+```sh
+pgsync public.table1,other.table2
 ```
 
 ## Schema
