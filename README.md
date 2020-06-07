@@ -87,21 +87,13 @@ exclude:
   - table2
 ```
 
-Sync tables from all schemas (by default, only the search path is synced)
+Sync tables from all schemas or specific schemas (by default, only the search path is synced)
 
 ```sh
 pgsync --all-schemas
-```
-
-Or from specific schemas
-
-```sh
+# or
 pgsync --schemas public,other
-```
-
-Specify the schema for specific tables
-
-```sh
+# or
 pgsync public.table1,other.table2
 ```
 
