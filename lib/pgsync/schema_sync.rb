@@ -66,7 +66,7 @@ module PgSync
 
     def dump_command
       tables =
-        if opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
+        if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
           @tasks.map { |task| "-t #{Shellwords.escape(task.quoted_table)}" }
         else
           []

@@ -10,7 +10,6 @@
 Breaking
 
 - Sync all tables in both source and destination when no tables specified
-- Removed `--all-schemas` option (now the default)
 - Raise an error when `--config` or `--db` option provided and config not found
 - Removed deprecated options
 - Dropped support for Postgres < 9.5

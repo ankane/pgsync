@@ -137,9 +137,9 @@ module PgSync
     def filter_tables(tables)
       tables = tables.dup
 
-      # could support wildcard schemas as well
-      if opts[:schemas]
-        schemas = Set.new(to_arr(opts[:schemas]))
+      unless opts[:all_schemas]
+        # could support wildcard schemas as well
+        schemas = Set.new(opts[:schemas] ? to_arr(opts[:schemas]) : source.search_path)
         tables.select! { |t| schemas.include?(t.schema) }
       end
 

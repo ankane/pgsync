@@ -59,6 +59,7 @@ Options:}
       o.boolean "--truncate", "truncate existing rows", default: false
       o.boolean "--schema-first", "schema first", default: false
       o.boolean "--schema-only", "schema only", default: false
+      o.boolean "--all-schemas", "all schemas", default: false
       o.boolean "--no-rules", "do not apply data rules", default: false
       o.boolean "--no-sequences", "do not sync sequences", default: false
       o.boolean "--init", "init", default: false

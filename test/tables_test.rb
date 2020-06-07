@@ -4,7 +4,7 @@ class TablesTest < Minitest::Test
   def test_all
     tables = list_tables
     assert_includes tables, "posts"
-    assert_includes tables, "other.pets"
+    refute_includes tables, "other.pets"
     refute_includes tables, "excluded"
   end
 
