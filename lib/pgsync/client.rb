@@ -27,7 +27,7 @@ module PgSync
     rescue => e
       # Error, PG::ConnectionBad, Slop::Error
       raise e if options && options[:debug]
-      abort colorize(e.message, :red)
+      abort colorize(e.message.strip, :red)
     end
 
     def self.start
