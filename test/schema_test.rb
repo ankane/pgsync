@@ -26,12 +26,11 @@ class SchemaTest < Minitest::Test
     assert_equal all_tables - ["public.Users"], tables(conn3)
   end
 
-  def test_schema_only_schemas
-    skip "Test fails due to enum"
-
-    assert_works "--schemas public --from pgsync_test1 --to pgsync_test3 --schema-only"
-    assert_equal all_tables - ["other.pets"], tables(conn3)
-  end
+  # fails due to enum
+  # def test_schema_only_schemas
+  #   assert_works "--schemas public --from pgsync_test1 --to pgsync_test3 --schema-only"
+  #   assert_equal all_tables - ["other.pets"], tables(conn3)
+  # end
 
   def test_schema_first
     insert(conn1, "posts", [{"id" => 1}])
