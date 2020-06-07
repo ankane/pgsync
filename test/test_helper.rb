@@ -9,7 +9,7 @@ require "open3"
 
 class Minitest::Test
   def verbose?
-    ENV["VERBOSE"]
+    ENV["VERBOSE"] || ENV["CI"]
   end
 
   # shelling out for each test is slower
