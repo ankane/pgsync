@@ -13,6 +13,10 @@ class DataSourceTest < Minitest::Test
     assert_error "Command exited with non-zero status:\nexit 1", "--config test/support/bad.yml"
   end
 
+  def test_source_command_not_run_with_option
+    assert_works "--config test/support/bad.yml --from pgsync_test1"
+  end
+
   # def test_destination_danger
   #   assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from pgsync_test1 --to postgres://hostname/db2"
   # end
