@@ -50,7 +50,13 @@ pgsync table1,table2
 Works with wildcards as well
 
 ```sh
-pgsync "public.*"
+pgsync "table*"
+```
+
+Specify the schema
+
+```sh
+pgsync public.table1
 ```
 
 Sync specific rows (existing rows are overwritten)
