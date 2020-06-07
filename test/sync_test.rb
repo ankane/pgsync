@@ -2,11 +2,7 @@ require_relative "test_helper"
 
 class SyncTest < Minitest::Test
   def setup
-    [$conn1, $conn2].each do |conn|
-      %w(Users posts comments books robots).each do |table|
-        truncate(conn, table)
-      end
-    end
+    truncate_tables %w(Users posts comments books robots)
   end
 
   def test_truncate
@@ -60,32 +56,6 @@ class SyncTest < Minitest::Test
     assert_error "No primary key", "chapters --preserve", config: true
   end
 
-  def test_variable
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    expected = [source[1]]
-
-    insert($conn1, "posts", source)
-    assert_works "variable:2", config: true
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
-  end
-
-  def test_variable_id
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    expected = [source[1]]
-
-    insert($conn1, "posts", source)
-    assert_works "variable_id:2", config: true
-    assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
-  end
-
-  def test_variable_missing
-    assert_error "Missing variables: 1", "variable", config: true
-  end
-
-  def test_variable_table
-    assert_error "Cannot use parameters with tables", "posts:123", config: true
-  end
-
   def test_no_shared_fields
     assert_prints "authors: No fields to copy", "authors", config: true
   end
@@ -131,28 +101,6 @@ class SyncTest < Minitest::Test
 
   def test_different_column_types
     assert_prints "Different column types: pages (integer -> bigint)", "chapters", config: true
-  end
-
-  def test_in_batches
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    dest = []
-    expected = source
-    assert_result("--in-batches --batch-size 1", source, dest, expected)
-  end
-
-  def test_in_batches_existing_data
-    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
-    dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
-    expected = dest
-    assert_result("--in-batches --batch-size 1", source, dest, expected)
-  end
-
-  def test_in_batches_overwrite
-    assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", config: true
-  end
-
-  def test_in_batches_multiple_tables
-    assert_error "Cannot use --in-batches with multiple tables", "--in-batches", config: true
   end
 
   def test_data_rules
@@ -210,18 +158,5 @@ class SyncTest < Minitest::Test
     # integrity is lost! (as expected)
     assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
-  end
-
-  def assert_result(command, source, dest, expected, table = "posts")
-    insert($conn1, table, source)
-    insert($conn2, table, dest)
-
-    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-
-    assert_works "#{table} #{command}", config: true
-
-    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
   end
 end

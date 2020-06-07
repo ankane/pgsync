@@ -59,6 +59,14 @@ class Minitest::Test
     conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
   end
 
+  def truncate_tables(tables)
+    [$conn1, $conn2].each do |conn|
+      tables.each do |table|
+        truncate(conn, table)
+      end
+    end
+  end
+
   def insert(conn, table, rows)
     return if rows.empty?
 
@@ -73,5 +81,18 @@ class Minitest::Test
 
   def quote_ident(ident)
     PG::Connection.quote_ident(ident)
+  end
+
+  def assert_result(command, source, dest, expected, table = "posts")
+    insert($conn1, table, source)
+    insert($conn2, table, dest)
+
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+
+    assert_works "#{table} #{command}", config: true
+
+    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
   end
 end
