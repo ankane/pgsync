@@ -53,10 +53,11 @@ module PgSync
 
       confirm_tables_exist(source, tasks, "source")
 
-      # TODO remove?
       if opts[:list]
         confirm_tables_exist(destination, tasks, "destination")
-        pretty_list tasks.map { |task| task_name(task) }
+        tasks.each do |task|
+          log task_name(task)
+        end
       else
         if opts[:schema_first] || opts[:schema_only]
           SchemaSync.new(source: source, destination: destination, tasks: tasks, args: args, opts: opts).perform
@@ -90,12 +91,6 @@ module PgSync
     def print_description(prefix, source)
       location = " on #{source.host}:#{source.port}" if source.host
       log "#{prefix}: #{source.dbname}#{location}"
-    end
-
-    def pretty_list(items)
-      items.each do |item|
-        log item
-      end
     end
 
     def log_completed(started_at)
