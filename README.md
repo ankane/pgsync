@@ -266,7 +266,7 @@ pgsync --db db2
 
 ### Rails
 
-If you run `pgsync --init` in a Rails project, `.pgsync.yml` will exclude Active Record metadata and schema migrations.
+If you run `pgsync --init` in a Rails project, Active Record metadata and schema migrations will be excluded in `.pgsync.yml`.
 
 ```yml
 exclude:
@@ -276,7 +276,7 @@ exclude:
 
 ### Heroku
 
-If you run `pgsync --init` in a Heroku project, `.pgsync.yml` will set the `from` database.
+If you run `pgsync --init` in a Heroku project, the `from` database will be set in `.pgsync.yml`.
 
 ```yml
 from: $(heroku config:get DATABASE_URL)?sslmode=require
