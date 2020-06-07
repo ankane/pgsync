@@ -7,9 +7,31 @@ require "shellwords"
 require "tmpdir"
 require "open3"
 
+def connect(dbname)
+  conn = PG::Connection.open(dbname: dbname)
+  conn.exec("SET client_min_messages TO WARNING")
+  conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
+  conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
+  conn
+end
+
+def conn1
+  @conn1 ||= connect("pgsync_test1")
+end
+
+def conn2
+  @conn2 ||= connect("pgsync_test2")
+end
+
+def conn3
+  @conn3 ||= connect("pgsync_test3")
+end
+
+[conn1, conn2, conn3] # setup schema
+
 class Minitest::Test
   def verbose?
-    ENV["VERBOSE"] || ENV["CI"]
+    ENV["VERBOSE"]
   end
 
   # shelling out for each test is slower
@@ -82,25 +104,5 @@ class Minitest::Test
 
     assert_equal source, conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
     assert_equal expected, conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-  end
-
-  def connect(dbname)
-    conn = PG::Connection.open(dbname: dbname)
-    conn.exec("SET client_min_messages TO WARNING")
-    conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
-    conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
-    conn
-  end
-
-  def conn1
-    @conn1 ||= connect("pgsync_test1")
-  end
-
-  def conn2
-    @conn2 ||= connect("pgsync_test2")
-  end
-
-  def conn3
-    @conn3 ||= connect("pgsync_test3")
   end
 end
