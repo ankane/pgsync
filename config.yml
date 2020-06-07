@@ -7,7 +7,7 @@
 #
 # we *highly recommend* you use sslmode=verify-full when possible
 # see https://ankane.org/postgres-sslmode-explained for more info
-from: $(some_command)?sslmode=require
+from: $(echo $DATABASE_URL)?sslmode=require
 
 # destination database URL
 to: postgres://localhost:5432/myapp_development
