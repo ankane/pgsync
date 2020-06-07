@@ -9,7 +9,7 @@
 
 Breaking
 
-- Sync all tables in both source and destination when no tables specified
+- Syncs shared tables instead of raising an error when tables missing in destination
 - Raise an error when `--config` or `--db` option provided and config not found
 - Removed deprecated options
 - Dropped support for Postgres < 9.5
