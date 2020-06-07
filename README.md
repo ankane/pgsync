@@ -264,17 +264,11 @@ pgsync --db db2
 
 ## Integrations
 
-### Rails
+- [Django](#django) [master]
+- [Heroku](#heroku)
+- [Rails](#rails)
 
-If you run `pgsync --init` in a Rails project, Active Record metadata and schema migrations will be excluded in `.pgsync.yml`.
-
-```yml
-exclude:
-  - ar_internal_metadata
-  - schema_migrations
-```
-
-### Django [master]
+### Django
 
 If you run `pgsync --init` in a Django project, migrations will be excluded in `.pgsync.yml`.
 
@@ -289,6 +283,16 @@ If you run `pgsync --init` in a Heroku project, the `from` database will be set 
 
 ```yml
 from: $(heroku config:get DATABASE_URL)?sslmode=require
+```
+
+### Rails
+
+If you run `pgsync --init` in a Rails project, Active Record metadata and schema migrations will be excluded in `.pgsync.yml`.
+
+```yml
+exclude:
+  - ar_internal_metadata
+  - schema_migrations
 ```
 
 ## Other Commands
