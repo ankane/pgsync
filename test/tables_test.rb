@@ -22,6 +22,12 @@ class TablesTest < Minitest::Test
     refute_includes tables, "excluded"
   end
 
+  def test_schemas_wildcard
+    tables = list_tables("--schemas public p*")
+    assert_includes tables, "posts"
+    refute_includes tables, "other.pets"
+  end
+
   def test_exclude_overrides_config
     tables = list_tables("--exclude posts")
     refute_includes tables, "posts"
