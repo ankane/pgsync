@@ -71,7 +71,7 @@ Or truncate them
 pgsync products "where store_id = 1" --truncate
 ```
 
-## Exclude
+## Tables
 
 Exclude specific tables
 
@@ -79,7 +79,7 @@ Exclude specific tables
 pgsync --exclude table1,table2
 ```
 
-Add to `.pgsync.yml` to exclude by default.
+Add to `.pgsync.yml` to exclude by default
 
 ```yml
 exclude:
@@ -87,12 +87,22 @@ exclude:
   - table2
 ```
 
-For Rails, you probably want to exclude schema migrations and Active Record metadata.
+Sync tables from all schemas (by default, only the search path is synced)
 
-```yml
-exclude:
-  - schema_migrations
-  - ar_internal_metadata
+```sh
+pgsync --all-schemas
+```
+
+Or from specific schemas
+
+```sh
+pgsync --schemas public,other
+```
+
+Specify the schema for specific tables
+
+```sh
+pgsync public.table1,other.table2
 ```
 
 ## Groups
@@ -131,26 +141,6 @@ And run:
 
 ```sh
 pgsync product:123
-```
-
-## Tables
-
-Sync tables from all schemas (by default, only the search path is synced)
-
-```sh
-pgsync --all-schemas
-```
-
-Or from specific schemas
-
-```sh
-pgsync --schemas public,other
-```
-
-Specify the schema for specific tables
-
-```sh
-pgsync public.table1,other.table2
 ```
 
 ## Schema
