@@ -116,8 +116,6 @@ module PgSync
     # used when no tables specified, or a wildcard
     # removes excluded tables and filters by schema
     def shared_tables
-      exclude = to_arr(opts[:exclude]).map { |t| fully_resolve(to_table(t)) }
-
       tables = source.tables
       unless opts[:schema_only] || opts[:schema_first]
         from_tables = tables
@@ -137,7 +135,16 @@ module PgSync
         tables.select! { |t| schemas.include?(t.schema) }
       end
 
-      tables - exclude
+      to_arr(opts[:exclude]).each do |value|
+        if value.include?("*")
+          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
+          tables.reject! { |t| regex.match(t.full_name) || regex.match(t.name) }
+        else
+          tables -= [fully_resolve(to_table(value))]
+        end
+      end
+
+      tables
     end
 
     def process_args

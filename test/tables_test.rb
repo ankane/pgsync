@@ -28,6 +28,12 @@ class TablesTest < Minitest::Test
     refute_includes tables, "other.pets"
   end
 
+  def test_exclude_wildcard
+    tables = list_tables("--exclude p*")
+    refute_includes tables, "posts"
+    assert_includes tables, "comments"
+  end
+
   def test_exclude_overrides_config
     tables = list_tables("--exclude posts")
     refute_includes tables, "posts"

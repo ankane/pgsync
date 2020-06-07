@@ -4,6 +4,7 @@
 - Fixed `--overwrite` and `--preserve` options for multicolumn primary keys
 - Fixed output for notices
 - Added messages for different column types and non-deferrable constraints
+- Added support for wildcards to `--exclude`
 
 Breaking
 
