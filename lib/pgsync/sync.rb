@@ -75,9 +75,12 @@ module PgSync
               tasks
             end
 
+          lines = []
           success =
             SchemaSync.new(source: source, destination: destination, tasks: schema_tasks).perform do |line|
-              unless show_spinner
+              if show_spinner
+                lines << line
+              else
                 log line
               end
             end
@@ -87,6 +90,7 @@ module PgSync
               spinner.success
             else
               spinner.error
+              puts lines.join
             end
           end
 
