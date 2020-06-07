@@ -127,7 +127,6 @@ module PgSync
         if result[:status] == "success"
           spinner.success(message)
         else
-          # TODO add option to fail fast
           spinner.error(message)
           failed_tables << task_name(task)
           fail_sync(failed_tables) if opts[:fail_fast]
