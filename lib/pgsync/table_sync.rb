@@ -37,14 +37,19 @@ module PgSync
     end
 
     def show_notes
+      # for tables
       resolver.notes.each do |note|
         warning note
       end
+
+      # for columns and sequences
       tasks.each do |task|
         task.notes.each do |note|
           warning "#{task_name(task)}: #{note}"
         end
       end
+
+      # for non-deferrable constraints
       if opts[:defer_constraints]
         constraints = non_deferrable_constraints(destination)
         constraints = tasks.flat_map { |t| constraints[t.table] || [] }
