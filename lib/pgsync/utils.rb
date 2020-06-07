@@ -58,6 +58,22 @@ module PgSync
       end
     end
 
+    def confirm_tables_exist(data_source, tasks, description)
+      tasks.map(&:table).each do |table|
+        unless data_source.table_exists?(table)
+          raise Error, "Table not found in #{description}: #{table}"
+        end
+      end
+    end
+
+    def first_schema
+      @first_schema ||= source.search_path.find { |sp| sp != "pg_catalog" }
+    end
+
+    def task_name(task)
+      friendly_name(task.table)
+    end
+
     def friendly_name(table)
       if table.schema == first_schema
         table.name
