@@ -79,6 +79,10 @@ class SyncTest < Minitest::Test
     assert_prints "Different column types: pages (integer -> bigint)", "chapters", config: true
   end
 
+  def test_notice
+    assert_prints "NOTICE:  truncate cascades to table \"comments\"", "", config: true
+  end
+
   def test_defer_constraints
     insert(conn1, "posts", [{"id" => 1}])
     insert(conn1, "comments", [{"post_id" => 1}])
