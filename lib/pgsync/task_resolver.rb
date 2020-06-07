@@ -130,6 +130,7 @@ module PgSync
         tables &= to_tables
       end
 
+      # could support wildcard schemas as well
       if opts[:schemas]
         schemas = Set.new(to_arr(opts[:schemas]))
         tables.select! { |t| schemas.include?(t.schema) }
