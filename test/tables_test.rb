@@ -15,6 +15,18 @@ class TablesTest < Minitest::Test
     refute_includes tables, "excluded"
   end
 
+  def test_wildcard_all_schemas
+    tables = list_tables("p* --all-schemas")
+    assert_includes tables, "posts"
+    assert_includes tables, "other.pets"
+  end
+
+  def test_wildcard_schemas
+    tables = list_tables("p* --schemas public")
+    assert_includes tables, "posts"
+    refute_includes tables, "other.pets"
+  end
+
   def test_all_schemas
     tables = list_tables("--all-schemas")
     assert_includes tables, "posts"
@@ -27,12 +39,6 @@ class TablesTest < Minitest::Test
     assert_includes tables, "posts"
     refute_includes tables, "other.pets"
     refute_includes tables, "excluded"
-  end
-
-  def test_schemas_wildcard
-    tables = list_tables("p* --schemas public")
-    assert_includes tables, "posts"
-    refute_includes tables, "other.pets"
   end
 
   def test_exclude_wildcard
