@@ -23,7 +23,7 @@ class TablesTest < Minitest::Test
   end
 
   def test_schemas_wildcard
-    tables = list_tables("--schemas public p*")
+    tables = list_tables("p* --schemas public")
     assert_includes tables, "posts"
     refute_includes tables, "other.pets"
   end
