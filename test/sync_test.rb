@@ -93,6 +93,7 @@ class SyncTest < Minitest::Test
   def test_defer_constraints_not_deferrable
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments2", [{"post_id" => 1}])
+    assert_prints "Non-deferrable constraints: comments2_post_id_fkey", "comments2,posts --defer-constraints", config: true
     assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", config: true
   end
 
