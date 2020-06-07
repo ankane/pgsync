@@ -24,6 +24,7 @@ module PgSync
         spinner.auto_spin
       end
 
+      # if spinner, capture lines to show on error
       lines = []
       success =
         run_command("#{dump_command} | #{restore_command}") do |line|
