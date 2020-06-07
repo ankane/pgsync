@@ -80,7 +80,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_notice
-    assert_prints "NOTICE:  truncate cascades to table \"comments\"", "", config: true
+    assert_prints "NOTICE:  truncate cascades to table \"comments\"", "posts", config: true
   end
 
   def test_defer_constraints
