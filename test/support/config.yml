@@ -7,6 +7,8 @@ groups:
     posts: "WHERE id = {1}"
   variable_id:
     posts: "WHERE id = {id}"
+  group_with_excluded:
+    - excluded
 exclude:
   - excluded
 data_rules:

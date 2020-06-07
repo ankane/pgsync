@@ -60,15 +60,6 @@ class SyncTest < Minitest::Test
     assert_error "No primary key", "chapters --preserve", dbs: true
   end
 
-  def test_all
-    assert_works "", dbs: true
-  end
-
-  # TODO improve test
-  def test_schemas
-    assert_works "--schemas public", dbs: true
-  end
-
   def test_variable
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     expected = [source[1]]
@@ -151,11 +142,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_group
-    assert_works "group1 --config test/support/config.yml", dbs: true
+    assert_works "group1", config: true
   end
 
   def test_group_unknown
-    assert_error "Group not found: bad", "--groups bad", dbs: true
+    assert_error "Group not found: bad", "--groups bad", config: true
   end
 
   def test_in_batches
@@ -195,7 +186,7 @@ class SyncTest < Minitest::Test
         "untouchable" => "rock"
       }])
     end
-    assert_works "Users --config test/support/config.yml", dbs: true
+    assert_works "Users", config: true
     result = $conn2.exec("SELECT * FROM \"Users\"").to_a
     row = result.first
     assert_equal "email#{row["Id"]}@example.org", row["email"]

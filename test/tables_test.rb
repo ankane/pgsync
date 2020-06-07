@@ -8,6 +8,13 @@ class TablesTest < Minitest::Test
     refute_includes tables, "excluded"
   end
 
+  def test_wildcard
+    tables = list_tables("public.*")
+    assert_includes tables, "posts"
+    refute_includes tables, "other.pets"
+    refute_includes tables, "excluded"
+  end
+
   def test_schemas
     tables = list_tables("--schemas public")
     assert_includes tables, "posts"
@@ -18,6 +25,11 @@ class TablesTest < Minitest::Test
   def test_exclude_overrides_config
     tables = list_tables("--exclude posts")
     refute_includes tables, "posts"
+    assert_includes tables, "excluded"
+  end
+
+  def test_exclude_not_applied_to_groups
+    tables = list_tables("group_with_excluded")
     assert_includes tables, "excluded"
   end
 
