@@ -5,7 +5,7 @@ class VariableTest < Minitest::Test
     truncate_tables ["posts"]
   end
 
-  def test_variable
+  def test_number
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     expected = [source[1]]
 
@@ -14,7 +14,7 @@ class VariableTest < Minitest::Test
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
   end
 
-  def test_variable_id
+  def test_id
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     expected = [source[1]]
 
@@ -23,11 +23,11 @@ class VariableTest < Minitest::Test
     assert_equal expected, $conn2.exec("SELECT * FROM posts ORDER BY 1, 2").to_a
   end
 
-  def test_variable_missing
+  def test_missing
     assert_error "Missing variables: 1", "variable", config: true
   end
 
-  def test_variable_table
+  def test_table
     assert_error "Cannot use parameters with tables", "posts:123", config: true
   end
 end
