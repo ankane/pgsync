@@ -71,7 +71,9 @@ Or truncate them
 pgsync products "where store_id = 1" --truncate
 ```
 
-## Exclude Tables
+## Exclude
+
+Exclude specific tables
 
 ```sh
 pgsync --exclude table1,table2
