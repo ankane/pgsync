@@ -62,6 +62,10 @@ CREATE TABLE robots (
   name TEXT
 );
 
+CREATE TABLE excluded (
+  id SERIAL PRIMARY KEY
+);
+
 CREATE TABLE other.pets (
   id SERIAL PRIMARY KEY
 );
