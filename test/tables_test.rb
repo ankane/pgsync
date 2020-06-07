@@ -15,6 +15,13 @@ class TablesTest < Minitest::Test
     refute_includes tables, "excluded"
   end
 
+  def test_all_schemas
+    tables = list_tables("--all-schemas")
+    assert_includes tables, "posts"
+    assert_includes tables, "other.pets"
+    refute_includes tables, "excluded"
+  end
+
   def test_schemas
     tables = list_tables("--schemas public")
     assert_includes tables, "posts"
