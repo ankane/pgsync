@@ -35,7 +35,7 @@ This creates `.pgsync.yml` for you to customize. We recommend checking this into
 
 First, make sure your schema is set up in both databases. We recommend using a schema migration tool for this, but pgsync also provides a few [convenience methods](#schema). Once that’s done, you’re ready to sync data.
 
-Sync all tables
+Sync tables
 
 ```sh
 pgsync
