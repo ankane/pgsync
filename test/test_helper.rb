@@ -7,18 +7,6 @@ require "shellwords"
 require "tmpdir"
 require "open3"
 
-def connect(dbname)
-  conn = PG::Connection.open(dbname: dbname)
-  conn.exec("SET client_min_messages TO WARNING")
-  conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
-  conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
-  conn
-end
-
-$conn1 = connect("pgsync_test1")
-$conn2 = connect("pgsync_test2")
-$conn3 = connect("pgsync_test3")
-
 class Minitest::Test
   def verbose?
     ENV["VERBOSE"]
@@ -60,7 +48,7 @@ class Minitest::Test
   end
 
   def truncate_tables(tables)
-    [$conn1, $conn2].each do |conn|
+    [conn1, conn2].each do |conn|
       tables.each do |table|
         truncate(conn, table)
       end
@@ -84,15 +72,35 @@ class Minitest::Test
   end
 
   def assert_result(command, source, dest, expected, table = "posts")
-    insert($conn1, table, source)
-    insert($conn2, table, dest)
+    insert(conn1, table, source)
+    insert(conn2, table, dest)
 
-    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-    assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal source, conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal dest, conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
 
     assert_works "#{table} #{command}", config: true
 
-    assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
-    assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal source, conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+    assert_equal expected, conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+  end
+
+  def connect(dbname)
+    conn = PG::Connection.open(dbname: dbname)
+    conn.exec("SET client_min_messages TO WARNING")
+    conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
+    conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
+    conn
+  end
+
+  def conn1
+    @conn1 ||= connect("pgsync_test1")
+  end
+
+  def conn2
+    @conn2 ||= connect("pgsync_test2")
+  end
+
+  def conn3
+    @conn3 ||= connect("pgsync_test3")
   end
 end

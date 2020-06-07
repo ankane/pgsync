@@ -80,37 +80,37 @@ class SyncTest < Minitest::Test
   end
 
   def test_defer_constraints
-    insert($conn1, "posts", [{"id" => 1}])
-    insert($conn1, "comments", [{"post_id" => 1}])
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", config: true
     assert_works "comments,posts --defer-constraints", config: true
     assert_works "comments,posts --defer-constraints --overwrite", config: true
     assert_works "comments,posts --defer-constraints --preserve", config: true
-    assert_equal [{"id" => 1}], $conn2.exec("SELECT id FROM posts ORDER BY id").to_a
-    assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
+    assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 
   def test_defer_constraints_not_deferrable
-    insert($conn1, "posts", [{"id" => 1}])
-    insert($conn1, "comments2", [{"post_id" => 1}])
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments2", [{"post_id" => 1}])
     assert_prints "Non-deferrable constraints: comments2_post_id_fkey", "comments2,posts --defer-constraints", config: true
     assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", config: true
   end
 
   def test_disable_user_triggers
-    insert($conn1, "robots", [{"name" => "Test"}])
+    insert(conn1, "robots", [{"name" => "Test"}])
     assert_error "Sync failed for 1 table: robots", "robots", config: true
     assert_works "robots --disable-user-triggers", config: true
-    assert_equal [{"name" => "Test"}], $conn2.exec("SELECT name FROM robots ORDER BY id").to_a
+    assert_equal [{"name" => "Test"}], conn2.exec("SELECT name FROM robots ORDER BY id").to_a
   end
 
   def test_disable_integrity
-    insert($conn1, "posts", [{"id" => 1}])
-    insert($conn1, "comments", [{"post_id" => 1}])
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments", config: true
     assert_works "comments --disable-integrity", config: true
     # integrity is lost! (as expected)
-    assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
-    assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
+    assert_equal [], conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
 end
