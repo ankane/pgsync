@@ -53,11 +53,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_overwrite_no_primary_key
-    assert_error "No primary key", "chapters --overwrite", dbs: true
+    assert_error "No primary key", "chapters --overwrite", config: true
   end
 
   def test_preserve_no_primary_key
-    assert_error "No primary key", "chapters --preserve", dbs: true
+    assert_error "No primary key", "chapters --preserve", config: true
   end
 
   def test_variable
@@ -83,11 +83,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_variable_table
-    assert_error "Cannot use parameters with tables", "posts:123", dbs: true
+    assert_error "Cannot use parameters with tables", "posts:123", config: true
   end
 
   def test_no_shared_fields
-    assert_prints "authors: No fields to copy", "authors", dbs: true
+    assert_prints "authors: No fields to copy", "authors", config: true
   end
 
   def test_where
@@ -122,7 +122,7 @@ class SyncTest < Minitest::Test
   end
 
   def test_missing_column
-    assert_prints "Missing columns: current_mood, zip_code", "Users", dbs: true
+    assert_prints "Missing columns: current_mood, zip_code", "Users", config: true
   end
 
   def test_extra_column
@@ -130,15 +130,15 @@ class SyncTest < Minitest::Test
   end
 
   def test_different_column_types
-    assert_prints "Different column types: pages (integer -> bigint)", "chapters", dbs: true
+    assert_prints "Different column types: pages (integer -> bigint)", "chapters", config: true
   end
 
   def test_table_unknown
-    assert_error "Table not found in source: bad", "bad", dbs: true
+    assert_error "Table not found in source: bad", "bad", config: true
   end
 
   def test_table_invalid
-    assert_error "Cannot resolve table: bad.bad.bad", "bad.bad.bad", dbs: true
+    assert_error "Cannot resolve table: bad.bad.bad", "bad.bad.bad", config: true
   end
 
   def test_group
@@ -164,11 +164,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_in_batches_overwrite
-    assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", dbs: true
+    assert_error "Cannot use --overwrite with --in-batches", "posts --in-batches --overwrite", config: true
   end
 
   def test_in_batches_multiple_tables
-    assert_error "Cannot use --in-batches with multiple tables", "--in-batches", dbs: true
+    assert_error "Cannot use --in-batches with multiple tables", "--in-batches", config: true
   end
 
   def test_data_rules
@@ -197,10 +197,10 @@ class SyncTest < Minitest::Test
   def test_defer_constraints
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments", [{"post_id" => 1}])
-    assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", dbs: true
-    assert_works "comments,posts --defer-constraints", dbs: true
-    assert_works "comments,posts --defer-constraints --overwrite", dbs: true
-    assert_works "comments,posts --defer-constraints --preserve", dbs: true
+    assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", config: true
+    assert_works "comments,posts --defer-constraints", config: true
+    assert_works "comments,posts --defer-constraints --overwrite", config: true
+    assert_works "comments,posts --defer-constraints --preserve", config: true
     assert_equal [{"id" => 1}], $conn2.exec("SELECT id FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
@@ -208,21 +208,21 @@ class SyncTest < Minitest::Test
   def test_defer_constraints_not_deferrable
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments2", [{"post_id" => 1}])
-    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", dbs: true
+    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", config: true
   end
 
   def test_disable_user_triggers
     insert($conn1, "robots", [{"name" => "Test"}])
-    assert_error "Sync failed for 1 table: robots", "robots", dbs: true
-    assert_works "robots --disable-user-triggers", dbs: true
+    assert_error "Sync failed for 1 table: robots", "robots", config: true
+    assert_works "robots --disable-user-triggers", config: true
     assert_equal [{"name" => "Test"}], $conn2.exec("SELECT name FROM robots ORDER BY id").to_a
   end
 
   def test_disable_integrity
     insert($conn1, "posts", [{"id" => 1}])
     insert($conn1, "comments", [{"post_id" => 1}])
-    assert_error "Sync failed for 1 table: comments", "comments", dbs: true
-    assert_works "comments --disable-integrity", dbs: true
+    assert_error "Sync failed for 1 table: comments", "comments", config: true
+    assert_works "comments --disable-integrity", config: true
     # integrity is lost! (as expected)
     assert_equal [], $conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], $conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
@@ -235,7 +235,7 @@ class SyncTest < Minitest::Test
     assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
     assert_equal dest, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
 
-    assert_works "#{table} #{command}", dbs: true
+    assert_works "#{table} #{command}", config: true
 
     assert_equal source, $conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
     assert_equal expected, $conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a

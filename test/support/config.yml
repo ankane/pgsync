@@ -19,5 +19,5 @@ data_rules:
   created_on: random_date
   updated_at: random_time
   ip: random_ip
-  name: random_letter
+  Users.name: random_letter
   nonsense: random_string

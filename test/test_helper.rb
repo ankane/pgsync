@@ -26,8 +26,7 @@ class Minitest::Test
 
   # shelling out for each test is slower
   # but it prevents forking from messing up connections
-  def run_command(command, dbs: false, config: false)
-    command << " --from pgsync_test1 --to pgsync_test2" if dbs
+  def run_command(command, config: false)
     command << " --config test/support/config.yml" if config
     if verbose?
       puts
