@@ -45,6 +45,32 @@ class TablesTest < Minitest::Test
     assert_includes tables, "excluded"
   end
 
+  def test_tables_option
+    tables = list_tables("--tables posts")
+    assert_includes tables, "posts"
+  end
+
+  def test_tables_option_group
+    assert_error "Table not found in source: group1", "--tables group1", config: true
+  end
+
+  def test_groups_option
+    tables = list_tables("--groups group1")
+    assert_includes tables, "Users"
+  end
+
+  def test_groups_option_table
+    assert_error "Group not found: posts", "--groups posts", config: true
+  end
+
+  def test_table_unknown
+    assert_error "Table not found in source: bad", "bad", config: true
+  end
+
+  def test_table_invalid
+    assert_error "Cannot resolve table: bad.bad.bad", "bad.bad.bad", config: true
+  end
+
   def list_tables(command = "")
     output = assert_works("--list #{command}", config: true)
     output.split("\n")[2..-1]

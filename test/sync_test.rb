@@ -133,22 +133,6 @@ class SyncTest < Minitest::Test
     assert_prints "Different column types: pages (integer -> bigint)", "chapters", config: true
   end
 
-  def test_table_unknown
-    assert_error "Table not found in source: bad", "bad", config: true
-  end
-
-  def test_table_invalid
-    assert_error "Cannot resolve table: bad.bad.bad", "bad.bad.bad", config: true
-  end
-
-  def test_group
-    assert_works "group1", config: true
-  end
-
-  def test_group_unknown
-    assert_error "Group not found: bad", "--groups bad", config: true
-  end
-
   def test_in_batches
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = []
