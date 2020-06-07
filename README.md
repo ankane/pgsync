@@ -274,6 +274,15 @@ exclude:
   - schema_migrations
 ```
 
+### Django [master]
+
+If you run `pgsync --init` in a Django project, migrations will be excluded in `.pgsync.yml`.
+
+```yml
+exclude:
+  - django_migrations
+```
+
 ### Heroku
 
 If you run `pgsync --init` in a Heroku project, the `from` database will be set in `.pgsync.yml`.

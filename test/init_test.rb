@@ -43,6 +43,14 @@ class InitTest < Minitest::Test
     end
   end
 
+  def test_django
+    new_dir do
+      File.write("manage.py", "django")
+      assert_works "--init"
+      assert_match "django_migrations", File.read(".pgsync.yml")
+    end
+  end
+
   def test_heroku
     new_dir do
       system "git init --quiet"

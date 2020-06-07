@@ -33,6 +33,12 @@ module PgSync
                 - ar_internal_metadata
                 - schema_migrations
             EOS
+          elsif django?
+            # TODO exclude other tables?
+            <<~EOS
+              exclude:
+                - django_migrations
+            EOS
           else
             <<~EOS
               # exclude:
@@ -56,6 +62,10 @@ module PgSync
 
     def rails?
       File.exist?("bin/rails")
+    end
+
+    def django?
+      (File.read("manage.py") =~ /django/i) rescue false
     end
   end
 end
