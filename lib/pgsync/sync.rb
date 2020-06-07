@@ -71,6 +71,8 @@ module PgSync
       end
     end
 
+    private
+
     def config
       @config ||= begin
         file = config_file
@@ -85,6 +87,30 @@ module PgSync
         else
           {}
         end
+      end
+    end
+
+    def config_file
+      if @options[:config]
+        @options[:config]
+      elsif @options[:db]
+        file = db_config_file(@options[:db])
+        search_tree(file) || file
+      else
+        search_tree(".pgsync.yml")
+      end
+    end
+
+    def search_tree(file)
+      return file if File.exist?(file)
+
+      path = Dir.pwd
+      # prevent infinite loop
+      20.times do
+        absolute_file = File.join(path, file)
+        break absolute_file if File.exist?(absolute_file)
+        path = File.dirname(path)
+        break if path == "/"
       end
     end
 
