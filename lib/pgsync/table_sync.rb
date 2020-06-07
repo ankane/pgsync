@@ -15,8 +15,18 @@ module PgSync
     def perform
       confirm_tables_exist(destination, tasks, "destination")
 
-      # TODO only query specific tables
-      # TODO add sequences, primary keys, etc
+      add_columns
+
+      show_notes
+
+      # don't sync tables with no shared fields
+      # we show a warning message above
+      run_tasks(tasks.reject { |task| task.shared_fields.empty? })
+    end
+
+    # TODO only query specific tables
+    # TODO add sequences, primary keys, etc
+    def add_columns
       source_columns = columns(source)
       destination_columns = columns(destination)
 
@@ -24,8 +34,9 @@ module PgSync
         task.from_columns = source_columns[task.table] || []
         task.to_columns = destination_columns[task.table] || []
       end
+    end
 
-      # show notes before we start
+    def show_notes
       resolver.notes.each do |note|
         warning note
       end
@@ -38,14 +49,6 @@ module PgSync
         constraints = non_deferrable_constraints(destination)
         constraints = tasks.flat_map { |t| constraints[t.table] || [] }
         warning "Non-deferrable constraints: #{constraints.join(", ")}" if constraints.any?
-      end
-
-      # don't sync tables with no shared fields
-      # we show a warning message above
-      tasks.reject! { |task| task.shared_fields.empty? }
-
-      in_parallel(tasks) do |task|
-        task.perform
       end
     end
 
@@ -82,7 +85,7 @@ module PgSync
       end.to_h
     end
 
-    def in_parallel(tasks, &block)
+    def run_tasks(tasks, &block)
       notices = []
       failed_tables = []
 
@@ -153,7 +156,7 @@ module PgSync
           source.reconnect_if_needed
           destination.reconnect_if_needed
 
-          yield task
+          task.perform
         end
       end
 
