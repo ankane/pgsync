@@ -1,7 +1,7 @@
 require_relative "test_helper"
 
 class TablesTest < Minitest::Test
-  def test_all
+  def test_default
     tables = list_tables
     assert_includes tables, "posts"
     refute_includes tables, "other.pets"
@@ -9,7 +9,7 @@ class TablesTest < Minitest::Test
   end
 
   def test_wildcard
-    tables = list_tables("public.*")
+    tables = list_tables("p*")
     assert_includes tables, "posts"
     refute_includes tables, "other.pets"
     refute_includes tables, "excluded"
