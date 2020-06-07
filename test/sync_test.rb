@@ -2,7 +2,7 @@ require_relative "test_helper"
 
 class SyncTest < Minitest::Test
   def setup
-    truncate_tables %w(Users posts comments books robots)
+    truncate_tables ["posts", "comments", "books", "robots"]
   end
 
   def test_truncate
