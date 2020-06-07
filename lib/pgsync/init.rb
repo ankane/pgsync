@@ -30,8 +30,8 @@ module PgSync
           if rails?
             <<~EOS
               exclude:
-                - schema_migrations
                 - ar_internal_metadata
+                - schema_migrations
             EOS
           else
             <<~EOS
