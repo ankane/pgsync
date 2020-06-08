@@ -139,6 +139,7 @@ module PgSync
       ds
     end
 
+    # ideally alias would work, but haven't found a nice way to do this
     def resolve_source(source)
       if source
         source = source.dup
