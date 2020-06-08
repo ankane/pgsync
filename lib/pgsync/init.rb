@@ -62,7 +62,7 @@ module PgSync
     end
 
     def django?
-      (File.read("manage.py") =~ /django/i) rescue false
+      file_exists?("manage.py", /django/i)
     end
 
     def heroku?
@@ -70,11 +70,21 @@ module PgSync
     end
 
     def laravel?
-      File.exist?("artisan") rescue false
+      file_exists?("artisan")
     end
 
     def rails?
-      File.exist?("bin/rails") rescue false
+      file_exists?("bin/rails")
+    end
+
+    def file_exists?(path, contents = nil)
+      if contents
+        File.read(path).match(contents)
+      else
+        File.exist?(path)
+      end
+    rescue
+      false
     end
   end
 end
