@@ -264,9 +264,9 @@ pgsync --db db2
 
 ## Integrations
 
-- [Django](#django) [master]
+- [Django](#django)
 - [Heroku](#heroku)
-- [Laravel](#laravel) [master]
+- [Laravel](#laravel)
 - [Rails](#rails)
 
 ### Django
