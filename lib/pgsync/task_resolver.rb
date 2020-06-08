@@ -148,7 +148,7 @@ module PgSync
           regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
           tables.reject! { |t| regex.match(t.full_name) || regex.match(t.name) }
         else
-          tables -= [fully_resolve(to_table(value))]
+          tables -= [fully_resolve(to_table(value), error: false)].compact
         end
       end
 
@@ -181,9 +181,11 @@ module PgSync
     end
 
     # for tables without a schema, find the table in the search path
-    def fully_resolve(table)
+    def fully_resolve(table, error: true)
       return table if table.schema
-      no_schema_tables[table.name] || (raise Error, "Table not found in source: #{table.name}")
+      resolved_table = no_schema_tables[table.name]
+      raise Error, "Table not found in source: #{table.name}" if !resolved_table && error
+      resolved_table
     end
 
     # parse command line arguments and YAML

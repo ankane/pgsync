@@ -1,3 +1,7 @@
+## 0.6.2 (unreleased)
+
+- Fixed error when excluded table not found in source
+
 ## 0.6.1 (2020-06-07)
 
 - Added Django and Laravel integrations

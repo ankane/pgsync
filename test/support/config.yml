@@ -11,6 +11,7 @@ groups:
     - excluded
 exclude:
   - excluded
+  - does_not_exist
 data_rules:
   email: unique_email
   phone: unique_phone
