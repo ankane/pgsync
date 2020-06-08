@@ -33,21 +33,11 @@ class InitTest < Minitest::Test
     end
   end
 
-  def test_rails
-    new_dir do
-      Dir.mkdir("bin")
-      File.write("bin/rails", "")
-      assert_works "--init"
-      assert_match "ar_internal_metadata", File.read(".pgsync.yml")
-      assert_match "schema_migrations", File.read(".pgsync.yml")
-    end
-  end
-
   def test_django
     new_dir do
       File.write("manage.py", "django")
       assert_works "--init"
-      assert_match "django_migrations", File.read(".pgsync.yml")
+      assert_excludes "django_migrations"
     end
   end
 
@@ -60,9 +50,31 @@ class InitTest < Minitest::Test
     end
   end
 
+  def test_laravel
+    new_dir do
+      File.write("artisan", "")
+      assert_works "--init"
+      assert_excludes "migrations"
+    end
+  end
+
+  def test_rails
+    new_dir do
+      Dir.mkdir("bin")
+      File.write("bin/rails", "")
+      assert_works "--init"
+      assert_excludes "ar_internal_metadata"
+      assert_excludes "schema_migrations"
+    end
+  end
+
   def new_dir
     Dir.chdir(Dir.mktmpdir) do
       yield
     end
+  end
+
+  def assert_excludes(table)
+    assert_match "- #{table}", File.read(".pgsync.yml")
   end
 end

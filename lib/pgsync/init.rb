@@ -39,6 +39,11 @@ module PgSync
               exclude:
                 - django_migrations
             EOS
+          elsif laravel?
+            <<~EOS
+              exclude:
+                - migrations
+            EOS
           else
             <<~EOS
               # exclude:
@@ -56,16 +61,20 @@ module PgSync
       end
     end
 
+    def django?
+      (File.read("manage.py") =~ /django/i) rescue false
+    end
+
     def heroku?
       `git remote -v 2>&1`.include?("git.heroku.com") rescue false
     end
 
-    def rails?
-      File.exist?("bin/rails")
+    def laravel?
+      File.exist?("artisan")
     end
 
-    def django?
-      (File.read("manage.py") =~ /django/i) rescue false
+    def rails?
+      File.exist?("bin/rails")
     end
   end
 end

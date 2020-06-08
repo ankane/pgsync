@@ -266,6 +266,7 @@ pgsync --db db2
 
 - [Django](#django) [master]
 - [Heroku](#heroku)
+- [Laravel](#laravel) [master]
 - [Rails](#rails)
 
 ### Django
@@ -283,6 +284,15 @@ If you run `pgsync --init` in a Heroku project, the `from` database will be set 
 
 ```yml
 from: $(heroku config:get DATABASE_URL)?sslmode=require
+```
+
+### Laravel
+
+If you run `pgsync --init` in a Laravel project, migrations will be excluded in `.pgsync.yml`.
+
+```yml
+exclude:
+  - migrations
 ```
 
 ### Rails

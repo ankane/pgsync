@@ -1,6 +1,6 @@
 ## 0.6.1 (unreleased)
 
-- Added Django integration
+- Added Django and Laravel integrations
 
 ## 0.6.0 (2020-06-07)
 
