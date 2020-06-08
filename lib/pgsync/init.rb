@@ -70,11 +70,11 @@ module PgSync
     end
 
     def laravel?
-      File.exist?("artisan")
+      File.exist?("artisan") rescue false
     end
 
     def rails?
-      File.exist?("bin/rails")
+      File.exist?("bin/rails") rescue false
     end
   end
 end
