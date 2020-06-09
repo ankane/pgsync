@@ -275,7 +275,7 @@ module PgSync
     end
 
     def maybe_disable_triggers
-      if opts[:disable_integrity] || opts[:disable_user_triggers]
+      if opts[:disable_integrity] || opts[:disable_integrity_v2] || opts[:disable_user_triggers]
         destination.transaction do
           triggers = destination.triggers(table)
           triggers.select! { |t| t["enabled"] == "t" }
@@ -283,7 +283,10 @@ module PgSync
           integrity_triggers = internal_triggers.select { |t| t["integrity"] == "t" }
           restore_triggers = []
 
-          if opts[:disable_integrity]
+          if opts[:disable_integrity_v2]
+            role = destination.execute("SHOW session_replication_role").first["session_replication_role"]
+            destination.execute("SET session_replication_role = replica")
+          elsif opts[:disable_integrity]
             integrity_triggers.each do |trigger|
               destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
             end
@@ -299,6 +302,11 @@ module PgSync
           end
 
           result = yield
+
+          if opts[:disable_integrity_v2]
+            raise Error, "Unknown role: #{role}" unless ["origin", "replica", "local"].include?(role)
+            destination.execute("SET session_replication_role = #{role}")
+          end
 
           # restore triggers that were previously enabled
           restore_triggers.each do |trigger|

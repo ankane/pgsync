@@ -118,4 +118,14 @@ class SyncTest < Minitest::Test
     assert_equal [], conn2.exec("SELECT * FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
   end
+
+  def test_disable_integrity_v2
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments", [{"post_id" => 1}])
+    assert_error "Sync failed for 1 table: comments", "comments", config: true
+    assert_works "comments --disable-integrity-v2", config: true
+    # integrity is lost! (as expected)
+    assert_equal [], conn2.exec("SELECT * FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
+  end
 end

@@ -1,5 +1,6 @@
 ## 0.6.2 (unreleased)
 
+- Added `--disable-integrity-v2` option
 - Fixed error when excluded table not found in source
 
 ## 0.6.1 (2020-06-07)
