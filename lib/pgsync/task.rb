@@ -284,6 +284,8 @@ module PgSync
           restore_triggers = []
 
           if opts[:disable_integrity_v2]
+            # SET LOCAL lasts until the end of the transaction
+            # https://www.postgresql.org/docs/current/sql-set.html
             destination.execute("SET LOCAL session_replication_role = replica")
           elsif opts[:disable_integrity]
             integrity_triggers.each do |trigger|
