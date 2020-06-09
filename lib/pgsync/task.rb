@@ -283,6 +283,9 @@ module PgSync
           integrity_triggers = internal_triggers.select { |t| t["integrity"] == "t" }
           restore_triggers = []
 
+          # both --disable-integrity options require superuser privileges
+          # however, only v2 works on Amazon RDS, which added specific support for it
+          # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
           if opts[:disable_integrity_v2]
             # SET LOCAL lasts until the end of the transaction
             # https://www.postgresql.org/docs/current/sql-set.html
