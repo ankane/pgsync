@@ -198,6 +198,9 @@ module PgSync
           end
 
           # set them back
+          # there are 3 modes: DEFERRABLE INITIALLY DEFERRED, DEFERRABLE INITIALLY IMMEDIATE, and NOT DEFERRABLE
+          # we only update NOT DEFERRABLE
+          # https://www.postgresql.org/docs/current/sql-set-constraints.html
           if opts[:defer_constraints_v2]
             destination.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
