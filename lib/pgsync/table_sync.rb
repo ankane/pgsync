@@ -174,6 +174,7 @@ module PgSync
       fail_sync(failed_tables) if failed_tables.any?
     end
 
+    # TODO add option to open transaction on source when manually specifying order of tables
     def maybe_defer_constraints
       if opts[:disable_integrity] || opts[:disable_integrity_v2]
         # create a transaction on the source
