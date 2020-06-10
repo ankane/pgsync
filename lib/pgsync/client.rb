@@ -67,7 +67,7 @@ Options:}
       o.integer "--batch-size", "batch size", default: 10000, help: false
       o.float "--sleep", "sleep", default: 0, help: false
       o.boolean "--fail-fast", "stop on the first failed table", default: false
-      o.boolean "--defer-constraints", "defer constraints", default: false
+      o.boolean "--defer-constraints", "defer constraints", default: false, help: false
       o.boolean "--defer-constraints-v2", "defer constraints", default: false
       o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false

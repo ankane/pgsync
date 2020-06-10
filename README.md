@@ -198,20 +198,20 @@ Rules starting with `unique_` require the table to have a single column primary 
 
 Foreign keys can make it difficult to sync data. Three options are:
 
-1. Manually specify the order of tables
-2. Use deferrable constraints
-3. Disable foreign key triggers, which can silently break referential integrity
+1. Defer constraints (recommended)
+2. Manually specify the order of tables
+3. Disable foreign key triggers, which can silently break referential integrity (not recommended)
 
-When manually specifying the order, use `--jobs 1` so tables are synced one-at-a-time.
+To defer constraints, use:
+
+```sh
+pgsync --defer-constraints-v2
+```
+
+To manually specify the order of tables, use `--jobs 1` so tables are synced one-at-a-time.
 
 ```sh
 pgsync table1,table2,table3 --jobs 1
-```
-
-If your tables have [deferrable constraints](https://begriffs.com/posts/2017-08-27-deferrable-sql-constraints.html), use:
-
-```sh
-pgsync --defer-constraints
 ```
 
 To disable foreign key triggers and potentially break referential integrity, use:

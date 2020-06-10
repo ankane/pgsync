@@ -1,4 +1,4 @@
-## 0.6.3 (unreleased)
+## 0.6.3 (2020-06-09)
 
 - Added `--defer-constraints-v2` option
 - Ensure consistent source snapshot with `--disable-integrity`
