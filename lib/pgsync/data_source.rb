@@ -95,21 +95,6 @@ module PgSync
       rows.sort_by { |r| r["indkey"].split(" ").index(r["attnum"]) }.map { |r| r["attname"] }
     end
 
-    def triggers(table)
-      query = <<~SQL
-        SELECT
-          tgname AS name,
-          tgisinternal AS internal,
-          tgenabled != 'D' AS enabled,
-          tgconstraint != 0 AS integrity
-        FROM
-          pg_trigger
-        WHERE
-          pg_trigger.tgrelid = $1::regclass
-      SQL
-      execute(query, [quote_ident_full(table)])
-    end
-
     def conn
       @conn ||= begin
         begin

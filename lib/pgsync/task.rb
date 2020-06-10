@@ -3,7 +3,7 @@ module PgSync
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
-    attr_accessor :from_columns, :to_columns
+    attr_accessor :from_columns, :to_columns, :to_triggers
 
     def initialize(source:, destination:, config:, table:, opts:)
       @source = source
@@ -20,7 +20,7 @@ module PgSync
     def perform
       with_notices do
         handle_errors do
-          maybe_disable_triggers do
+          maybe_disable_user_triggers do
             sync_data
           end
         end
@@ -49,6 +49,14 @@ module PgSync
 
     def shared_sequences
       @shared_sequences ||= to_sequences & from_sequences
+    end
+
+    def integrity_triggers
+      @integrity_triggers ||= to_triggers.select { |t| t["internal"] == "t" && t["integrity"] == "t" }
+    end
+
+    def user_triggers
+      @user_triggers ||= to_triggers.select { |t| t["internal"] == "f" }
     end
 
     def notes
@@ -274,44 +282,18 @@ module PgSync
       "#{quoted_table}.#{quote_ident(primary_key.first)}"
     end
 
-    def maybe_disable_triggers
-      if opts[:disable_integrity] || opts[:disable_integrity_v2] || opts[:disable_user_triggers]
+    def maybe_disable_user_triggers
+      if opts[:disable_user_triggers] && user_triggers.any?
         destination.transaction do
-          triggers = destination.triggers(table)
-          triggers.select! { |t| t["enabled"] == "t" }
-          internal_triggers, user_triggers = triggers.partition { |t| t["internal"] == "t" }
-          integrity_triggers = internal_triggers.select { |t| t["integrity"] == "t" }
-          restore_triggers = []
-
-          # both --disable-integrity options require superuser privileges
-          # however, only v2 works on Amazon RDS, which added specific support for it
-          # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
-          #
-          # session_replication_role disables more than foreign keys (like triggers and rules)
-          # this is probably fine, but keep the current default for now
-          if opts[:disable_integrity_v2] || (opts[:disable_integrity] && rds?)
-            # SET LOCAL lasts until the end of the transaction
-            # https://www.postgresql.org/docs/current/sql-set.html
-            destination.execute("SET LOCAL session_replication_role = replica")
-          elsif opts[:disable_integrity]
-            integrity_triggers.each do |trigger|
-              destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
-            end
-            restore_triggers.concat(integrity_triggers)
-          end
-
-          if opts[:disable_user_triggers]
-            # important!
-            # rely on Postgres to disable user triggers
-            # we don't want to accidentally disable non-user triggers if logic above is off
-            destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
-            restore_triggers.concat(user_triggers)
-          end
+          # important!
+          # rely on Postgres to disable user triggers
+          # we don't want to accidentally disable non-user triggers if logic above is off
+          destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
 
           result = yield
 
           # restore triggers that were previously enabled
-          restore_triggers.each do |trigger|
+          user_triggers.each do |trigger|
             destination.execute("ALTER TABLE #{quoted_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 
@@ -320,10 +302,6 @@ module PgSync
       else
         yield
       end
-    end
-
-    def rds?
-      destination.execute("SELECT name, setting FROM pg_settings WHERE name LIKE 'rds.%'").any?
     end
   end
 end

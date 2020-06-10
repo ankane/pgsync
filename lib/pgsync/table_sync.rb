@@ -17,6 +17,8 @@ module PgSync
 
       add_columns
 
+      add_triggers if triggers?
+
       show_notes
 
       # don't sync tables with no shared fields
@@ -33,6 +35,14 @@ module PgSync
       tasks.each do |task|
         task.from_columns = source_columns[task.table] || []
         task.to_columns = destination_columns[task.table] || []
+      end
+    end
+
+    def add_triggers
+      destination_triggers = triggers(destination)
+
+      tasks.each do |task|
+        task.to_triggers = destination_triggers[task.table] || []
       end
     end
 
@@ -73,6 +83,25 @@ module PgSync
       end.to_h
     end
 
+    def triggers(data_source)
+      query = <<~SQL
+        SELECT
+          nspname AS schema,
+          relname AS table,
+          tgname AS name,
+          tgisinternal AS internal,
+          tgenabled != 'D' AS enabled,
+          tgconstraint != 0 AS integrity
+        FROM
+          pg_trigger
+        INNER JOIN
+          pg_class ON pg_class.oid = pg_trigger.tgrelid
+        INNER JOIN
+          pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+      SQL
+      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.to_h
+    end
+
     def non_deferrable_constraints(data_source)
       query = <<~SQL
         SELECT
@@ -88,6 +117,10 @@ module PgSync
       data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
         [k, v.map { |r| r["constraint_name"] }]
       end.to_h
+    end
+
+    def triggers?
+      opts[:disable_user_triggers] || opts[:disable_integrity]
     end
 
     def run_tasks(tasks, &block)
@@ -141,7 +174,7 @@ module PgSync
       options = {start: start, finish: finish}
 
       jobs = opts[:jobs]
-      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2]
+      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2] || opts[:disable_integrity] || opts[:disable_integrity_v2]
         warning "--jobs ignored" if jobs
         jobs = 0
       end
@@ -172,21 +205,41 @@ module PgSync
     end
 
     def maybe_defer_constraints
-      if opts[:defer_constraints] || opts[:defer_constraints_v2]
+      disable_integrity = opts[:disable_integrity] || opts[:disable_integrity_v2]
+      defer_constraints = opts[:defer_constraints] || opts[:defer_constraints_v2]
+
+      if disable_integrity || defer_constraints
         destination.transaction do
-          if opts[:defer_constraints_v2]
-            table_constraints = non_deferrable_constraints(destination)
-            table_constraints.each do |table, constraints|
-              constraints.each do |constraint|
-                destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
+          restore_triggers = false
+
+          if disable_integrity
+            # both --disable-integrity options require superuser privileges
+            # however, only v2 works on Amazon RDS, which added specific support for it
+            # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
+            #
+            # session_replication_role disables more than foreign keys (like triggers and rules)
+            # this is probably fine, but keep the current default for now
+            if opts[:disable_integrity_v2] || (opts[:disable_integrity] && rds?)
+              # SET LOCAL lasts until the end of the transaction
+              # https://www.postgresql.org/docs/current/sql-set.html
+              destination.execute("SET LOCAL session_replication_role = replica")
+            else
+              update_integrity_triggers(tasks, "DISABLE")
+              restore_triggers = true
+            end
+          else
+           if opts[:defer_constraints_v2]
+              table_constraints = non_deferrable_constraints(destination)
+              table_constraints.each do |table, constraints|
+                constraints.each do |constraint|
+                  destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
+                end
               end
             end
+
+            destination.execute("SET CONSTRAINTS ALL DEFERRED")
           end
 
-          destination.execute("SET CONSTRAINTS ALL DEFERRED")
-
-          # create a transaction on the source
-          # to ensure we get a consistent snapshot
           source.transaction do
             yield
           end
@@ -201,10 +254,24 @@ module PgSync
               end
             end
           end
+
+          update_integrity_triggers(tasks, "ENABLE") if restore_triggers
         end
       else
         yield
       end
+    end
+
+    def update_integrity_triggers(tasks, op)
+      tasks.each do |task|
+        task.integrity_triggers.each do |trigger|
+          destination.execute("ALTER TABLE #{quote_ident_full(task.table)} #{op} TRIGGER #{quote_ident(trigger["name"])}")
+        end
+      end
+    end
+
+    def rds?
+      destination.execute("SELECT name, setting FROM pg_settings WHERE name LIKE 'rds.%'").any?
     end
 
     def fail_sync(failed_tables)
