@@ -141,7 +141,7 @@ module PgSync
       options = {start: start, finish: finish}
 
       jobs = opts[:jobs]
-      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints]
+      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2]
         warning "--jobs ignored" if jobs
         jobs = 0
       end
@@ -172,14 +172,34 @@ module PgSync
     end
 
     def maybe_defer_constraints
-      if opts[:defer_constraints]
+      if opts[:defer_constraints] || opts[:defer_constraints_v2]
         destination.transaction do
+          if opts[:defer_constraints_v2]
+            table_constraints = non_deferrable_constraints(destination)
+            table_constraints.each do |table, constraints|
+              constraints.each do |constraint|
+                destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
+              end
+            end
+          end
+
           destination.execute("SET CONSTRAINTS ALL DEFERRED")
 
           # create a transaction on the source
           # to ensure we get a consistent snapshot
           source.transaction do
             yield
+          end
+
+          # set them back
+          if opts[:defer_constraints_v2]
+            destination.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+            table_constraints.each do |table, constraints|
+              constraints.each do |constraint|
+                destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} NOT DEFERRABLE")
+              end
+            end
           end
         end
       else

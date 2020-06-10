@@ -1,3 +1,7 @@
+## 0.6.3 (unreleased)
+
+- Added `--defer-constraints-v2` option
+
 ## 0.6.2 (2020-06-09)
 
 - Added support for `--disable-integrity` on Amazon RDS
