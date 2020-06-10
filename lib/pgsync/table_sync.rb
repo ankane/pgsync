@@ -141,6 +141,9 @@ module PgSync
       options = {start: start, finish: finish}
 
       jobs = opts[:jobs]
+
+      # disable multiple jobs for defer constraints and disable integrity
+      # so we can use a transaction to ensure a consistent snapshot
       if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2] || opts[:disable_integrity] || opts[:disable_integrity_v2]
         warning "--jobs ignored" if jobs
         jobs = 0
