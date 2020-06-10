@@ -141,7 +141,7 @@ module PgSync
       options = {start: start, finish: finish}
 
       jobs = opts[:jobs]
-      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2]
+      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2] || opts[:disable_integrity] || opts[:disable_integrity_v2]
         warning "--jobs ignored" if jobs
         jobs = 0
       end
@@ -172,7 +172,13 @@ module PgSync
     end
 
     def maybe_defer_constraints
-      if opts[:defer_constraints] || opts[:defer_constraints_v2]
+      if opts[:disable_integrity] || opts[:disable_integrity_v2]
+        # create a transaction on the source
+        # to ensure we get a consistent snapshot
+        source.transaction do
+          yield
+        end
+      elsif opts[:defer_constraints] || opts[:defer_constraints_v2]
         destination.transaction do
           if opts[:defer_constraints_v2]
             table_constraints = non_deferrable_constraints(destination)
