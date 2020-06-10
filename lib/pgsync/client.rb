@@ -70,7 +70,8 @@ Options:}
       o.boolean "--defer-constraints", "defer constraints", default: false
       o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false
-      o.boolean "--disable-integrity-v2", "disable foreign key triggers", default: false
+      # private, for testing
+      o.boolean "--disable-integrity-v2", "disable foreign key triggers", default: false, help: false
       o.boolean "-v", "--version", "print the version"
       o.boolean "-h", "--help", "prints help"
       o

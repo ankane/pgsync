@@ -220,7 +220,7 @@ To disable foreign key triggers and potentially break referential integrity, use
 pgsync --disable-integrity
 ```
 
-This requires superuser privileges on the `to` database. If syncing to (not from) Heroku, there doesn’t appear to be a way to disable integrity.
+This requires superuser privileges on the `to` database. If syncing to (not from) Amazon RDS, use the `rds_superuser` role. If syncing to (not from) Heroku, there doesn’t appear to be a way to disable integrity.
 
 ## Triggers
 

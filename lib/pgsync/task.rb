@@ -286,7 +286,10 @@ module PgSync
           # both --disable-integrity options require superuser privileges
           # however, only v2 works on Amazon RDS, which added specific support for it
           # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
-          if opts[:disable_integrity_v2]
+          #
+          # session_replication_role disables more than foreign keys (like triggers and rules)
+          # this is probably fine, but keep the current default for now
+          if opts[:disable_integrity_v2] || (opts[:disable_integrity] && rds?)
             # SET LOCAL lasts until the end of the transaction
             # https://www.postgresql.org/docs/current/sql-set.html
             destination.execute("SET LOCAL session_replication_role = replica")
@@ -317,6 +320,10 @@ module PgSync
       else
         yield
       end
+    end
+
+    def rds?
+      destination.execute("SELECT name, setting FROM pg_settings WHERE name LIKE 'rds.%'").any?
     end
   end
 end
