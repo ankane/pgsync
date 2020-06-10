@@ -205,41 +205,46 @@ module PgSync
     end
 
     def maybe_defer_constraints
-      disable_integrity = opts[:disable_integrity] || opts[:disable_integrity_v2]
-      defer_constraints = opts[:defer_constraints] || opts[:defer_constraints_v2]
-
-      if disable_integrity || defer_constraints
+      if opts[:disable_integrity] || opts[:disable_integrity_v2]
         destination.transaction do
-          restore_triggers = false
-
-          if disable_integrity
-            # both --disable-integrity options require superuser privileges
-            # however, only v2 works on Amazon RDS, which added specific support for it
-            # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
-            #
-            # session_replication_role disables more than foreign keys (like triggers and rules)
-            # this is probably fine, but keep the current default for now
-            if opts[:disable_integrity_v2] || (opts[:disable_integrity] && rds?)
-              # SET LOCAL lasts until the end of the transaction
-              # https://www.postgresql.org/docs/current/sql-set.html
-              destination.execute("SET LOCAL session_replication_role = replica")
-            else
-              update_integrity_triggers(tasks, "DISABLE")
-              restore_triggers = true
-            end
+          # both --disable-integrity options require superuser privileges
+          # however, only v2 works on Amazon RDS, which added specific support for it
+          # https://aws.amazon.com/about-aws/whats-new/2014/11/10/amazon-rds-postgresql-read-replicas/
+          #
+          # session_replication_role disables more than foreign keys (like triggers and rules)
+          # this is probably fine, but keep the current default for now
+          if opts[:disable_integrity_v2] || (opts[:disable_integrity] && rds?)
+            # SET LOCAL lasts until the end of the transaction
+            # https://www.postgresql.org/docs/current/sql-set.html
+            destination.execute("SET LOCAL session_replication_role = replica")
           else
-           if opts[:defer_constraints_v2]
-              table_constraints = non_deferrable_constraints(destination)
-              table_constraints.each do |table, constraints|
-                constraints.each do |constraint|
-                  destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
-                end
-              end
-            end
-
-            destination.execute("SET CONSTRAINTS ALL DEFERRED")
+            update_integrity_triggers(tasks, "DISABLE")
+            restore_triggers = true
           end
 
+          # create a transaction on the source
+          # to ensure we get a consistent snapshot
+          source.transaction do
+            yield
+          end
+
+          update_integrity_triggers(tasks, "ENABLE") if restore_triggers
+        end
+      elsif opts[:defer_constraints] || opts[:defer_constraints_v2]
+        destination.transaction do
+         if opts[:defer_constraints_v2]
+            table_constraints = non_deferrable_constraints(destination)
+            table_constraints.each do |table, constraints|
+              constraints.each do |constraint|
+                destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
+              end
+            end
+          end
+
+          destination.execute("SET CONSTRAINTS ALL DEFERRED")
+
+          # create a transaction on the source
+          # to ensure we get a consistent snapshot
           source.transaction do
             yield
           end
@@ -254,8 +259,6 @@ module PgSync
               end
             end
           end
-
-          update_integrity_triggers(tasks, "ENABLE") if restore_triggers
         end
       else
         yield
