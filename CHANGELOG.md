@@ -1,4 +1,4 @@
-## 0.6.2 (unreleased)
+## 0.6.2 (2020-06-09)
 
 - Added support for `--disable-integrity` on Amazon RDS
 - Fixed error when excluded table not found in source
