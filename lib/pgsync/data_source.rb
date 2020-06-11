@@ -134,10 +134,12 @@ module PgSync
       if conn.transaction_status == 0
         # not currently in transaction
         log_sql "BEGIN"
-        conn.transaction do
-          yield
-        end
+        result =
+          conn.transaction do
+            yield
+          end
         log_sql "COMMIT"
+        result
       else
         yield
       end
