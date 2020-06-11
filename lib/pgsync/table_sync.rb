@@ -17,6 +17,8 @@ module PgSync
 
       add_columns
 
+      add_primary_keys
+
       show_notes
 
       # don't sync tables with no shared fields
@@ -25,7 +27,7 @@ module PgSync
     end
 
     # TODO only query specific tables
-    # TODO add sequences, primary keys, etc
+    # TODO add sequences
     def add_columns
       source_columns = columns(source)
       destination_columns = columns(destination)
@@ -34,6 +36,39 @@ module PgSync
         task.from_columns = source_columns[task.table] || []
         task.to_columns = destination_columns[task.table] || []
       end
+    end
+
+    def add_primary_keys
+      destination_primary_keys = primary_keys(destination)
+
+      tasks.each do |task|
+        task.to_primary_key = destination_primary_keys[task.table] || []
+      end
+    end
+
+    def primary_keys(data_source)
+      # https://stackoverflow.com/a/20537829
+      # TODO can simplify with array_position in Postgres 9.5+
+      query = <<~SQL
+        SELECT
+          nspname AS schema,
+          relname AS table,
+          pg_attribute.attname AS column,
+          format_type(pg_attribute.atttypid, pg_attribute.atttypmod),
+          pg_attribute.attnum,
+          pg_index.indkey
+        FROM
+          pg_index, pg_class, pg_attribute, pg_namespace
+        WHERE
+          indrelid = pg_class.oid AND
+          pg_class.relnamespace = pg_namespace.oid AND
+          pg_attribute.attrelid = pg_class.oid AND
+          pg_attribute.attnum = any(pg_index.indkey) AND
+          indisprimary
+      SQL
+      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
+        [k, v.sort_by { |r| r["indkey"].split(" ").index(r["attnum"]) }.map { |r| r["column"] }]
+      end.to_h
     end
 
     def show_notes

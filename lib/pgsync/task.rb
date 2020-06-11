@@ -3,7 +3,7 @@ module PgSync
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
-    attr_accessor :from_columns, :to_columns
+    attr_accessor :from_columns, :to_columns, :to_primary_key
 
     def initialize(source:, destination:, config:, table:, opts:)
       @source = source
@@ -88,7 +88,7 @@ module PgSync
       sql_clause << " #{opts[:sql]}" if opts[:sql]
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
-      primary_key = destination.primary_key(table)
+      primary_key = to_primary_key
       copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
