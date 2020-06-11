@@ -93,26 +93,29 @@ module PgSync
     def run_tasks(tasks, &block)
       notices = []
       failed_tables = []
-
-      spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
-      task_spinners = {}
       started_at = {}
+
+      show_spinners = output.tty? && !opts[:in_batches]
+      if show_spinners
+        spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
+        task_spinners = {}
+      end
 
       start = lambda do |task, i|
         message = ":spinner #{display_item(task)}"
-        spinner = spinners.register(message)
-        if opts[:in_batches]
-          # log instead of spin for non-tty
-          log message.sub(":spinner", "⠋")
-        else
+
+        if show_spinners
+          spinner = spinners.register(message)
           spinner.auto_spin
+          task_spinners[task] = spinner
+        elsif opts[:in_batches]
+          log message.sub(":spinner", "⠋")
         end
-        task_spinners[task] = spinner
+
         started_at[task] = Time.now
       end
 
       finish = lambda do |task, i, result|
-        spinner = task_spinners[task]
         time = (Time.now - started_at[task]).round(1)
 
         message =
@@ -124,17 +127,21 @@ module PgSync
 
         notices.concat(result[:notices])
 
-        if result[:status] == "success"
-          spinner.success(message)
+        if show_spinners
+          spinner = task_spinners[task]
+          if result[:status] == "success"
+            spinner.success(message)
+          else
+            spinner.error(message)
+          end
         else
-          spinner.error(message)
-          failed_tables << task_name(task)
-          fail_sync(failed_tables) if opts[:fail_fast]
-        end
-
-        unless spinner.send(:tty?)
           status = result[:status] == "success" ? "✔" : "✖"
           log [status, display_item(task), message].join(" ")
+        end
+
+        if result[:status] != "success"
+          failed_tables << task_name(task)
+          fail_sync(failed_tables) if opts[:fail_fast]
         end
       end
 
