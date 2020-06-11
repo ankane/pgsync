@@ -92,11 +92,6 @@ module PgSync
       copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
-      seq_values = {}
-      shared_sequences.each do |seq|
-        seq_values[seq] = source.last_value(seq)
-      end
-
       copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
         raise Error, "No primary key" if primary_key.empty?
@@ -163,7 +158,10 @@ module PgSync
         end
         copy(copy_to_command, dest_table: table, dest_fields: fields)
       end
-      seq_values.each do |seq, value|
+
+      # update sequences
+      shared_sequences.each do |seq|
+        value = source.last_value(seq)
         destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
       end
 
