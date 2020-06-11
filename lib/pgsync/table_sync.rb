@@ -118,6 +118,8 @@ module PgSync
       finish = lambda do |task, i, result|
         time = (Time.now - started_at[task]).round(1)
 
+        success = result[:status] == "success"
+
         message =
           if result[:message]
             "(#{result[:message].lines.first.to_s.strip})"
@@ -129,17 +131,17 @@ module PgSync
 
         if show_spinners
           spinner = task_spinners[task]
-          if result[:status] == "success"
+          if success
             spinner.success(message)
           else
             spinner.error(message)
           end
         else
-          status = result[:status] == "success" ? "✔" : "✖"
+          status = success ? "✔" : "✖"
           log [status, display_item(task), message].join(" ")
         end
 
-        if result[:status] != "success"
+        unless success
           failed_tables << task_name(task)
           fail_sync(failed_tables) if opts[:fail_fast]
         end
