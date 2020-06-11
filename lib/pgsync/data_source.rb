@@ -148,7 +148,7 @@ module PgSync
     # TODO log time for each statement
     def log_sql(query, params = {})
       if @debug
-        message = "[#{@name}] #{query.gsub(/\s+/, " ").strip}"
+        message = "#{colorize("[#{@name}]", :cyan)} #{query.gsub(/\s+/, " ").strip}"
         message = "#{message} #{params.inspect}" if params.any?
         log message
       end

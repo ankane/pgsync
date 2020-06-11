@@ -3,7 +3,8 @@ module PgSync
     COLOR_CODES = {
       red: 31,
       green: 32,
-      yellow: 33
+      yellow: 33,
+      cyan: 36
     }
 
     def log(message = nil)
