@@ -1,4 +1,4 @@
-## 0.6.4 (unreleased)
+## 0.6.4 (2020-06-10)
 
 - Log SQL with `--debug` option
 - Improved sequence queries

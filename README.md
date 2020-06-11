@@ -307,6 +307,14 @@ exclude:
   - schema_migrations
 ```
 
+## Debugging
+
+To view the SQL that’s run, use:
+
+```sh
+pgsync --debug
+```
+
 ## Other Commands
 
 Help
