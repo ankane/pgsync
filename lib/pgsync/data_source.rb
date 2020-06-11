@@ -52,10 +52,6 @@ module PgSync
       table_set.include?(table)
     end
 
-    def sequences(table, columns)
-      execute("SELECT #{columns.map { |f| "pg_get_serial_sequence(#{escape("#{quote_ident_full(table)}")}, #{escape(f)}) AS #{quote_ident(f)}" }.join(", ")}").first.values.compact
-    end
-
     def max_id(table, primary_key, sql_clause = nil)
       execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["max"].to_i
     end
@@ -64,9 +60,8 @@ module PgSync
       execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["min"].to_i
     end
 
-    # this value comes from pg_get_serial_sequence which is already quoted
     def last_value(seq)
-      execute("SELECT last_value FROM #{seq}").first["last_value"]
+      execute("SELECT last_value FROM #{quote_ident_full(seq)}").first["last_value"]
     end
 
     def truncate(table)

@@ -60,7 +60,7 @@ module PgSync
     end
 
     def quote_ident_full(ident)
-      if ident.is_a?(Table)
+      if ident.is_a?(Table) || ident.is_a?(Sequence)
         [quote_ident(ident.schema), quote_ident(ident.name)].join(".")
       else # temp table names are strings
         quote_ident(ident)

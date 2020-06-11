@@ -3,7 +3,7 @@ module PgSync
     include Utils
 
     attr_reader :source, :destination, :config, :table, :opts
-    attr_accessor :from_columns, :to_columns, :to_primary_key
+    attr_accessor :from_columns, :to_columns, :from_sequences, :to_sequences, :to_primary_key
 
     def initialize(source:, destination:, config:, table:, opts:)
       @source = source
@@ -11,6 +11,8 @@ module PgSync
       @config = config
       @table = table
       @opts = opts
+      @from_sequences = []
+      @to_sequences = []
     end
 
     def quoted_table
@@ -37,14 +39,6 @@ module PgSync
 
     def shared_fields
       @shared_fields ||= to_fields & from_fields
-    end
-
-    def from_sequences
-      @from_sequences ||= opts[:no_sequences] ? [] : source.sequences(table, shared_fields)
-    end
-
-    def to_sequences
-      @to_sequences ||= opts[:no_sequences] ? [] : destination.sequences(table, shared_fields)
     end
 
     def shared_sequences
@@ -162,7 +156,7 @@ module PgSync
       # update sequences
       shared_sequences.each do |seq|
         value = source.last_value(seq)
-        destination.execute("SELECT setval(#{escape(seq)}, #{escape(value)})")
+        destination.execute("SELECT setval(#{escape(quote_ident_full(seq))}, #{escape(value)})")
       end
 
       {status: "success"}

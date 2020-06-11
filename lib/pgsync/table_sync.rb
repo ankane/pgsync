@@ -19,6 +19,8 @@ module PgSync
 
       add_primary_keys
 
+      add_sequences unless opts[:no_sequences]
+
       show_notes
 
       # don't sync tables with no shared fields
@@ -44,6 +46,47 @@ module PgSync
       tasks.each do |task|
         task.to_primary_key = destination_primary_keys[task.table] || []
       end
+    end
+
+    def add_sequences
+      source_sequences = sequences(source)
+      destination_sequences = sequences(destination)
+
+      tasks.each do |task|
+        shared_columns = Set.new(task.shared_fields)
+
+        task.from_sequences = (source_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
+        task.to_sequences = (destination_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
+      end
+    end
+
+    # TODO use sequence schema
+    def sequences(data_source)
+      query = <<~SQL
+        SELECT
+          nt.nspname as schema,
+          t.relname as table,
+          a.attname as column,
+          n.nspname as sequence_schema,
+          s.relname as sequence
+        FROM
+          pg_class s
+        INNER JOIN
+          pg_depend d ON d.objid = s.oid
+        INNER JOIN
+          pg_class t ON d.objid = s.oid AND d.refobjid = t.oid
+        INNER JOIN
+          pg_attribute a ON (d.refobjid, d.refobjsubid) = (a.attrelid, a.attnum)
+        INNER JOIN
+          pg_namespace n ON n.oid = s.relnamespace
+        INNER JOIN
+          pg_namespace nt ON nt.oid = t.relnamespace
+        WHERE
+          s.relkind = 'S'
+      SQL
+      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
+        [k, v.map { |r| Sequence.new(r["sequence_schema"], r["sequence"], column: r["column"]) }]
+      end.to_h
     end
 
     def primary_keys(data_source)
