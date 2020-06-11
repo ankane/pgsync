@@ -34,12 +34,12 @@ module PgSync
         raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
       end
 
+      print_description("From", source)
+      print_description("To", destination)
+
       if (opts[:preserve] || opts[:overwrite]) && destination.server_version_num < 90500
         raise Error, "Postgres 9.5+ is required for --preserve and --overwrite"
       end
-
-      print_description("From", source)
-      print_description("To", destination)
 
       resolver = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config, first_schema: first_schema)
       tasks =
