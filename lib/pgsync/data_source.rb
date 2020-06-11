@@ -143,8 +143,6 @@ module PgSync
       end
     end
 
-    private
-
     # TODO log time for each statement
     def log_sql(query, params = {})
       if @debug
@@ -153,6 +151,8 @@ module PgSync
         log message
       end
     end
+
+    private
 
     def concurrent_id
       [Process.pid, Thread.current.object_id]
