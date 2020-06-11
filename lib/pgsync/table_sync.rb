@@ -95,7 +95,7 @@ module PgSync
       failed_tables = []
       started_at = {}
 
-      show_spinners = output.tty? && !opts[:in_batches]
+      show_spinners = output.tty? && !opts[:in_batches] && !opts[:debug]
       if show_spinners
         spinners = TTY::Spinner::Multi.new(format: :dots, output: output)
         task_spinners = {}

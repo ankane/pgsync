@@ -1,3 +1,7 @@
+## 0.6.4 (unreleased)
+
+- Log SQL with `--debug` option
+
 ## 0.6.3 (2020-06-09)
 
 - Added `--defer-constraints-v2` option

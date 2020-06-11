@@ -4,8 +4,10 @@ module PgSync
 
     attr_reader :url
 
-    def initialize(url)
+    def initialize(url, name:, debug:)
       @url = url
+      @name = name
+      @debug = debug
     end
 
     def exists?
@@ -148,21 +150,33 @@ module PgSync
     end
 
     def execute(query, params = [])
+      log_sql query, params
       conn.exec_params(query, params).to_a
     end
 
     def transaction
       if conn.transaction_status == 0
         # not currently in transaction
+        log_sql "BEGIN"
         conn.transaction do
           yield
         end
+        log_sql "COMMIT"
       else
         yield
       end
     end
 
     private
+
+    # TODO log time for each statement
+    def log_sql(query, params = {})
+      if @debug
+        message = "[#{@name}] #{query.gsub(/\s+/, " ").strip}"
+        message = "#{message} #{params.inspect}" if params.any?
+        log message
+      end
+    end
 
     def concurrent_id
       [Process.pid, Thread.current.object_id]

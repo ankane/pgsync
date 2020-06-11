@@ -126,15 +126,15 @@ module PgSync
     end
 
     def source
-      @source ||= data_source(@options[:from])
+      @source ||= data_source(@options[:from], "from")
     end
 
     def destination
-      @destination ||= data_source(@options[:to])
+      @destination ||= data_source(@options[:to], "to")
     end
 
-    def data_source(url)
-      ds = DataSource.new(url)
+    def data_source(url, name)
+      ds = DataSource.new(url, name: name, debug: @options[:debug])
       ObjectSpace.define_finalizer(self, self.class.finalize(ds))
       ds
     end
