@@ -28,8 +28,6 @@ module PgSync
       run_tasks(tasks.reject { |task| task.shared_fields.empty? })
     end
 
-    # TODO only query specific tables
-    # TODO add sequences
     def add_columns
       source_columns = columns(source)
       destination_columns = columns(destination)
@@ -60,7 +58,6 @@ module PgSync
       end
     end
 
-    # TODO use sequence schema
     def sequences(data_source)
       query = <<~SQL
         SELECT
