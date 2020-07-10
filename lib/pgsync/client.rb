@@ -39,42 +39,64 @@ module PgSync
     def slop_options
       o = Slop::Options.new
       o.banner = %{Usage:
-  pgsync [options]
+  pgsync [options]}
 
-Options:}
-      o.string "-d", "--db", "database"
+      o.separator ""
+      o.separator "Sync options:"
+      # defaults to searching path for .pgsync.yml, but this is simpler
+      o.string "--config", "config file (defaults to .pgsync.yml)"
+      o.string "-d", "--db", "database-specific config"
       o.string "-t", "--tables", "tables to sync"
       o.string "-g", "--groups", "groups to sync"
       o.integer "-j", "--jobs", "number of tables to sync at a time"
       o.string "--schemas", "schemas to sync"
-      o.string "--from", "source"
-      o.string "--to", "destination"
-      o.string "--exclude", "exclude tables"
-      o.string "--config", "config file"
-      o.boolean "--to-safe", "accept danger", default: false
-      o.boolean "--debug", "debug", default: false
-      o.boolean "--list", "list", default: false
+      o.boolean "--all-schemas", "all schemas", default: false
+      o.string "--exclude", "tables to exclude"
       o.boolean "--overwrite", "overwrite existing rows", default: false, help: false
       o.boolean "--preserve", "preserve existing rows", default: false
       o.boolean "--truncate", "truncate existing rows", default: false
-      o.boolean "--schema-first", "schema first", default: false
-      o.boolean "--schema-only", "schema only", default: false
-      o.boolean "--all-schemas", "all schemas", default: false
-      o.boolean "--no-rules", "do not apply data rules", default: false
-      o.boolean "--no-sequences", "do not sync sequences", default: false
-      o.boolean "--init", "init", default: false
-      o.boolean "--in-batches", "in batches", default: false, help: false
-      o.integer "--batch-size", "batch size", default: 10000, help: false
-      o.float "--sleep", "sleep", default: 0, help: false
+      o.boolean "--no-rules", "don't apply data rules", default: false
+      o.boolean "--no-sequences", "don't sync sequences", default: false
+      o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
       o.boolean "--fail-fast", "stop on the first failed table", default: false
+      o.boolean "--debug", "show SQL statements", default: false
+
+      o.separator ""
+      o.separator "Foreign key options:"
       o.boolean "--defer-constraints", "defer constraints", default: false, help: false
       o.boolean "--defer-constraints-v2", "defer constraints", default: false
-      o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false
       # private, for testing
       o.boolean "--disable-integrity-v2", "disable foreign key triggers", default: false, help: false
+
+      o.separator ""
+      o.separator "Schema options:"
+      o.boolean "--schema-first", "sync schema first", default: false
+      o.boolean "--schema-only", "sync schema only", default: false
+
+      o.separator ""
+      o.separator "Connection options:"
+      o.string "--from", "source database URL"
+      o.string "--to", "destination database URL"
+      o.boolean "--to-safe", "confirms destination is safe (when not localhost)", default: false
+
+      # not shown in help
+      # o.separator ""
+      # o.separator "Batch options:"
+      o.boolean "--in-batches", "in batches", default: false, help: false
+      o.integer "--batch-size", "batch size", default: 10000, help: false
+      o.float "--sleep", "sleep", default: 0, help: false
+
+      o.separator ""
+      o.separator "Other commands:"
+      o.boolean "--init", "create config file", default: false
+      o.boolean "--list", "list tables", default: false
+
+      o.separator ""
+      o.separator "General options:"
+      o.boolean "-h", "--help", "print help"
       o.boolean "-v", "--version", "print the version"
-      o.boolean "-h", "--help", "prints help"
+
       o
     end
   end

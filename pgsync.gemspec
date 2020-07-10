@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "parallel"
   spec.add_dependency "pg", ">= 0.18.2"
-  spec.add_dependency "slop", ">= 4.8.1"
+  spec.add_dependency "slop", ">= 4.8.2"
   spec.add_dependency "tty-spinner"
 
   spec.add_development_dependency "bundler"

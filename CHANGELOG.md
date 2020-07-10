@@ -1,3 +1,7 @@
+## 0.6.5 (unreleased)
+
+- Improved help
+
 ## 0.6.4 (2020-06-10)
 
 - Log SQL with `--debug` option
