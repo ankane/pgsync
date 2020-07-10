@@ -39,7 +39,7 @@ module PgSync
     def slop_options
       o = Slop::Options.new
       o.banner = %{Usage:
-  pgsync [options]}
+    pgsync [options]}
 
       o.separator ""
       o.separator "Sync options:"
@@ -91,11 +91,8 @@ module PgSync
       o.separator "Other commands:"
       o.boolean "--init", "create config file", default: false
       o.boolean "--list", "list tables", default: false
-
-      o.separator ""
-      o.separator "General options:"
       o.boolean "-h", "--help", "print help"
-      o.boolean "-v", "--version", "print the version"
+      o.boolean "-v", "--version", "print version"
 
       o
     end
