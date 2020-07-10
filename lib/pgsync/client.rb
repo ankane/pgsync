@@ -39,27 +39,34 @@ module PgSync
     def slop_options
       o = Slop::Options.new
       o.banner = %{Usage:
-    pgsync [options]}
+    pgsync [tables,groups] [sql] [options]}
 
       o.separator ""
       o.separator "Sync options:"
       # defaults to searching path for .pgsync.yml, but this is simpler
       o.string "--config", "config file (defaults to .pgsync.yml)"
       o.string "-d", "--db", "database-specific config"
-      o.string "-t", "--tables", "tables to sync"
-      o.string "-g", "--groups", "groups to sync"
       o.integer "-j", "--jobs", "number of tables to sync at a time"
-      o.string "--schemas", "schemas to sync"
-      o.boolean "--all-schemas", "all schemas", default: false
-      o.string "--exclude", "tables to exclude"
-      o.boolean "--overwrite", "overwrite existing rows", default: false, help: false
-      o.boolean "--preserve", "preserve existing rows", default: false
-      o.boolean "--truncate", "truncate existing rows", default: false
       o.boolean "--no-rules", "don't apply data rules", default: false
       o.boolean "--no-sequences", "don't sync sequences", default: false
       o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
       o.boolean "--fail-fast", "stop on the first failed table", default: false
       o.boolean "--debug", "show SQL statements", default: false
+      # not shown
+      o.string "-t", "--tables", "tables to sync", help: false
+      o.string "-g", "--groups", "groups to sync", help: false
+
+      o.separator ""
+      o.separator "Table options:"
+      o.string "--exclude", "tables to exclude"
+      o.string "--schemas", "schemas to sync"
+      o.boolean "--all-schemas", "sync all schemas", default: false
+
+      o.separator ""
+      o.separator "Row options:"
+      o.boolean "--overwrite", "overwrite existing rows", default: false
+      o.boolean "--preserve", "preserve existing rows", default: false
+      o.boolean "--truncate", "truncate existing rows", default: false
 
       o.separator ""
       o.separator "Foreign key options:"
@@ -82,10 +89,10 @@ module PgSync
 
       # not shown in help
       # o.separator ""
-      # o.separator "Batch options:"
-      o.boolean "--in-batches", "in batches", default: false, help: false
+      # o.separator "Append-only table options:"
+      o.boolean "--in-batches", "sync in batches", default: false, help: false
       o.integer "--batch-size", "batch size", default: 10000, help: false
-      o.float "--sleep", "sleep", default: 0, help: false
+      o.float "--sleep", "time to sleep between batches", default: 0, help: false
 
       o.separator ""
       o.separator "Other commands:"
