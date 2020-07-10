@@ -41,17 +41,6 @@ module PgSync
       o.banner = %{Usage:
     pgsync [tables,groups] [sql] [options]}
 
-      o.separator ""
-      o.separator "Sync options:"
-      # defaults to searching path for .pgsync.yml, but this is simpler
-      o.string "--config", "config file (defaults to .pgsync.yml)"
-      o.string "-d", "--db", "database-specific config"
-      o.integer "-j", "--jobs", "number of tables to sync at a time"
-      o.boolean "--no-rules", "don't apply data rules", default: false
-      o.boolean "--no-sequences", "don't sync sequences", default: false
-      o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
-      o.boolean "--fail-fast", "stop on the first failed table", default: false
-      o.boolean "--debug", "show SQL statements", default: false
       # not shown
       o.string "-t", "--tables", "tables to sync", help: false
       o.string "-g", "--groups", "groups to sync", help: false
@@ -72,6 +61,7 @@ module PgSync
       o.separator "Foreign key options:"
       o.boolean "--defer-constraints", "defer constraints", default: false, help: false
       o.boolean "--defer-constraints-v2", "defer constraints", default: false
+      o.integer "-j", "--jobs", "number of tables to sync at a time"
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false
       # private, for testing
       o.boolean "--disable-integrity-v2", "disable foreign key triggers", default: false, help: false
@@ -82,10 +72,24 @@ module PgSync
       o.boolean "--schema-only", "sync schema only", default: false
 
       o.separator ""
+      o.separator "Config options:"
+      # technically, defaults to searching path for .pgsync.yml, but this is simpler
+      o.string "--config", "config file (defaults to .pgsync.yml)"
+      o.string "-d", "--db", "database-specific config file"
+
+      o.separator ""
       o.separator "Connection options:"
       o.string "--from", "source database URL"
       o.string "--to", "destination database URL"
       o.boolean "--to-safe", "confirms destination is safe (when not localhost)", default: false
+
+      o.separator ""
+      o.separator "Other options:"
+      o.boolean "--debug", "show SQL statements", default: false
+      o.boolean "--fail-fast", "stop on the first failed table", default: false
+      o.boolean "--disable-user-triggers", "disable non-system triggers", default: false
+      o.boolean "--no-rules", "don't apply data rules", default: false
+      o.boolean "--no-sequences", "don't sync sequences", default: false
 
       # not shown in help
       # o.separator ""
