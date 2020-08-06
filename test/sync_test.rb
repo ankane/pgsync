@@ -63,6 +63,10 @@ class SyncTest < Minitest::Test
     assert_error "No primary key", "chapters --preserve", config: true
   end
 
+  def test_same_source_destination
+    assert_error "Destination must be different from source", "--from pgsync_test1 --to pgsync_test1", config: true
+  end
+
   def test_no_shared_fields
     assert_prints "authors: No fields to copy", "authors", config: true
   end
