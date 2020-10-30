@@ -1,4 +1,4 @@
-## 0.6.6 (unreleased)
+## 0.6.6 (2020-10-29)
 
 - Added support for tables with generated columns
 
