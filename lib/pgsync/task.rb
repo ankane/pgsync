@@ -140,7 +140,11 @@ module PgSync
             "NOTHING"
           else # overwrite or sql clause
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
-            "UPDATE SET #{setter.join(", ")}"
+            if setter.any?
+              "UPDATE SET #{setter.join(", ")}"
+            else
+              "NOTHING"
+            end
           end
         destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
