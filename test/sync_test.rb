@@ -55,6 +55,31 @@ class SyncTest < Minitest::Test
     assert_result("--preserve", source, dest, expected, "books")
   end
 
+  def test_generated
+    skip if server_version_num < 120000
+
+    [conn1, conn2].each do |conn|
+      conn.exec("DROP TABLE IF EXISTS shares")
+      conn.exec <<~EOS
+        CREATE TABLE shares (
+          id SERIAL PRIMARY KEY,
+          gen integer GENERATED ALWAYS AS (id + 1) STORED
+        );
+      EOS
+    end
+
+    source = 3.times.map { |i| {"id" => i + 1, "gen" => i + 2} }
+    dest = []
+    expected = source
+    assert_result("", source, dest, expected, "shares")
+
+    truncate_tables ["shares"]
+    assert_result("--overwrite", source, dest, expected, "shares")
+
+    truncate_tables ["shares"]
+    assert_result("--preserve", source, dest, expected, "shares")
+  end
+
   def test_overwrite_no_primary_key
     assert_error "No primary key", "chapters --overwrite", config: true
   end

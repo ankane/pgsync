@@ -94,7 +94,7 @@ class Minitest::Test
   end
 
   def assert_result(command, source, dest, expected, table = "posts")
-    insert(conn1, table, source)
+    insert(conn1, table, source.map(&:dup).map { |v| v.delete("gen"); v })
     insert(conn2, table, dest)
 
     assert_equal source, conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
@@ -104,5 +104,9 @@ class Minitest::Test
 
     assert_equal source, conn1.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
     assert_equal expected, conn2.exec("SELECT * FROM #{table} ORDER BY 1, 2").to_a
+  end
+
+  def server_version_num
+    conn1.exec("SHOW server_version_num").first["server_version_num"].to_i
   end
 end
