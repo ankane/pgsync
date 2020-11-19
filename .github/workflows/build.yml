@@ -1,0 +1,18 @@
+name: build
+on: [push, pull_request]
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7
+        bundler-cache: true
+    - uses: ankane/setup-postgres@v1
+    - run: |
+        createdb pgsync_test1
+        createdb pgsync_test2
+        createdb pgsync_test3
+    - run: bundle exec rake test

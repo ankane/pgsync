@@ -9,7 +9,7 @@ Sync data from one Postgres database to another (like `pg_dump`/`pg_restore`). D
 
 :tangerine: Battle-tested at [Instacart](https://www.instacart.com/opensource)
 
-[![Build Status](https://travis-ci.org/ankane/pgsync.svg?branch=master)](https://travis-ci.org/ankane/pgsync)
+[![Build Status](https://github.com/ankane/pgsync/workflows/build/badge.svg?branch=master)](https://github.com/ankane/pgsync/actions)
 
 ## Installation
 
