@@ -1,4 +1,6 @@
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in pgsync.gemspec
 gemspec
+
+gem "minitest", ">= 5"
+gem "rake"
