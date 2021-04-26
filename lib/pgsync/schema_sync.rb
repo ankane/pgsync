@@ -27,7 +27,7 @@ module PgSync
       # if spinner, capture lines to show on error
       lines = []
       success =
-        run_command("#{dump_command} | #{restore_command}") do |line|
+        run_command do |line|
           if show_spinner
             lines << line
           else
@@ -49,12 +49,14 @@ module PgSync
 
     private
 
-    def run_command(command)
-      Open3.popen2e(command) do |stdin, stdout, wait_thr|
-        stdout.each do |line|
+    def run_command
+      err_r, err_w = IO.pipe
+      Open3.pipeline_start(dump_command, restore_command, err: err_w) do |wait_thrs|
+        err_w.close
+        err_r.each do |line|
           yield line
         end
-        wait_thr.value.success?
+        wait_thrs.all? { |t| t.value.success? }
       end
     end
 
@@ -65,19 +67,19 @@ module PgSync
     end
 
     def dump_command
-      tables =
-        if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
-          @tasks.map { |task| "-t #{Shellwords.escape(task.quoted_table)}" }
-        else
-          []
+      cmd = ["pg_dump", "-Fc", "--verbose", "--schema-only", "--no-owner", "--no-acl"]
+      if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
+        @tasks.each do |task|
+          cmd.concat(["-t", task.quoted_table])
         end
-
-      "pg_dump -Fc --verbose --schema-only --no-owner --no-acl #{tables.join(" ")} -d #{@source.url}"
+      end
+      cmd.concat(["-d", @source.url])
     end
 
     def restore_command
-      if_exists = Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
-      "pg_restore --verbose --no-owner --no-acl --clean #{if_exists ? "--if-exists" : nil} -d #{@destination.url}"
+      cmd = ["pg_restore", "--verbose", "--no-owner", "--no-acl", "--clean"]
+      cmd << "--if-exists" if Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
+      cmd.concat(["-d", @destination.url])
     end
   end
 end

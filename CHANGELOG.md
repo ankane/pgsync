@@ -1,3 +1,7 @@
+## 0.6.7 (unreleased)
+
+- Fixed connection security for `--schema-first` and `--schema-only`
+
 ## 0.6.6 (2020-10-29)
 
 - Added support for tables with generated columns
