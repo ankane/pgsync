@@ -78,7 +78,8 @@ module PgSync
         file = config_file
         if file
           begin
-            YAML.load_file(file) || {}
+            require 'erb'
+            YAML.load(ERB.new(File.read(file)).result) || {}
           rescue Psych::SyntaxError => e
             raise Error, e.message
           rescue Errno::ENOENT

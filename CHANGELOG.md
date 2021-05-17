@@ -1,3 +1,9 @@
+## 0.7.0
+
+Breaking
+
+- Allow erb templating in config. Please escape if you used erb specials in config before.
+
 ## 0.6.7 (2021-04-26)
 
 - Fixed connection security for `--schema-first` and `--schema-only` - [more info](https://github.com/ankane/pgsync/issues/121)

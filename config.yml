@@ -10,7 +10,7 @@
 from: $(some_command)?sslmode=require
 
 # destination database URL
-to: postgres://localhost:5432/myapp_development
+to: postgres://localhost:5432/<%%= ENV.fetch('PGSYNC_TARGET_DB_NAME', 'myapp_development') %%>
 
 # exclude tables
 %{exclude}
