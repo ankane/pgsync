@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+    db:
+        image: postgres:13-alpine
+        environment:
+            - "POSTGRES_USER=pgsync"
+            - "POSTGRES_PASSWORD=password"
+            - "PGUSER=pgsync"
+            - "PGPASSWORD=password"
+        volumes:
+            - "pgsync_db:/var/lib/postgresql/data"
+
+    pgsync:
+        build:
+            context: '.'
+            dockerfile: Dockerfile.dev
+        volumes:
+            - "./:/pgsync"
+        environment:
+            - "PGUSER=pgsync"
+            - "PGHOST=db"
+            - "PGPASSWORD=password"
+            - "PGSYNC_SAFE_DESTINATIONS=db"
+        command: "ruby -e 'puts \"Ready!\"'"
+        depends_on:
+            - db
+
+volumes:
+    pgsync_db:

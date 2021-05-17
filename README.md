@@ -250,6 +250,8 @@ To keep you from accidentally overwriting production, the destination is limited
 
 To use another host, add `to_safe: true` to your `.pgsync.yml`.
 
+To list allowed hosts pass env variable PGSYNC_SAFE_DESTINATIONS with comma separated values. Example: PGSYNC_SAFE_DESTINATIONS='shared-dev.db.com,123.123.123'
+
 ## Multiple Databases
 
 To use with multiple databases, run:
