@@ -68,6 +68,23 @@ module PgSync
       execute("TRUNCATE #{quote_ident_full(table)} CASCADE")
     end
 
+    def schemas
+      @schemas ||= begin
+        query = <<~SQL
+          SELECT
+            schema_name
+          FROM
+            information_schema.schemata
+          ORDER BY 1
+        SQL
+        execute(query).map { |row| row["schema_name"] }
+      end
+    end
+
+    def create_schema(schema)
+      execute("CREATE SCHEMA #{quote_ident(schema)}")
+    end
+
     def triggers(table)
       query = <<~SQL
         SELECT

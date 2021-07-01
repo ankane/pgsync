@@ -24,6 +24,8 @@ module PgSync
         spinner.auto_spin
       end
 
+      create_schemas if specify_tables?
+
       # if spinner, capture lines to show on error
       lines = []
       success =
@@ -68,7 +70,7 @@ module PgSync
 
     def dump_command
       cmd = ["pg_dump", "-Fc", "--verbose", "--schema-only", "--no-owner", "--no-acl"]
-      if !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
+      if specify_tables?
         @tasks.each do |task|
           cmd.concat(["-t", task.quoted_table])
         end
@@ -80,6 +82,21 @@ module PgSync
       cmd = ["pg_restore", "--verbose", "--no-owner", "--no-acl", "--clean"]
       cmd << "--if-exists" if Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
       cmd.concat(["-d", @destination.url])
+    end
+
+    # pg_dump -t won't create schemas (even with -n)
+    # not ideal that this happens outside restore transaction
+    def create_schemas
+      schemas = @tasks.map { |t| t.table.schema }.uniq - @destination.schemas
+      if schemas.any?
+        schemas.sort.each do |schema|
+          @destination.create_schema(schema)
+        end
+      end
+    end
+
+    def specify_tables?
+      !opts[:all_schemas] || opts[:tables] || opts[:groups] || args[0] || opts[:exclude] || opts[:schemas]
     end
   end
 end
