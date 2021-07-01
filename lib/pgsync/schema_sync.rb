@@ -88,10 +88,8 @@ module PgSync
     # not ideal that this happens outside restore transaction
     def create_schemas
       schemas = @tasks.map { |t| t.table.schema }.uniq - @destination.schemas
-      if schemas.any?
-        schemas.sort.each do |schema|
-          @destination.create_schema(schema)
-        end
+      schemas.sort.each do |schema|
+        @destination.create_schema(schema)
       end
     end
 
