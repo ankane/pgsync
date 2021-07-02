@@ -30,8 +30,13 @@ module PgSync
       raise Error, "No source" unless source.exists?
       raise Error, "No destination" unless destination.exists?
 
-      unless opts[:to_safe] || destination.local?
-        raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1"
+      destination_is_safe = opts[:to_safe] ||
+        destination.local? ||
+        ENV.fetch('PGSYNC_SAFE_DESTINATIONS', 'localhost,127.0.0.1').split(/,\s*/)
+
+      unless destination_is_safe
+        raise Error, "Danger! Add `to_safe: true` to `.pgsync.yml` or pass PGSYNC_SAFE_DESTINATIONS "\
+          "if the destination is not localhost or 127.0.0.1"
       end
 
       print_description("From", source)

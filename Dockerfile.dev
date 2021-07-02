@@ -1,0 +1,13 @@
+FROM ruby:3.0.1-alpine3.13
+
+MAINTAINER Andrew Kane <andrew@ankane.org>
+
+RUN apk add --update ruby-dev build-base \
+  libxml2-dev libxslt-dev pcre-dev libffi-dev \
+  postgresql-dev postgresql-client git
+
+RUN mkdir /pgsync
+WORKDIR /pgsync
+COPY ./Gemfile ./Gemfile.lock ./pgsync.gemspec ./
+COPY ./lib/pgsync/version.rb ./lib/pgsync/version.rb
+RUN bundle install -j2
