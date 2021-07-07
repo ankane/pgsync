@@ -270,7 +270,7 @@ module PgSync
         end
       elsif opts[:defer_constraints] || opts[:defer_constraints_v2]
         destination.transaction do
-          if opts[:defer_constraints_v2]
+          if opts[:defer_constraints_v2] && !opts[:skip_alter_constraints]
             table_constraints = non_deferrable_constraints(destination)
             table_constraints.each do |table, constraints|
               constraints.each do |constraint|
@@ -293,10 +293,11 @@ module PgSync
           # https://www.postgresql.org/docs/current/sql-set-constraints.html
           if opts[:defer_constraints_v2]
             destination.execute("SET CONSTRAINTS ALL IMMEDIATE")
-
-            table_constraints.each do |table, constraints|
-              constraints.each do |constraint|
-                destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} NOT DEFERRABLE")
+              if !opts[:skip_alter_constraints]
+                table_constraints.each do |table, constraints|
+                  constraints.each do |constraint|
+                    destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} NOT DEFERRABLE")
+                end
               end
             end
           end
