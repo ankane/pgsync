@@ -132,6 +132,7 @@ class SyncTest < Minitest::Test
     insert(conn1, "comments", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", config: true
     assert_works "comments,posts --defer-constraints-v2", config: true
+    assert_works "comments,posts --defer-constraints-v2 --skip-alter-constraints", config: true
     assert_works "comments,posts --defer-constraints-v2 --overwrite", config: true
     assert_works "comments,posts --defer-constraints-v2 --preserve", config: true
     assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
@@ -142,6 +143,7 @@ class SyncTest < Minitest::Test
     insert(conn1, "posts", [{"id" => 1}])
     insert(conn1, "comments2", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments2", "comments2,posts --jobs 1", config: true
+    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints-v2 --skip-alter-constraints", config: true
     assert_works "comments2,posts --defer-constraints-v2", config: true
     assert_works "comments2,posts --defer-constraints-v2 --overwrite", config: true
     assert_works "comments2,posts --defer-constraints-v2 --preserve", config: true

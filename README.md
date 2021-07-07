@@ -207,6 +207,10 @@ To defer constraints, use:
 ```sh
 pgsync --defer-constraints-v2
 ```
+This command will lock tables where it sets constraints to deferrable. If you set constraints to deferrable before running pgsync, you can use `--skip-alter-constraints` to avoid the locking.
+```sh
+pgsync --defer-constraints-v2 --skip-alter-constraints
+```
 
 To manually specify the order of tables, use `--jobs 1` so tables are synced one-at-a-time.
 
