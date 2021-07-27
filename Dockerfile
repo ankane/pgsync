@@ -4,7 +4,7 @@ MAINTAINER Andrew Kane <andrew@ankane.org>
 
 RUN apk add --update ruby-dev build-base \
   libxml2-dev libxslt-dev pcre-dev libffi-dev \
-  postgresql-dev
+  postgresql-client postgresql-dev
 
 RUN gem install pgsync
 
