@@ -71,6 +71,12 @@ Or truncate them
 pgsync products "where store_id = 1" --truncate
 ```
 
+By default pgsync will sync the next sequence value, which may cause issues if you're only syncing a part of the bigger table. You can avoid that by providing following flag
+
+```sh
+pgsync products "where store_id = 1" --no-sequences
+```
+
 ## Tables
 
 Exclude specific tables
