@@ -19,6 +19,35 @@ class SyncTest < Minitest::Test
     assert_result("--overwrite", source, dest, expected)
   end
 
+  def test_overwrite_only_changed
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = source
+    expected = source
+    assert_result("--overwrite --overwrite-only-changed", source, dest, expected)
+    # get ctids (~ table row versions)
+    ctids = conn2.exec("select ctid from posts").to_a
+    # rerun the overwrite
+    assert_works "posts --overwrite --overwrite-only-changed", config: true
+    ctids2 = conn2.exec("select ctid from posts").to_a
+    # verify ctids have not changed
+    assert_equal(ctids, ctids2)
+  end
+
+
+  def test_overwrite_without_only_changed_has_ctid_diffs
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    dest = source
+    expected = source
+    assert_result("--overwrite", source, dest, expected)
+    # get ctids (~ table row versions)
+    ctids = conn2.exec("select ctid from posts").to_a
+    # rerun the overwrite
+    assert_works "posts --overwrite", config: true
+    ctids2 = conn2.exec("select ctid from posts").to_a
+    # verify ctids have changed.
+    refute_equal(ctids, ctids2)
+  end
+
   def test_preserve
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]

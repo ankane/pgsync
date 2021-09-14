@@ -56,6 +56,7 @@ module PgSync
       o.boolean "--overwrite", "overwrite existing rows", default: false
       o.boolean "--preserve", "preserve existing rows", default: false
       o.boolean "--truncate", "truncate existing rows", default: false
+      o.boolean "--overwrite-only-changed", "Only overwrite rows with values that have changed", default: false
 
       o.separator ""
       o.separator "Foreign key options:"
