@@ -149,7 +149,6 @@ module PgSync
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
         on_conflict = primary_key.map { |pk| quote_ident(pk) }.join(", ")
-
         action =
           if opts[:preserve]
             "NOTHING"
