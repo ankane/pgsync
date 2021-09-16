@@ -19,6 +19,14 @@ module PgSync
       quote_ident_full(table)
     end
 
+    def field_equality(column)
+      if to_types[column] == 'json'
+        "#{quoted_table}.#{quote_ident(column)}::jsonb = EXCLUDED.#{quote_ident(column)}::jsonb"
+      else
+        "#{quoted_table}.#{quote_ident(column)} = EXCLUDED.#{quote_ident(column)}"
+      end
+    end
+
     def perform
       with_notices do
         handle_errors do
@@ -35,6 +43,14 @@ module PgSync
 
     def to_fields
       @to_fields ||= to_columns.map { |c| c[:name] }
+    end
+
+    def from_types
+      @from_types ||= from_columns.map { |c| [c[:name], c[:type]] }.to_h
+    end
+
+    def to_types
+      @to_types ||= to_columns.map { |c| [c[:name], c[:type]] }.to_h
     end
 
     def shared_fields
@@ -62,8 +78,6 @@ module PgSync
         missing_sequences = from_sequences - to_sequences
         notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
 
-        from_types = from_columns.map { |c| [c[:name], c[:type]] }.to_h
-        to_types = to_columns.map { |c| [c[:name], c[:type]] }.to_h
         different_types = []
         shared_fields.each do |field|
           if from_types[field] != to_types[field]
@@ -141,7 +155,7 @@ module PgSync
           else # overwrite or sql clause
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
             if setter.any?
-              "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quoted_table}.#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join(" AND ")})"
+              "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| field_equality(f) }.join(" AND ")})"
             else
               "NOTHING"
             end
