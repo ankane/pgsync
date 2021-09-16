@@ -140,18 +140,13 @@ module PgSync
             "NOTHING"
           else # overwrite or sql clause
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
-            if opts[:overwrite_only_changed]
-              nooper = "WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quoted_table}.#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join(" AND ")})"
-            else
-              nooper = ""
-            end
             if setter.any?
-              "UPDATE SET #{setter.join(", ")} #{nooper}"
+              "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quoted_table}.#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join(" AND ")})"
             else
               "NOTHING"
             end
           end
-        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
+        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *").length
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints] || opts[:defer_constraints_v2]
