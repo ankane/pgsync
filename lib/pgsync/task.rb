@@ -140,13 +140,8 @@ module PgSync
             "NOTHING"
           else # overwrite or sql clause
             setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
-            if opts[:overwrite_only_changed]
-              nooper = "WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quoted_table}.#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join(" AND ")})"
-            else
-              nooper = ""
-            end
             if setter.any?
-              "UPDATE SET #{setter.join(", ")} #{nooper}"
+              "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quoted_table}.#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }.join(" AND ")})"
             else
               "NOTHING"
             end
