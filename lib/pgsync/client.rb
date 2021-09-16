@@ -62,6 +62,7 @@ module PgSync
       o.boolean "--defer-constraints-v2", "defer constraints", default: false
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false
       o.integer "-j", "--jobs", "number of tables to sync at a time"
+      o.integer "--throttle-bytes-per-second", "limit the sync to roughly this many bytes per second"
 
       # replaced by v2
       o.boolean "--defer-constraints", "defer constraints", default: false, help: false
