@@ -20,10 +20,11 @@ module PgSync
     end
 
     def field_equality(column)
+      null_cond = "(#{quoted_table}.#{quote_ident(column)} IS NULL AND EXCLUDED.#{quote_ident(column)} IS NULL)"
       if to_types[column] == 'json'
-        "#{quoted_table}.#{quote_ident(column)}::jsonb = EXCLUDED.#{quote_ident(column)}::jsonb"
+        "#{quoted_table}.#{quote_ident(column)}::jsonb = EXCLUDED.#{quote_ident(column)}::jsonb OR #{null_cond}"
       else
-        "#{quoted_table}.#{quote_ident(column)} = EXCLUDED.#{quote_ident(column)}"
+        "#{quoted_table}.#{quote_ident(column)} = EXCLUDED.#{quote_ident(column)} OR #{null_cond}"
       end
     end
 
