@@ -1,4 +1,4 @@
-## 0.6.8 (unreleased)
+## 0.6.8 (2021-09-21)
 
 - Fixed error when schema missing in destination with `--schema-first` and `--schema-only`
 
