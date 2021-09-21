@@ -19,7 +19,7 @@ pgsync is a command line tool. To install, run:
 gem install pgsync
 ```
 
-This will give you the `pgsync` command. If installation fails, you may need to install [dependencies](#dependencies).
+This will give you the `pgsync` command. You can also install it with [Homebrew](#homebrew). If installation fails, you may need to install [dependencies](#dependencies).
 
 ## Setup
 
@@ -345,6 +345,14 @@ For Ruby scripts, you may need to do:
 Bundler.with_unbundled_env do
   system "pgsync ..."
 end
+```
+
+## Homebrew
+
+On Mac, you can use:
+
+```sh
+brew install ankane/brew/pgsync
 ```
 
 ## Dependencies
