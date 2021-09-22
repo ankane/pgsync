@@ -90,6 +90,22 @@ module PgSync
       notes
     end
 
+    def prep_table
+      if opts[:delete]
+        destination.transaction do
+          destination.execute("delete from #{quoted_table}")
+          yield
+        end
+      # use delete instead of truncate for foreign keys
+      elsif opts[:defer_constraints] || opts[:defer_constraints_v2]
+        destination.execute("DELETE FROM #{quoted_table}")
+        yield
+      else
+        destination.truncate(table)
+        yield
+      end
+    end
+
     def sync_data
       raise Error, "This should never happen. Please file a bug." if shared_fields.empty?
 
@@ -139,7 +155,7 @@ module PgSync
             sleep(opts[:sleep])
           end
         end
-      elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
+      elsif !(opts[:truncate] || opts[:delete]) && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
         raise Error, "No primary key" if primary_key.empty?
 
         # create a temp table
@@ -164,13 +180,9 @@ module PgSync
         result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
         log "updated #{result.length} rows"
       else
-        # use delete instead of truncate for foreign keys
-        if opts[:defer_constraints] || opts[:defer_constraints_v2]
-          destination.execute("DELETE FROM #{quoted_table}")
-        else
-          destination.truncate(table)
+        prep_table do
+          copy(copy_to_command, dest_table: table, dest_fields: fields)
         end
-        copy(copy_to_command, dest_table: table, dest_fields: fields)
       end
 
       # update sequences
