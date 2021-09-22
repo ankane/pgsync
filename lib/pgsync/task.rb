@@ -22,9 +22,9 @@ module PgSync
     def field_equality(column)
       null_cond = "(#{quoted_table}.#{quote_ident(column)} IS NULL AND EXCLUDED.#{quote_ident(column)} IS NULL)"
       if to_types[column] == 'json'
-        "(#{quoted_table}.#{quote_ident(column)}::jsonb = EXCLUDED.#{quote_ident(column)}::jsonb OR #{null_cond})"
+        "(COALESCE(#{quoted_table}.#{quote_ident(column)}::jsonb = EXCLUDED.#{quote_ident(column)}::jsonb, false) OR #{null_cond})"
       else
-        "(#{quoted_table}.#{quote_ident(column)} = EXCLUDED.#{quote_ident(column)} OR #{null_cond})"
+        "(COALESCE(#{quoted_table}.#{quote_ident(column)} = EXCLUDED.#{quote_ident(column)}, false) OR #{null_cond})"
       end
     end
 
@@ -161,7 +161,8 @@ module PgSync
               "NOTHING"
             end
           end
-        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
+        result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
+        log "updated #{result.length} rows"
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints] || opts[:defer_constraints_v2]
