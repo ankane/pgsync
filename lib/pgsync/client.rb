@@ -55,6 +55,7 @@ module PgSync
       o.separator "Row options:"
       o.boolean "--overwrite", "overwrite existing rows", default: false
       o.boolean "--preserve", "preserve existing rows", default: false
+      o.boolean "--delete", "delete existing rows inside of a transaction", default: false
       o.boolean "--truncate", "truncate existing rows", default: false
 
       o.separator ""
