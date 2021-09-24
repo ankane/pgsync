@@ -57,6 +57,7 @@ module PgSync
       o.boolean "--preserve", "preserve existing rows", default: false
       o.boolean "--delete", "delete existing rows inside of a transaction", default: false
       o.boolean "--truncate", "truncate existing rows", default: false
+      o.integer "--incremental", "only sync rows with an updated_at field great than this many seconds ago"
 
       o.separator ""
       o.separator "Foreign key options:"

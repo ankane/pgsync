@@ -111,7 +111,14 @@ module PgSync
 
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
-
+      if opts[:incremental] && !from_types['updated_at'].nil? && from_types['updated_at'].start_with?('timestamp')
+        if !sql_clause.empty?
+          sql_clause << " AND "
+        else
+          sql_clause << " WHERE "
+        end
+        sql_clause << "#{quoted_table}.updated_at > NOW() - INTERVAL '#{opts[:incremental]} second'"
+      end
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = to_primary_key
       copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
