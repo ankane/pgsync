@@ -165,27 +165,29 @@ module PgSync
       elsif !(opts[:truncate] || opts[:delete]) && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
         raise Error, "No primary key" if primary_key.empty?
 
-        # create a temp table
-        temp_table = "pgsync_#{rand(1_000_000_000)}"
-        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_table} WITH NO DATA")
+        destination.transaction do
+          # create a temp table
+          temp_table = "pgsync_#{rand(1_000_000_000)}"
+          destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} ON COMMIT DROP AS TABLE #{quoted_table} WITH NO DATA")
 
-        # load data
-        copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
+          # load data
+          copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
 
-        on_conflict = primary_key.map { |pk| quote_ident(pk) }.join(", ")
-        action =
-          if opts[:preserve]
-            "NOTHING"
-          else # overwrite or sql clause
-            setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
-            if setter.any?
-              "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| field_equality(f) }.join(" AND ")})"
-            else
+          on_conflict = primary_key.map { |pk| quote_ident(pk) }.join(", ")
+          action =
+            if opts[:preserve]
               "NOTHING"
+            else # overwrite or sql clause
+              setter = shared_fields.reject { |f| primary_key.include?(f) }.map { |f| "#{quote_ident(f)} = EXCLUDED.#{quote_ident(f)}" }
+              if setter.any?
+                "UPDATE SET #{setter.join(", ")} WHERE NOT (#{shared_fields.reject { |f| primary_key.include?(f) }.map { |f| field_equality(f) }.join(" AND ")})"
+              else
+                "NOTHING"
+              end
             end
-          end
-        result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
-        log "updated #{result.length} rows"
+          result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
+          log "updated #{result.length} rows"
+        end
       else
         prep_table do
           copy(copy_to_command, dest_table: table, dest_fields: fields)
