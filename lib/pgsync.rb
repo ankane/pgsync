@@ -5,6 +5,7 @@ require "slop"
 require "tty-spinner"
 
 # stdlib
+require 'json'
 require "set"
 require "shellwords"
 require "tempfile"

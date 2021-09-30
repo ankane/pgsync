@@ -8,6 +8,9 @@ module PgSync
     }
 
     def log(message = nil)
+      if message.is_a? Hash
+        message = JSON.dump(message)
+      end
       output.puts message
     end
 

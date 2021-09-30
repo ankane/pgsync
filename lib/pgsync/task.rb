@@ -186,7 +186,7 @@ module PgSync
               end
             end
           result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
-          log "updated #{result.length} rows"
+          log ({ table: table,  updated_rows: result.length })
         end
       else
         prep_table do
