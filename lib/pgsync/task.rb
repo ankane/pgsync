@@ -90,6 +90,24 @@ module PgSync
       notes
     end
 
+    def table_schema_match(temp_table, table)
+      query = "
+          select column_name,data_type from information_schema.columns where
+          table_name = '%s'
+          AND
+          table_schema = 'public'
+      "
+
+      queries = [query % table, query % temp_table]
+
+      delta_query = "
+          (#{queries[0]} EXCEPT #{queries[1]})
+          UNION ALL
+          (#{queries[1]} EXCEPT #{queries[0]})
+      "
+      destination.execute(delta_query).length == 0
+    end
+
     def prep_table
       if opts[:delete]
         destination.transaction do
@@ -170,7 +188,11 @@ module PgSync
           # adding bloat and slowing down the DB
           if opts[:no_temp_table]
             temp_table = "pgsync_#{table}"
-            destination.execute("CREATE TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table} INCLUDING ALL)")
+            if !table_schema_match(temp_table, table.name)
+              log "Table schema does not match, dropping the staging table."
+              destination.execute("DROP TABLE IF EXISTS #{quote_ident_full(temp_table)}")
+            end
+            destination.execute("CREATE UNLOGGED TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table} INCLUDING ALL)")
           # create a temp table
           else
             temp_table = "pgsync_#{rand(1_000_000_000)}"
