@@ -166,9 +166,16 @@ module PgSync
         raise Error, "No primary key" if primary_key.empty?
 
         destination.transaction do
+          # creating many temp tables churns pg_attribute and pg_type
+          # adding bloat and slowing down the DB
+          if opts[:no_temp_table]
+            temp_table = "pgsync_#{table}"
+            destination.execute("CREATE TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table})")
           # create a temp table
-          temp_table = "pgsync_#{rand(1_000_000_000)}"
-          destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} ON COMMIT DROP AS TABLE #{quoted_table} WITH NO DATA")
+          else
+            temp_table = "pgsync_#{rand(1_000_000_000)}"
+            destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} ON COMMIT DROP AS TABLE #{quoted_table} WITH NO DATA")
+          end
 
           # load data
           copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
@@ -186,6 +193,11 @@ module PgSync
               end
             end
           result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
+
+          # Protected by MVCC
+          if opts[:no_temp_table]
+            destination.execute("DELETE FROM #{quote_ident_full(temp_table)}")
+          end
           log ({ table: table,  updated_rows: result.length })
         end
       else
