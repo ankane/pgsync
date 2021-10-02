@@ -196,7 +196,7 @@ module PgSync
 
           # Protected by MVCC
           if opts[:no_temp_table]
-            destination.execute("DELETE * FROM #{quote_ident_full(temp_table)}")
+            destination.execute("DELETE FROM #{quote_ident_full(temp_table)}")
           end
           log ({ table: table,  updated_rows: result.length })
         end
