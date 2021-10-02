@@ -170,7 +170,7 @@ module PgSync
           # adding bloat and slowing down the DB
           if opts[:no_temp_table]
             temp_table = "pgsync_#{table}"
-            destination.execute("CREATE TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table})")
+            destination.execute("CREATE TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table} INCLUDING ALL)")
           # create a temp table
           else
             temp_table = "pgsync_#{rand(1_000_000_000)}"
