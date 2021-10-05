@@ -187,7 +187,8 @@ module PgSync
           # creating many temp tables churns pg_attribute and pg_type
           # adding bloat and slowing down the DB
           if opts[:no_temp_table]
-            temp_table = "pgsync_#{table}"
+            # pgsync_public.countries"
+            temp_table = "pgsync_#{table.gsub('.', '_')}"
             if !table_schema_match(temp_table, table.name)
               log "Table schema does not match, dropping the staging table."
               destination.execute("DROP TABLE IF EXISTS #{quote_ident_full(temp_table)}")
