@@ -191,6 +191,8 @@ module PgSync
             if !table_schema_match(temp_table, table.name)
               log "Table schema does not match, dropping the staging table."
               destination.execute("DROP TABLE IF EXISTS #{quote_ident_full(temp_table)}")
+              # Drop old name as well.
+              destination.execute("DROP TABLE IF EXISTS #{quote_ident_full("pgsync_#{table}")}")
             end
             destination.execute("CREATE UNLOGGED TABLE IF NOT EXISTS #{quote_ident_full(temp_table)} (LIKE #{quoted_table} INCLUDING ALL)")
           # create a temp table
