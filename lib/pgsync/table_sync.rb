@@ -40,9 +40,13 @@ module PgSync
 
     def add_primary_keys
       destination_primary_keys = primary_keys(destination)
-
       tasks.each do |task|
-        task.to_primary_key = destination_primary_keys[task.table] || []
+        pk_override = ENV["PRIMARY_KEY_OVERRIDE_#{task.table.name.upcase}"]
+        if pk_override
+          task.to_primary_key = pk_override.split(',')
+        else
+          task.to_primary_key = destination_primary_keys[task.table] || []
+        end
       end
     end
 
