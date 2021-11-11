@@ -102,6 +102,7 @@ module PgSync
       # o.separator "Append-only table options:"
       o.boolean "--in-batches", "sync in batches", default: false, help: false
       o.integer "--batch-size", "batch size", default: 10000, help: false
+      o.integer "--starting-id", "starting id", help: false
       o.float "--sleep", "time to sleep between batches", default: 0, help: false
 
       o.separator ""

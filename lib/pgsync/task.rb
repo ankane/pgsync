@@ -157,8 +157,9 @@ module PgSync
           to_max_id = from_min_id if from_min_id > 0
         end
 
-        starting_id = to_max_id
+        starting_id = [to_max_id, opts[:starting_id].to_i].max
         batch_size = opts[:batch_size]
+        target_rows_copied = batch_size
 
         i = 1
         batch_count = ((from_max_id - starting_id + 1) / batch_size.to_f).ceil
@@ -171,9 +172,23 @@ module PgSync
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
           batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
-          copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
+          rows_copied = copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
-          starting_id += batch_size
+          if rows_copied == 0
+            starting_id = source.min_id(table, primary_key, " where #{quote_ident(primary_key)} >= #{starting_id.to_i}")
+            log "Warning: no rows found, adjusting next id to #{starting_id}"
+          else
+            starting_id += batch_size
+            target_fraction = rows_copied.to_f / target_rows_copied
+            if target_fraction < 0.5
+              batch_size = [batch_size.to_f / target_fraction, batch_size * 1.5].min.to_i
+              log "Warning: small number of rows found, adjusting batch_size to #{batch_size}"
+            elsif target_fraction > 2.0
+              batch_size = [batch_size.to_f / target_fraction, batch_size / 2].max.to_i
+              log "Warning: large number of rows found, adjusting batch_size to #{batch_size}"
+            end
+          end
+
           i += 1
 
           if opts[:sleep] && starting_id <= from_max_id
@@ -287,6 +302,7 @@ module PgSync
       source.log_sql(source_command)
       destination.log_sql(destination_command)
       bytes_count = 0
+      rows_count = 0
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       destination.conn.copy_data(destination_command) do
@@ -297,9 +313,11 @@ module PgSync
             end
             destination.conn.put_copy_data(row)
             bytes_count += row.bytesize
+            rows_count += 1
           end
         end
       end
+      rows_count
     end
 
     # TODO better performance
