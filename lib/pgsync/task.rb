@@ -175,7 +175,13 @@ module PgSync
           rows_copied = copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
           if rows_copied == 0
-            starting_id = source.min_id(table, primary_key, " where #{quote_ident(primary_key)} >= #{starting_id.to_i}")
+            clause = sql_clause.empty? ? " WHERE " : "#{sql_clause} AND "
+            clause << "#{quote_ident(primary_key)} >= #{starting_id.to_i}"
+            starting_id = source.min_id(table, primary_key, clause)
+            if starting_id == 0
+              log "Warning: no more rows found matching #{sql_clause}"
+              break
+            end
             log "Warning: no rows found, adjusting next id to #{starting_id}"
           else
             starting_id += batch_size
