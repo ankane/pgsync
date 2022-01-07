@@ -233,20 +233,21 @@ module PgSync
               end
             end
 
-          result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
+          result = destination.raw_execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
 
           if opts[:delete]
-            destination.execute("
+            delete_result = destination.raw_execute("
               DELETE FROM #{quoted_table}
               WHERE (#{primary_key_fields}) NOT IN (SELECT #{primary_key_fields}
               FROM #{quote_ident_full(temp_table)})")
+            log ({ table: table,  rows_deleted: delete_result.cmd_status.split(' ')[1].to_i })
           end
 
           # Protected by MVCC
           if opts[:no_temp_table]
             destination.execute("DELETE FROM #{quote_ident_full(temp_table)}")
           end
-          log ({ table: table,  updated_rows: result.length })
+          log ({ table: table,  updated_rows: result.cmd_status.split(" ")[2].to_i })
         end
       else
         prep_table do
