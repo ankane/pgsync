@@ -111,7 +111,7 @@ module PgSync
     def prep_table
       if opts[:delete]
         destination.transaction do
-          destination.execute("delete from #{quoted_table}")
+          destination.execute("DELETE FROM #{quoted_table}")
           yield
         end
       # use delete instead of truncate for foreign keys
