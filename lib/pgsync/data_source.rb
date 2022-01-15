@@ -142,11 +142,6 @@ module PgSync
       conn.exec_params(query, params).to_a
     end
 
-    def raw_execute(query, params = [])
-      log_sql query, params
-      conn.exec_params(query, params)
-    end
-
     def transaction
       if conn.transaction_status == 0
         # not currently in transaction

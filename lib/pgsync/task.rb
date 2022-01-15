@@ -111,7 +111,7 @@ module PgSync
     def prep_table
       if opts[:delete]
         destination.transaction do
-          destination.execute("DELETE FROM #{quoted_table}")
+          destination.execute("delete from #{quoted_table}")
           yield
         end
       # use delete instead of truncate for foreign keys
@@ -141,7 +141,6 @@ module PgSync
       primary_key = to_primary_key
       copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
-      primary_key_fields = primary_key.map { |f| quote_ident(f) }.join(", ")
 
       copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
@@ -202,7 +201,7 @@ module PgSync
             sleep(opts[:sleep])
           end
         end
-      elsif !(opts[:truncate]) && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
+      elsif !(opts[:truncate] || opts[:delete]) && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
         raise Error, "No primary key" if primary_key.empty?
 
         destination.transaction do
@@ -238,22 +237,13 @@ module PgSync
                 "NOTHING"
               end
             end
-
-          result = destination.raw_execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
-
-          if opts[:delete]
-            delete_result = destination.raw_execute("
-              DELETE FROM #{quoted_table}
-              WHERE (#{primary_key_fields}) NOT IN (SELECT #{primary_key_fields}
-              FROM #{quote_ident_full(temp_table)})")
-            log ({ table: table,  rows_deleted: delete_result.cmd_status.split(' ')[1].to_i })
-          end
+          result = destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action} returning *")
 
           # Protected by MVCC
           if opts[:no_temp_table]
             destination.execute("DELETE FROM #{quote_ident_full(temp_table)}")
           end
-          log ({ table: table,  updated_rows: result.cmd_status.split(" ")[2].to_i })
+          log ({ table: table,  updated_rows: result.length })
         end
       else
         prep_table do
