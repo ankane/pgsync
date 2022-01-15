@@ -245,9 +245,15 @@ module PgSync
           end
           log ({ table: table,  updated_rows: result.length })
         end
+        if opts[:vacuum]
+          destination.execute("VACUUM #{quoted_table}")
+        end
       else
         prep_table do
           copy(copy_to_command, dest_table: table, dest_fields: fields)
+        end
+        if opts[:vacuum]
+          destination.execute("VACUUM #{quoted_table}")
         end
       end
 
