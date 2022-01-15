@@ -59,6 +59,7 @@ module PgSync
       o.boolean "--truncate", "truncate existing rows", default: false
       o.integer "--incremental", "only sync rows with an updated_at field great than this many seconds ago"
       o.boolean "--no-temp-table", "create a permanent staging table", default: false
+      o.boolean "--vacuum", "manually vacuum the table post copy", default: false
 
       o.separator ""
       o.separator "Foreign key options:"
