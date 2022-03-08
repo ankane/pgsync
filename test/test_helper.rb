@@ -61,7 +61,7 @@ class Minitest::Test
   end
 
   def assert_prints(message, command, **options)
-    output, status = run_command(command, **options)
+    output, _ = run_command(command, **options)
     assert_match message, output
   end
 
