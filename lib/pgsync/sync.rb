@@ -78,7 +78,16 @@ module PgSync
         file = config_file
         if file
           begin
-            YAML.load_file(file) || {}
+            # same options as YAML.load_file
+            File.open(file, "r:bom|utf-8") do |f|
+              # changed to keyword arguments in 3.1.0.pre1
+              # https://github.com/ruby/psych/commit/c79ed445b4b3f8c9adf3da13bca3c976ddfae258
+              if Psych::VERSION.to_f >= 3.1
+                YAML.safe_load(f, aliases: true, filename: file) || {}
+              else
+                YAML.safe_load(f, [], [], true, file) || {}
+              end
+            end
           rescue Psych::SyntaxError => e
             raise Error, e.message
           rescue Errno::ENOENT

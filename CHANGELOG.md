@@ -1,3 +1,7 @@
+## 0.6.9 (unreleased)
+
+- Fixed unknown alias error with Ruby 3.1
+
 ## 0.6.8 (2021-09-21)
 
 - Fixed error when schema missing in destination with `--schema-first` and `--schema-only`
