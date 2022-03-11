@@ -1,4 +1,4 @@
-## 0.7.0 (unreleased)
+## 0.7.0 (2022-03-10)
 
 - Changed `--defer-constraints` to `--defer-constraints-v1`
 - Changed `--defer-constraints-v2` to `--defer-constraints`

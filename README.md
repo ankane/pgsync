@@ -205,7 +205,7 @@ Foreign keys can make it difficult to sync data. Three options are:
 To defer constraints, use:
 
 ```sh
-pgsync --defer-constraints-v2
+pgsync --defer-constraints
 ```
 
 To manually specify the order of tables, use `--jobs 1` so tables are synced one-at-a-time.
