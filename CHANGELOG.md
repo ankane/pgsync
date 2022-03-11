@@ -3,6 +3,7 @@
 - Changed `--defer-constraints` to `--defer-constraints-v1`
 - Changed `--defer-constraints-v2` to `--defer-constraints`
 - Fixed unknown alias error with Ruby 3.1
+- Dropped support for Ruby < 2.5
 
 ## 0.6.8 (2021-09-21)
 

@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.bindir        = "exe"
   spec.executables   = ["pgsync"]
 
-  spec.required_ruby_version = ">= 2.2"
+  spec.required_ruby_version = ">= 2.5"
 
   spec.add_dependency "parallel"
   spec.add_dependency "pg", ">= 0.18.2"
