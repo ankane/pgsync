@@ -11,6 +11,7 @@ module PgSync
       result = Slop::Parser.new(slop_options).parse(@args)
       arguments = result.arguments
       options = result.to_h
+      options[:defer_constraints_v2] ||= options[:defer_constraints]
 
       raise Error, "Specify either --db or --config, not both" if options[:db] && options[:config]
       raise Error, "Cannot use --overwrite with --in-batches" if options[:overwrite] && options[:in_batches]
@@ -59,12 +60,13 @@ module PgSync
 
       o.separator ""
       o.separator "Foreign key options:"
-      o.boolean "--defer-constraints-v2", "defer constraints", default: false
+      o.boolean "--defer-constraints", "defer constraints", default: false
       o.boolean "--disable-integrity", "disable foreign key triggers", default: false
       o.integer "-j", "--jobs", "number of tables to sync at a time"
 
-      # replaced by v2
-      o.boolean "--defer-constraints", "defer constraints", default: false, help: false
+      # legacy
+      o.boolean "--defer-constraints-v1", "defer constraints", default: false, help: false
+      o.boolean "--defer-constraints-v2", "defer constraints", default: false, help: false
       # private, for testing
       o.boolean "--disable-integrity-v2", "disable foreign key triggers", default: false, help: false
 

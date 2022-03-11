@@ -109,6 +109,24 @@ class SyncTest < Minitest::Test
     assert_prints "NOTICE:  truncate cascades to table \"comments\"", "posts", config: true
   end
 
+  def test_defer_constraints_v1
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments", [{"post_id" => 1}])
+    assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", config: true
+    assert_works "comments,posts --defer-constraints-v1", config: true
+    assert_works "comments,posts --defer-constraints-v1 --overwrite", config: true
+    assert_works "comments,posts --defer-constraints-v1 --preserve", config: true
+    assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
+    assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
+  end
+
+  def test_defer_constraints_v1_not_deferrable
+    insert(conn1, "posts", [{"id" => 1}])
+    insert(conn1, "comments2", [{"post_id" => 1}])
+    assert_prints "Non-deferrable constraints: comments2_post_id_fkey", "comments2,posts --defer-constraints-v1", config: true
+    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints-v1", config: true
+  end
+
   def test_defer_constraints
     insert(conn1, "posts", [{"id" => 1}])
     insert(conn1, "comments", [{"post_id" => 1}])
@@ -123,28 +141,10 @@ class SyncTest < Minitest::Test
   def test_defer_constraints_not_deferrable
     insert(conn1, "posts", [{"id" => 1}])
     insert(conn1, "comments2", [{"post_id" => 1}])
-    assert_prints "Non-deferrable constraints: comments2_post_id_fkey", "comments2,posts --defer-constraints", config: true
-    assert_error "violates foreign key constraint", "comments2,posts --defer-constraints", config: true
-  end
-
-  def test_defer_constraints_v2
-    insert(conn1, "posts", [{"id" => 1}])
-    insert(conn1, "comments", [{"post_id" => 1}])
-    assert_error "Sync failed for 1 table: comments", "comments,posts --jobs 1", config: true
-    assert_works "comments,posts --defer-constraints-v2", config: true
-    assert_works "comments,posts --defer-constraints-v2 --overwrite", config: true
-    assert_works "comments,posts --defer-constraints-v2 --preserve", config: true
-    assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
-    assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
-  end
-
-  def test_defer_constraints_v2_not_deferrable
-    insert(conn1, "posts", [{"id" => 1}])
-    insert(conn1, "comments2", [{"post_id" => 1}])
     assert_error "Sync failed for 1 table: comments2", "comments2,posts --jobs 1", config: true
-    assert_works "comments2,posts --defer-constraints-v2", config: true
-    assert_works "comments2,posts --defer-constraints-v2 --overwrite", config: true
-    assert_works "comments2,posts --defer-constraints-v2 --preserve", config: true
+    assert_works "comments2,posts --defer-constraints", config: true
+    assert_works "comments2,posts --defer-constraints --overwrite", config: true
+    assert_works "comments2,posts --defer-constraints --preserve", config: true
     assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments2 ORDER BY post_id").to_a
   end

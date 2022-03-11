@@ -125,7 +125,7 @@ module PgSync
       end
 
       # for non-deferrable constraints
-      if opts[:defer_constraints]
+      if opts[:defer_constraints_v1]
         constraints = non_deferrable_constraints(destination)
         constraints = tasks.flat_map { |t| constraints[t.table] || [] }
         warning "Non-deferrable constraints: #{constraints.join(", ")}" if constraints.any?
@@ -230,7 +230,7 @@ module PgSync
 
       # disable multiple jobs for defer constraints and disable integrity
       # so we can use a transaction to ensure a consistent snapshot
-      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints] || opts[:defer_constraints_v2] || opts[:disable_integrity] || opts[:disable_integrity_v2]
+      if opts[:debug] || opts[:in_batches] || opts[:defer_constraints_v1] || opts[:defer_constraints_v2] || opts[:disable_integrity] || opts[:disable_integrity_v2]
         warning "--jobs ignored" if jobs
         jobs = 0
       end
@@ -268,7 +268,7 @@ module PgSync
         source.transaction do
           yield
         end
-      elsif opts[:defer_constraints] || opts[:defer_constraints_v2]
+      elsif opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
         destination.transaction do
           if opts[:defer_constraints_v2]
             table_constraints = non_deferrable_constraints(destination)

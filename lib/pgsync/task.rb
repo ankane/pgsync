@@ -149,7 +149,7 @@ module PgSync
         destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
         # use delete instead of truncate for foreign keys
-        if opts[:defer_constraints] || opts[:defer_constraints_v2]
+        if opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
           destination.execute("DELETE FROM #{quoted_table}")
         else
           destination.truncate(table)
