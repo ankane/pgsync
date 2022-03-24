@@ -16,6 +16,7 @@ CREATE TABLE "Users" (
   name TEXT,
   nonsense TEXT,
   untouchable TEXT,
+  env_token TEXT,
   "column_with_punctuation?" BOOLEAN
 );
 

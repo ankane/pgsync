@@ -22,3 +22,6 @@ data_rules:
   public.Users.ip: random_ip
   Users.name: random_letter
   nonsense: random_string
+  env_token: null
+skip_update_on_conflict:
+  - env_token
