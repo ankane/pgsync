@@ -211,6 +211,13 @@ module PgSync
             temp_table = "pgsync_#{table.name}"
             if !table_schema_match(temp_table, table.name)
               log "Table schema does not match, dropping the staging table."
+
+              destination.execute("DROP VIEW IF EXISTS blazerproschema.#{quote_ident_full(temp_table)}")
+              destination.execute("DROP VIEW IF EXISTS blazerschema.#{quote_ident_full(temp_table)}")
+
+              destination.execute("DROP VIEW IF EXISTS blazerproschema.#{quote_ident_full("pgsync_#{table}")}")
+              destination.execute("DROP VIEW IF EXISTS blazerschema.#{quote_ident_full("pgsync_#{table}")}")
+
               destination.execute("DROP TABLE IF EXISTS #{quote_ident_full(temp_table)}")
               # Drop old name as well.
               destination.execute("DROP TABLE IF EXISTS #{quote_ident_full("pgsync_#{table}")}")
