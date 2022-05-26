@@ -236,7 +236,7 @@ module PgSync
           escape(rule["value"])
         elsif rule.key?("statement")
           rule["statement"]
-        elsif rule.key("shell")
+        elsif rule.key?("shell")
           resolve_source(rule["shell"])
         else
           raise Error, "Unknown rule #{rule.inspect} for column #{column}"
