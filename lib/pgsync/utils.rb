@@ -83,5 +83,21 @@ module PgSync
     def quote_string(s)
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
+
+    # ideally aliases would work, but haven't found a nice way to do this
+    def resolve_source(source)
+      if source
+        source = source.dup
+        source.gsub!(/\$\([^)]+\)/) do |m|
+          command = m[2..-2]
+          result = `#{command}`.chomp
+          unless $?.success?
+            raise Error, "Command exited with non-zero status:\n#{command}"
+          end
+          result
+        end
+      end
+      source
+    end
   end
 end
