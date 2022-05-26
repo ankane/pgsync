@@ -29,6 +29,7 @@ class DataRulesTest < Minitest::Test
     assert row["ip"].end_with?("0.0.1")
     assert_equal 1, row["name"].size
     assert_equal "rock", row["untouchable"]
+    assert_equal "shell", row["nonsense"]
   end
 
   def test_no_rules

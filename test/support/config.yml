@@ -21,4 +21,5 @@ data_rules:
   updated_at: random_time
   public.Users.ip: random_ip
   Users.name: random_letter
-  nonsense: random_string
+  nonsense:
+    shell: $(echo "'shell'")
