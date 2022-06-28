@@ -256,8 +256,10 @@ module PgSync
         when "random_time"
           "NOW() - (RANDOM() * 100000000)::int * INTERVAL '1 second'"
         when "random_ip"
+          # casting double to int rounds
           "(1 + RANDOM() * 254)::int::text || '.0.0.1'"
         when "random_letter"
+          # casting double to int rounds
           "chr(65 + (RANDOM() * 25)::int)"
         when "random_string"
           "RIGHT(MD5(RANDOM()::text), 10)"

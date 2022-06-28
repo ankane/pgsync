@@ -1,3 +1,7 @@
+## 0.7.1 (unreleased)
+
+- Fixed random letter data rule generating non-letter
+
 ## 0.7.0 (2022-03-10)
 
 - Changed `--defer-constraints` to `--defer-constraints-v1`
