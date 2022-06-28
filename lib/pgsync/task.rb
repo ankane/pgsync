@@ -258,7 +258,7 @@ module PgSync
         when "random_ip"
           "(1 + RANDOM() * 254)::int::text || '.0.0.1'"
         when "random_letter"
-          "chr(65 + (RANDOM() * 26)::int)"
+          "chr(65 + (RANDOM() * 25)::int)"
         when "random_string"
           "RIGHT(MD5(RANDOM()::text), 10)"
         when "null", nil
