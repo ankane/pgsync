@@ -1,4 +1,4 @@
-## 0.7.1 (unreleased)
+## 0.7.1 (2022-07-06)
 
 - Fixed random letter data rule generating non-letter
 
