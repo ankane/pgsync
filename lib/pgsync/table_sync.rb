@@ -189,11 +189,11 @@ module PgSync
           log message.sub(":spinner", "⠋")
         end
 
-        started_at[task] = Time.now
+        started_at[task] = monotonic_time
       end
 
       finish = lambda do |task, i, result|
-        time = (Time.now - started_at[task]).round(1)
+        time = (monotonic_time - started_at[task]).round(1)
 
         success = result[:status] == "success"
 

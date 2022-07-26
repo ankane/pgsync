@@ -8,7 +8,7 @@ module PgSync
     end
 
     def perform
-      started_at = Time.now
+      started_at = monotonic_time
 
       args = @arguments
       opts = @options
@@ -129,7 +129,7 @@ module PgSync
     end
 
     def log_completed(started_at)
-      time = Time.now - started_at
+      time = monotonic_time - started_at
       message = "Completed in #{time.round(1)}s"
       log colorize(message, :green)
     end

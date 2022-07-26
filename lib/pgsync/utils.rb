@@ -83,5 +83,9 @@ module PgSync
     def quote_string(s)
       s.gsub(/\\/, '\&\&').gsub(/'/, "''")
     end
+
+    def monotonic_time
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
   end
 end

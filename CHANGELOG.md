@@ -1,3 +1,7 @@
+## 0.7.2 (unreleased)
+
+- Use monotonic time
+
 ## 0.7.1 (2022-07-06)
 
 - Fixed random letter data rule generating non-letter
