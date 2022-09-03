@@ -349,7 +349,7 @@ end
 
 ## Homebrew
 
-On Mac, you can use:
+With Homebrew, you can use:
 
 ```sh
 brew install ankane/brew/pgsync
