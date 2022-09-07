@@ -81,11 +81,11 @@ class SyncTest < Minitest::Test
   end
 
   def test_overwrite_no_primary_key
-    assert_error "Table public.chapters must have a primary key to use this functionality", "chapters --overwrite", config: true
+    assert_error "chapters (Table must have a primary key to use this functionality)", "chapters --overwrite", config: true
   end
 
   def test_preserve_no_primary_key
-    assert_error "Table public.chapters must have a primary key to use this functionality", "chapters --preserve", config: true
+    assert_error "chapters (Table must have a primary key to use this functionality)", "chapters --preserve", config: true
   end
 
   def test_no_shared_fields

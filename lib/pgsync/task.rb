@@ -88,7 +88,7 @@ module PgSync
 
       copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
-        raise Error, "Table #{table} must have a primary key to use --in-batches" if primary_key.empty?
+        raise Error, "Table must have a primary key to use --in-batches" if primary_key.empty?
         primary_key = primary_key.first
 
         destination.truncate(table) if opts[:truncate]
@@ -125,7 +125,7 @@ module PgSync
           end
         end
       elsif !opts[:truncate] && (opts[:overwrite] || opts[:preserve] || !sql_clause.empty?)
-        raise Error, "Table #{table} must have a primary key to use this functionality" if primary_key.empty?
+        raise Error, "Table must have a primary key to use this functionality" if primary_key.empty?
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
