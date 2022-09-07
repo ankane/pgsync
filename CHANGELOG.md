@@ -1,6 +1,6 @@
 ## 0.7.2 (unreleased)
 
-- Improved error message when functionality requires a primary key
+- Improved error message when a primary key is required
 - Use monotonic time
 
 ## 0.7.1 (2022-07-06)
