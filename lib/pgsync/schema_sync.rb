@@ -63,7 +63,7 @@ module PgSync
     end
 
     def pg_restore_version
-      `pg_restore --version`.lines.first.chomp.split(" ").reverse.find { |part| part.match?(/\d+(\.\d+)?/) }
+      `pg_restore --version`.lines.first.chomp.split.reverse.find { |part| part.match?(/\d+(\.\d+)?/) }
     rescue Errno::ENOENT
       raise Error, "pg_restore not found"
     end
