@@ -62,8 +62,9 @@ module PgSync
       end
     end
 
-    def pg_restore_version
-      `pg_restore --version`.lines[0].chomp.split(" ")[-1].split(/[^\d.]/)[0]
+    # not ideal, but simpler than trying to parse version
+    def supports_if_exists?
+      `pg_restore --help`.include?("--if-exists")
     rescue Errno::ENOENT
       raise Error, "pg_restore not found"
     end
@@ -80,7 +81,7 @@ module PgSync
 
     def restore_command
       cmd = ["pg_restore", "--verbose", "--no-owner", "--no-acl", "--clean"]
-      cmd << "--if-exists" if Gem::Version.new(pg_restore_version) >= Gem::Version.new("9.4.0")
+      cmd << "--if-exists" if supports_if_exists?
       cmd.concat(["-d", @destination.url])
     end
 

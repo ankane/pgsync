@@ -2,6 +2,7 @@
 
 - Improved error message when a primary key is required
 - Use monotonic time
+- Fixed schema sync with Homebrew Postgres 14.5
 
 ## 0.7.1 (2022-07-06)
 
