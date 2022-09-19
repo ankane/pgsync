@@ -1,4 +1,4 @@
-## 0.7.2 (unreleased)
+## 0.7.2 (2022-09-19)
 
 - Improved error message when a primary key is required
 - Switched to monotonic time
