@@ -62,6 +62,7 @@ module PgSync
       end
     end
 
+    # --if-exists introduced in Postgres 9.4
     # not ideal, but simpler than trying to parse version
     def supports_if_exists?
       `pg_restore --help`.include?("--if-exists")
