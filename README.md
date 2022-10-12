@@ -359,7 +359,7 @@ Get the [Docker image](https://hub.docker.com/r/ankane/pgsync) with:
 
 ```sh
 docker pull ankane/pgsync
-alias pgsync="docker run --rm ankane/pgsync"
+alias pgsync="docker run -ti ankane/pgsync"
 ```
 
 This will give you the `pgsync` command.
