@@ -21,7 +21,18 @@ gem install pgsync
 
 This will give you the `pgsync` command. If installation fails, you may need to install [dependencies](#dependencies).
 
-You can also install it with [Homebrew](#homebrew) or [Docker](#docker).
+You can also install it with Homebrew:
+
+```sh
+brew install pgsync
+```
+
+or Docker:
+
+```sh
+docker pull ankane/pgsync
+alias pgsync="docker run --rm ankane/pgsync"
+```
 
 ## Setup
 
@@ -348,27 +359,6 @@ Bundler.with_unbundled_env do
   system "pgsync ..."
 end
 ```
-
-## Additional Installation Methods
-
-### Homebrew
-
-With Homebrew, you can use:
-
-```sh
-brew install pgsync
-```
-
-### Docker
-
-Get the [Docker image](https://hub.docker.com/r/ankane/pgsync) with:
-
-```sh
-docker pull ankane/pgsync
-alias pgsync="docker run --rm ankane/pgsync"
-```
-
-This will give you the `pgsync` command.
 
 ## Dependencies
 
