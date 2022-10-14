@@ -1,3 +1,7 @@
+## 0.7.3 (unreleased)
+
+- Fixed output when `pg_restore` not found
+
 ## 0.7.2 (2022-09-19)
 
 - Improved error message when a primary key is required
