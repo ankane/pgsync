@@ -3,13 +3,23 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ruby: 3.1
+          postgres: 15
+        - ruby: 2.5
+          postgres: 9.6
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1
+        ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
     - uses: ankane/setup-postgres@v1
+      with:
+        postgres-version: ${{ matrix.postgres }}
     - run: |
         createdb pgsync_test1
         createdb pgsync_test2
