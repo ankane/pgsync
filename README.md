@@ -27,6 +27,56 @@ You can also install it with Homebrew:
 brew install pgsync
 ```
 
+## Command Line Usage
+
+```sh
+pgsync [tables] [sql_where] [options]
+```
+
+## Configuration Options
+
+| Config Setting | Option | Description |
+| --- | --- | --- |
+| `tables:` | `--tables users,customer*,*lookups` | One or more tables to sync. |
+| [see SQL WHERE example](#variables) | `--sql "where id = '1'"` | SQL WHERE clause to filter table data. Requires one input table. See [recommended yaml example](#variables). |
+| `groups:` | `--groups students` | List of groups to sync. Define [groups in `.pgsync.yml`.](#groups) |
+| **Connection options** | |
+| `from:` | `--from postgres://user:pass@host:port/db` | Source database connection string. |
+| `to:` | `--to postgres://localhost/db` | Destination database connection string. |
+| `to_safe: true` | `--to-safe` | confirms destination is safe (when not localhost.) |
+| [**Table Options**](#tables) | |
+| `exclude:` | `--exclude schema_migrations,ar_internal_metadata` | List of table patterns to skip. |
+| `schemas:` | `--schemas public,legacy` | One or more schemas to sync. Defaults to your search path. |
+| `all_schemas: false` | `--all-schemas` | Sync all schemas. Defaults to your search path. |
+| **Row options** | |
+| `overwrite: false` | `--overwrite` | Auto `update` or `insert` records by primary key. |
+| `preserve: false` | `--preserve` | Preserve existing rows when using filtered table results. Cannot use `--preserve` with `--schema-first` or `--schema-only`. |
+| `truncate: false` | `--truncate` | Explicitly deletes/truncate tables before sync. Cannot use `--truncate` with `--preserve` or `--overwrite`. |
+| [**Foreign key options**](#foreign-keys) | |
+| `defer_constraints_v1: false` | `--defer-constraints-v1` | Defers foreign key constraints (per table.) Transactions are used to ensure constraints safely verified. |
+| `defer_constraints_v2: false` | `--defer-constraints`, `--defer-constraints-v2` | Temporarily alters non-deferrable tables' constraint settings during data sync. |
+| `disable_integrity: false` | `--disable-integrity` | Skip transactions, foreign keys, triggers, and rules. Requires superuser. **Use with caution.** |
+| `disable_integrity_v2: false` | `--disable-integrity-v2` | Skip transactions, foreign keys, triggers, and rules. Requires superuser. _Supports AWS RDS._ **Use with caution.** |
+| `jobs: -1` | `--jobs 4` | Number of parallel jobs. Not supported when deferring constraints or disabling integrity. |
+| [**Schema options**](#schema) | |
+| `schema_first: false` | `--schema-first` | Sync schema before data. |
+| `schema_only: false` | `--schemas public,admin --schema-only` | Sync schema only. |
+| **Other options** | |
+| `debug: false` | `--debug` | Logs all queries & commands to console. |
+| `disable_user_triggers:` | `--disable-user-triggers` | Disable user triggers. |
+| `fail_fast: false` | `--fail-fast` | Stop on first error. |
+| `no_rules: false` | `--no-rules` | Disable [sensitive data rules.](#sensitive-data) |
+| `no_sequences: false` | `--no-sequences` | Do not sync sequences. |
+| [**Append-only table options**](#append-only-tables) | |
+| `in_batches: false` | `--in-batches --table users` | Large table mode. (One table limit currently.) |
+| `batch_size: 10000` | `--batch-size 10000` | Batch size for large tables. Requires `in-batches`. |
+| `sleep: 0` | `--sleep` | Seconds to wait between batches. Requires `in-batches`. |
+| **Misc commands** | |
+| | `--init` | Create config file. |
+| | `--list` | Print list of tables to sync. |
+| | `-v`, `--version` | Print version. |
+| | `-h`, `--help` | Print help. |
+
 ## Setup
 
 In your project directory, run:
@@ -37,7 +87,7 @@ pgsync --init
 
 This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
 
-## How to Use
+## Examples
 
 First, make sure your schema is set up in both databases. We recommend using a schema migration tool for this, but pgsync also provides a few [convenience methods](#schema). Once that’s done, you’re ready to sync data.
 
