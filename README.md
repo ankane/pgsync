@@ -87,7 +87,7 @@ pgsync --init
 
 This creates `.pgsync.yml` for you to customize. We recommend checking this into your version control (assuming it doesn’t contain sensitive information). `pgsync` commands can be run from this directory or any subdirectory.
 
-## Examples
+## How to Use
 
 First, make sure your schema is set up in both databases. We recommend using a schema migration tool for this, but pgsync also provides a few [convenience methods](#schema). Once that’s done, you’re ready to sync data.
 
