@@ -1,5 +1,6 @@
 ## 0.7.3 (unreleased)
 
+- Fixed issue with pg 1.4.4
 - Fixed output when `pg_restore` not found
 
 ## 0.7.2 (2022-09-19)

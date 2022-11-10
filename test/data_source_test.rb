@@ -17,6 +17,14 @@ class DataSourceTest < Minitest::Test
     assert_works "--config test/support/bad.yml --from pgsync_test1"
   end
 
+  def test_database
+    assert_prints "From: pgsync_test1\nTo: pgsync_test2", "--from pgsync_test1 --to pgsync_test2"
+  end
+
+  def test_url
+    assert_prints "From: pgsync_test1 on localhost:5432\nTo: pgsync_test2 on localhost:5432", "--from postgres://localhost/pgsync_test1 --to postgres://localhost/pgsync_test2"
+  end
+
   # def test_destination_danger
   #   assert_error "Danger! Add `to_safe: true` to `.pgsync.yml` if the destination is not localhost or 127.0.0.1", "--from pgsync_test1 --to postgres://hostname/db2"
   # end

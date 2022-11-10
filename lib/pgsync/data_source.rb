@@ -19,11 +19,11 @@ module PgSync
     end
 
     def host
-      @host ||= conninfo[:host]
+      @host ||= dedup_localhost(conninfo[:host])
     end
 
     def port
-      @port ||= conninfo[:port]
+      @port ||= dedup_localhost(conninfo[:port])
     end
 
     def dbname
@@ -187,6 +187,16 @@ module PgSync
           raise Error, "libpq is too old. Upgrade it and run `gem install pg`"
         end
         conn.conninfo_hash
+      end
+    end
+
+    # for pg 1.4.4
+    # https://github.com/ged/ruby-pg/issues/490
+    def dedup_localhost(value)
+      if conninfo[:host] == "localhost,localhost" && conninfo[:port].to_s.split(",").uniq.size == 1
+        value.split(",")[0]
+      else
+        value
       end
     end
   end
