@@ -69,3 +69,9 @@ CREATE TABLE excluded (
 CREATE TABLE other.pets (
   id SERIAL PRIMARY KEY
 );
+
+INSERT INTO other.pets
+VALUES
+  (1),
+  (2),
+  (3);
