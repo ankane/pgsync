@@ -7,21 +7,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - ruby: 3.1
-          postgres: 15
-        - ruby: 2.5
-          postgres: 9.6
+          - ruby: 3.2
+            postgres: 15
+          - ruby: 2.5
+            postgres: 9.6
     steps:
-    - uses: actions/checkout@v3
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
-        bundler-cache: true
-    - uses: ankane/setup-postgres@v1
-      with:
-        postgres-version: ${{ matrix.postgres }}
-    - run: |
-        createdb pgsync_test1
-        createdb pgsync_test2
-        createdb pgsync_test3
-    - run: bundle exec rake test
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: ${{ matrix.postgres }}
+      - run: |
+          createdb pgsync_test1
+          createdb pgsync_test2
+          createdb pgsync_test3
+      - run: bundle exec rake test
