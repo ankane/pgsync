@@ -155,7 +155,7 @@ Specify tables
 pgsync table1,table2 --schema-first
 ```
 
-Or just the schema (this wipes out existing data)
+Sync the schema without data (this wipes out existing data)
 
 ```sh
 pgsync --schema-only
