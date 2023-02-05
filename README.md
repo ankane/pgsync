@@ -143,7 +143,7 @@ pgsync product:123
 
 ## Schema
 
-Sync schema before the data (this wipes out existing data)
+Sync the schema before the data (this wipes out existing data)
 
 ```sh
 pgsync --schema-first
