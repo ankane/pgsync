@@ -236,6 +236,14 @@ Disable user triggers with:
 pgsync --disable-user-triggers
 ```
 
+## Sequences
+
+Skip syncing sequences with:
+
+```sh
+pgsync --no-sequences
+```
+
 ## Append-Only Tables
 
 For extremely large, append-only tables, sync in batches.
