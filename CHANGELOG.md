@@ -1,3 +1,7 @@
+## 0.7.4 (unreleased)
+
+- Fixed issue with slop 4.10.0
+
 ## 0.7.3 (2022-11-09)
 
 - Fixed issue with pg 1.4.4
