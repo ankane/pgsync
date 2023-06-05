@@ -9,7 +9,7 @@ jobs:
         include:
           - ruby: 3.2
             postgres: 15
-          - ruby: 2.5
+          - ruby: 2.7
             postgres: 9.6
     steps:
       - uses: actions/checkout@v3

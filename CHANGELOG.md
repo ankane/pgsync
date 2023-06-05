@@ -1,3 +1,7 @@
+## 0.8.0 (unreleased)
+
+- Dropped support for Ruby < 2.7
+
 ## 0.7.4 (2023-03-06)
 
 - Fixed issue with slop 4.10.0
