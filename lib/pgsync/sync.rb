@@ -41,6 +41,10 @@ module PgSync
         raise Error, "Postgres 9.5+ is required for --preserve and --overwrite"
       end
 
+      if destination.host.starts_with? "jdbc" || source.host.starts_with? "jdbc"
+        raise Error, "JDBC URLs are not supported"
+      end
+
       resolver = TaskResolver.new(args: args, opts: opts, source: source, destination: destination, config: config, first_schema: first_schema)
       tasks =
         resolver.tasks.map do |task|
