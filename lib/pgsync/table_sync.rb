@@ -248,7 +248,9 @@ module PgSync
         Parallel.each(tasks, **options) do |task|
           source.reconnect_if_needed
           destination.reconnect_if_needed
-
+          if opts[:replication_origin]
+            destination.set_replication_origin(opts[:replication_origin])
+          end
           task.perform
         end
       end

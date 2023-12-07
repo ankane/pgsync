@@ -100,6 +100,25 @@ module PgSync
       execute(query, [quote_ident_full(table)])
     end
 
+    def set_replication_origin(origin)
+      query = <<~SQL
+        SELECT 
+          CASE
+            WHEN EXISTS (SELECT 1 FROM pg_replication_origin WHERE roname = $1) THEN null
+            ELSE pg_replication_origin_create($1)
+          END;
+      SQL
+      execute(query, [origin])
+      query = <<~SQL
+        SELECT
+          CASE
+            WHEN pg_replication_origin_session_is_setup() THEN null
+            ELSE pg_replication_origin_session_setup($1)
+          END;
+      SQL
+      execute(query, [origin])
+    end
+
     def conn
       @conn ||= begin
         begin

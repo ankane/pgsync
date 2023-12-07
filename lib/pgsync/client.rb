@@ -101,6 +101,7 @@ module PgSync
       o.boolean "--in-batches", "sync in batches", default: false, help: false
       o.integer "--batch-size", "batch size", default: 10000, help: false
       o.float "--sleep", "time to sleep between batches", default: 0, help: false
+      o.string "--replication-origin", "replication origin", help: false
 
       o.separator ""
       o.separator "Other commands:"

@@ -19,7 +19,7 @@ module PgSync
       end
 
       # merge other config
-      [:to_safe, :exclude, :schemas].each do |opt|
+      [:to_safe, :exclude, :schemas, :replication_origin].each do |opt|
         opts[opt] ||= config[opt.to_s]
       end
 
