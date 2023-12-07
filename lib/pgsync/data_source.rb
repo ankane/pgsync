@@ -106,15 +106,8 @@ module PgSync
           CASE
             WHEN EXISTS (SELECT 1 FROM pg_replication_origin WHERE roname = $1) THEN null
             ELSE pg_replication_origin_create($1)
-          END;
-      SQL
-      execute(query, [origin])
-      query = <<~SQL
-        SELECT
-          CASE
-            WHEN pg_replication_origin_session_is_setup() THEN null
-            ELSE pg_replication_origin_session_setup($1)
-          END;
+          END,
+          pg_replication_origin_session_setup($1);
       SQL
       execute(query, [origin])
     end

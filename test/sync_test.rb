@@ -178,7 +178,6 @@ class SyncTest < Minitest::Test
 
   def test_replication_origin
     insert(conn1, "posts", [{"id" => 1}])
-    assert_error "Sync failed for 1 table: posts", "posts", config: true
     assert_works "posts --replication-origin=test --debug", config: true
     assert_equal [{"exists" => 1}], conn2.exec("SELECT 1 AS exists FROM pg_replication_origin WHERE roname = 'test'").to_a
   end
