@@ -27,6 +27,17 @@ You can also install it with Homebrew:
 brew install pgsync
 ```
 
+### Docker
+
+Get the [Docker image](https://hub.docker.com/r/ankane/pgsync) with:
+
+```sh
+docker pull ankane/pgsync
+alias pgsync="docker run -ti -v $(pwd):/opt -w='/opt' ankane/pgsync"
+```
+
+This will give you the `pgsync` command. Note the current working dir. is mounted inside the container.
+
 ## Setup
 
 In your project directory, run:
@@ -360,17 +371,6 @@ Bundler.with_unbundled_env do
   system "pgsync ..."
 end
 ```
-
-## Docker
-
-Get the [Docker image](https://hub.docker.com/r/ankane/pgsync) with:
-
-```sh
-docker pull ankane/pgsync
-alias pgsync="docker run -ti ankane/pgsync"
-```
-
-This will give you the `pgsync` command.
 
 ## Dependencies
 
