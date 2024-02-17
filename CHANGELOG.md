@@ -1,6 +1,7 @@
-## 0.8.0 (unreleased)
+## 1.0.0 (unreleased)
 
 - Added Docker image for `linux/arm64`
+- Fixed warning with Ruby 3.3
 - Dropped support for Ruby < 2.7
 
 ## 0.7.4 (2023-03-06)
