@@ -126,7 +126,7 @@ module PgSync
 
       # for non-deferrable constraints
       if opts[:defer_constraints_v1]
-        constraints = non_deferrable_constraints(destination)
+        constraints = non_deferrable_constraints(destination, tasks.map(&:table))
         constraints = tasks.flat_map { |t| constraints[t.table] || [] }
         warning "Non-deferrable constraints: #{constraints.join(", ")}" if constraints.any?
       end
@@ -150,11 +150,35 @@ module PgSync
       end.to_h
     end
 
-    def non_deferrable_constraints(data_source)
+    def non_deferrable_constraints(data_source, tables)
       query = <<~SQL
         SELECT
           table_schema AS schema,
           table_name AS table,
+          constraint_schema,
+          constraint_name
+        FROM
+          information_schema.key_column_usage
+        UNION ALL
+        SELECT
+          table_schema AS schema,
+          table_name AS table,
+          constraint_schema,
+          constraint_name
+        FROM
+          information_schema.constraint_column_usage
+      SQL
+      constraints_by_table =
+        data_source.execute(query)
+          .group_by { |r| Table.new(r["schema"], r["table"]) }
+          .to_h { |k, v| [k, v.map { |r| [r["constraint_schema"], r["constraint_name"]] }] }
+      matching_constraints = Set.new(tables.flat_map { |t| constraints_by_table[t] || [] })
+
+      query = <<~SQL
+        SELECT
+          table_schema AS schema,
+          table_name AS table,
+          constraint_schema,
           constraint_name
         FROM
           information_schema.table_constraints
@@ -162,9 +186,10 @@ module PgSync
           constraint_type = 'FOREIGN KEY' AND
           is_deferrable = 'NO'
       SQL
-      data_source.execute(query).group_by { |r| Table.new(r["schema"], r["table"]) }.map do |k, v|
-        [k, v.map { |r| r["constraint_name"] }]
-      end.to_h
+      data_source.execute(query)
+        .select { |r| matching_constraints.include?([r["constraint_schema"], r["constraint_name"]]) }
+        .group_by { |r| Table.new(r["schema"], r["table"]) }
+        .to_h { |k, v| [k, v.map { |r| r["constraint_name"] }] }
     end
 
     def run_tasks(tasks, &block)
@@ -241,7 +266,7 @@ module PgSync
         options[:in_processes] = jobs if jobs
       end
 
-      maybe_defer_constraints do
+      maybe_defer_constraints(tasks.map(&:table)) do
         # could try to use `raise Parallel::Kill` to fail faster with --fail-fast
         # see `fast_faster` branch
         # however, need to make sure connections are cleaned up properly
@@ -261,7 +286,7 @@ module PgSync
     end
 
     # TODO add option to open transaction on source when manually specifying order of tables
-    def maybe_defer_constraints
+    def maybe_defer_constraints(tables)
       if opts[:disable_integrity] || opts[:disable_integrity_v2]
         # create a transaction on the source
         # to ensure we get a consistent snapshot
@@ -271,7 +296,7 @@ module PgSync
       elsif opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
         destination.transaction do
           if opts[:defer_constraints_v2]
-            table_constraints = non_deferrable_constraints(destination)
+            table_constraints = non_deferrable_constraints(destination, tables)
             table_constraints.each do |table, constraints|
               constraints.each do |constraint|
                 destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
