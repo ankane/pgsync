@@ -1,7 +1,6 @@
 ## 1.0.0 (unreleased)
 
 - Added Docker image for `linux/arm64`
-- Improved `--defer-constraints`
 - Fixed warning with Ruby 3.3
 - Dropped support for Ruby < 2.7
 

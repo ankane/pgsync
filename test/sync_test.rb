@@ -136,8 +136,6 @@ class SyncTest < Minitest::Test
     assert_works "comments,posts --defer-constraints --preserve", config: true
     assert_equal [{"id" => 1}], conn2.exec("SELECT id FROM posts ORDER BY id").to_a
     assert_equal [{"post_id" => 1}], conn2.exec("SELECT post_id FROM comments ORDER BY post_id").to_a
-    assert_prints "ALTER CONSTRAINT", "comments,posts --defer-constraints --debug", config: true
-    refute_prints "ALTER CONSTRAINT", "authors --defer-constraints --debug", config: true
   end
 
   def test_defer_constraints_not_deferrable

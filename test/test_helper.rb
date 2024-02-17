@@ -65,11 +65,6 @@ class Minitest::Test
     assert_match message, output
   end
 
-  def refute_prints(message, command, **options)
-    output, _ = run_command(command, **options)
-    refute_match message, output
-  end
-
   def truncate(conn, table)
     conn.exec("TRUNCATE #{quote_ident(table)} CASCADE")
   end
