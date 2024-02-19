@@ -178,6 +178,8 @@ data_rules:
     value: secret
   visits_count:
     statement: "(RANDOM() * 10)::int"
+  popularity:
+    statement: "CASE WHEN visits_count > 5 THEN 'popular' ELSE 'unpopular' END"
   encrypted_*: null
 ```
 
