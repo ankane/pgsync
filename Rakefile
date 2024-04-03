@@ -11,7 +11,7 @@ namespace :docker do
   task :build do
     require_relative "lib/pgsync/version"
 
-    system "docker build --pull --no-cache --platform linux/amd64 -t ankane/pgsync:latest -t ankane/pgsync:v#{PgSync::VERSION} .", exception: true
+    system "docker build --pull --no-cache -t ankane/pgsync:latest -t ankane/pgsync:v#{PgSync::VERSION} .", exception: true
   end
 
   task :release do
