@@ -252,7 +252,7 @@ For extremely large, append-only tables, sync in batches.
 pgsync large_table --in-batches
 ```
 
-Note: This requires the table to have a numeric primary key
+Note: This requires the table to have a numeric, increasing primary key
 
 The script will resume where it left off when run again, making it great for backfills.
 
