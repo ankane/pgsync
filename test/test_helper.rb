@@ -37,7 +37,7 @@ class Minitest::Test
   # shelling out for each test is slower
   # but it prevents forking from messing up connections
   def run_command(command, config: false)
-    command << " --config test/support/config.yml" if config
+    command += " --config test/support/config.yml" if config
     if verbose?
       puts
       puts "$ pgsync #{command}"
