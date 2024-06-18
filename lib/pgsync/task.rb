@@ -229,7 +229,7 @@ module PgSync
 
     # TODO better performance
     def rule_match?(table, column, rule)
-      regex = Regexp.new('\A' + Regexp.escape(rule).gsub('\*','[^\.]*') + '\z')
+      regex = Regexp.new('\A' + Regexp.escape(rule).gsub('\*', '[^\.]*') + '\z')
       regex.match(column) || regex.match("#{table.name}.#{column}") || regex.match("#{table.schema}.#{table.name}.#{column}")
     end
 

@@ -37,7 +37,7 @@ class SyncTest < Minitest::Test
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
-      {"id" => 1, "id2" => 3, "title" => "Post 3"},
+      {"id" => 1, "id2" => 3, "title" => "Post 3"}
     ]
     dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 1, "id2" => 4, "title" => "Post 4"}]
     expected = source + [dest[1]]
@@ -48,7 +48,7 @@ class SyncTest < Minitest::Test
     source = [
       {"id" => 1, "id2" => 1, "title" => "Post 1"},
       {"id" => 1, "id2" => 2, "title" => "Post 2"},
-      {"id" => 2, "id2" => 4, "title" => "Post 3"},
+      {"id" => 2, "id2" => 4, "title" => "Post 3"}
     ]
     dest = [{"id" => 1, "id2" => 1, "title" => "First Post"}, {"id" => 3, "id2" => 4, "title" => "Post 4"}]
     expected = [dest[0]] + source[1..-1] + [dest[1]]

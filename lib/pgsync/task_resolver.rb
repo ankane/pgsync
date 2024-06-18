@@ -72,7 +72,7 @@ module PgSync
 
       tables =
         if value.include?("*")
-          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
+          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*', '[^\.]*') + '\z')
           shared_tables.select { |t| regex.match(t.full_name) || regex.match(t.name) }
         else
           [to_table(value)]
@@ -145,7 +145,7 @@ module PgSync
 
       to_arr(opts[:exclude]).each do |value|
         if value.include?("*")
-          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*','[^\.]*') + '\z')
+          regex = Regexp.new('\A' + Regexp.escape(value).gsub('\*', '[^\.]*') + '\z')
           tables.reject! { |t| regex.match(t.full_name) || regex.match(t.name) }
         else
           tables -= [fully_resolve(to_table(value), error: false)].compact
