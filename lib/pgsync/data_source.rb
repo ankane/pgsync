@@ -104,7 +104,7 @@ module PgSync
       @conn ||= begin
         begin
           ENV["PGCONNECT_TIMEOUT"] ||= "3"
-          if @url =~ /\Apostgres(ql)?:\/\//
+          if @url.start_with?("postgres://", "postgresql://")
             config = @url
           else
             config = {dbname: @url}
