@@ -1,4 +1,4 @@
-## 0.8.0 (unreleased)
+## 0.8.0 (2024-07-10)
 
 - Added Docker image for `linux/arm64`
 - Fixed warning with Ruby 3.3
