@@ -156,6 +156,12 @@ class SyncTest < Minitest::Test
     assert_equal [{"name" => "Test"}], conn2.exec("SELECT name FROM robots ORDER BY id").to_a
   end
 
+  def test_disable_user_triggers_defer_constraints
+    insert(conn1, "robots", [{"name" => "Test"}])
+    assert_works "robots --disable-user-triggers --defer-constraints", config: true
+    assert_equal [{"name" => "Test"}], conn2.exec("SELECT name FROM robots ORDER BY id").to_a
+  end
+
   def test_disable_integrity
     insert(conn1, "posts", [{"id" => 1}])
     insert(conn1, "comments", [{"post_id" => 1}])
