@@ -265,6 +265,8 @@ module PgSync
         when "random_letter"
           # casting double to int rounds
           "chr(65 + (RANDOM() * 25)::int)"
+        when "anonymize_iban_account_number"
+          "regexp_replace(#{table}.#{column}, '.{10}$', lpad(#{quoted_primary_key(table, primary_key, rule)}::text, 10, '0'))"
         when "random_string"
           "RIGHT(MD5(RANDOM()::text), 10)"
         when "null", nil
