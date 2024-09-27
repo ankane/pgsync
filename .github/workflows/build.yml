@@ -8,7 +8,7 @@ jobs:
       matrix:
         include:
           - ruby: 3.3
-            postgres: 16
+            postgres: 17
           - ruby: 2.7
             postgres: 9.6
     steps:
