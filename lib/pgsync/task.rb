@@ -91,7 +91,13 @@ module PgSync
         raise Error, "Primary key required for --in-batches" if primary_key.empty?
         primary_key = primary_key.first
 
-        destination.truncate(table) if opts[:truncate]
+        if opts[:truncate]
+            if opts[:disable_integrity] || opts[:disable_integrity_v2]
+                destination.truncate(table)
+            else
+                destination.truncate_with_cascade(table)
+            end
+        end
 
         from_max_id = source.max_id(table, primary_key)
         to_max_id = destination.max_id(table, primary_key) + 1
@@ -155,8 +161,10 @@ module PgSync
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
           destination.execute("DELETE FROM #{quoted_table}")
-        else
+        elsif opts[:disable_integrity] || opts[:disable_integrity_v2]
           destination.truncate(table)
+        else
+          destination.truncate_with_cascade(table)
         end
         copy(copy_to_command, dest_table: table, dest_fields: fields)
       end

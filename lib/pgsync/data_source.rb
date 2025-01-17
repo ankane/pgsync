@@ -64,8 +64,12 @@ module PgSync
       execute("SELECT last_value FROM #{quote_ident_full(seq)}").first["last_value"]
     end
 
-    def truncate(table)
+    def truncate_with_cascade(table)
       execute("TRUNCATE #{quote_ident_full(table)} CASCADE")
+    end
+
+    def truncate(table)
+      execute("TRUNCATE #{quote_ident_full(table)}")
     end
 
     def schemas

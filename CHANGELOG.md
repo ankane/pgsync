@@ -1,3 +1,7 @@
+## 0.8.1 (TBD)
+
+- Support truncation without cascade when `--disable-integrity` is specified - [more info](https://github.com/ankane/pgsync/issues/125)
+
 ## 0.8.0 (2024-07-10)
 
 - Added Docker image for `linux/arm64`
