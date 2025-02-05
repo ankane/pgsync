@@ -54,7 +54,7 @@ module PgSync
         shared_columns = Set.new(task.shared_fields)
 
         task.from_sequences = (source_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
-        task.to_sequences = (destination_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
+        task.to_sequences = (destination_sequences[task.destination_table] || []).select { |s| shared_columns.include?(s.column) }
       end
     end
 

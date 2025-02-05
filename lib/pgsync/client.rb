@@ -74,6 +74,7 @@ module PgSync
       o.separator "Schema options:"
       o.boolean "--schema-first", "sync schema first", default: false
       o.boolean "--schema-only", "sync schema only", default: false
+      o.string "--tenant", "destination schema"  # Added option
 
       o.separator ""
       o.separator "Config options:"

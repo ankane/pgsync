@@ -2,10 +2,10 @@ module PgSync
   class Task
     include Utils
 
-    attr_reader :source, :destination, :config, :table, :opts
+    attr_reader :source, :destination, :config, :table, :opts, :destination_table
     attr_accessor :from_columns, :to_columns, :from_sequences, :to_sequences, :to_primary_key
 
-    def initialize(source:, destination:, config:, table:, opts:)
+    def initialize(source:, destination:, config:, table:, opts:, tenant:)
       @source = source
       @destination = destination
       @config = config
@@ -13,10 +13,15 @@ module PgSync
       @opts = opts
       @from_sequences = []
       @to_sequences = []
+      @destination_table = Table.new(tenant, table.name)
     end
 
     def quoted_table
       quote_ident_full(table)
+    end
+
+    def quoted_destination_table
+      quote_ident_full(destination_table)
     end
 
     def perform
@@ -91,10 +96,10 @@ module PgSync
         raise Error, "Primary key required for --in-batches" if primary_key.empty?
         primary_key = primary_key.first
 
-        destination.truncate(table) if opts[:truncate]
+        destination.truncate(destination_table) if opts[:truncate]
 
         from_max_id = source.max_id(table, primary_key)
-        to_max_id = destination.max_id(table, primary_key) + 1
+        to_max_id = destination.max_id(destination_table, primary_key) + 1
 
         if to_max_id == 1
           from_min_id = source.min_id(table, primary_key)
@@ -115,7 +120,7 @@ module PgSync
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
           batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
-          copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
+          copy(batch_copy_to_command, dest_table: destination_table, dest_fields: fields)
 
           starting_id += batch_size
           i += 1
@@ -150,15 +155,15 @@ module PgSync
               "NOTHING"
             end
           end
-        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
+        destination.execute("INSERT INTO #{quoted_destination_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
-          destination.execute("DELETE FROM #{quoted_table}")
+          destination.execute("DELETE FROM #{quoted_destination_table}")
         else
-          destination.truncate(table)
+          destination.truncate(destination_table)
         end
-        copy(copy_to_command, dest_table: table, dest_fields: fields)
+        copy(copy_to_command, dest_table: destination_table, dest_fields: fields)
       end
 
       # update sequences
@@ -283,7 +288,7 @@ module PgSync
     def maybe_disable_triggers
       if opts[:disable_integrity] || opts[:disable_integrity_v2] || opts[:disable_user_triggers]
         destination.transaction do
-          triggers = destination.triggers(table)
+          triggers = destination.triggers(destination_table)
           triggers.select! { |t| t["enabled"] == "t" }
           internal_triggers, user_triggers = triggers.partition { |t| t["internal"] == "t" }
           integrity_triggers = internal_triggers.select { |t| t["integrity"] == "t" }
@@ -301,7 +306,7 @@ module PgSync
             destination.execute("SET LOCAL session_replication_role = replica")
           elsif opts[:disable_integrity]
             integrity_triggers.each do |trigger|
-              destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
+              destination.execute("ALTER TABLE #{quoted_destination_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
             end
             restore_triggers.concat(integrity_triggers)
           end
@@ -310,7 +315,7 @@ module PgSync
             # important!
             # rely on Postgres to disable user triggers
             # we don't want to accidentally disable non-user triggers if logic above is off
-            destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
+            destination.execute("ALTER TABLE #{quoted_destination_table} DISABLE TRIGGER USER")
             restore_triggers.concat(user_triggers)
           end
 
@@ -318,7 +323,7 @@ module PgSync
 
           # restore triggers that were previously enabled
           restore_triggers.each do |trigger|
-            destination.execute("ALTER TABLE #{quoted_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
+            destination.execute("ALTER TABLE #{quoted_destination_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 
           result
