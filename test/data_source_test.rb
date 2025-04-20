@@ -10,6 +10,9 @@ class DataSourceTest < Minitest::Test
   end
 
   def test_source_command_error
+    # https://github.com/oracle/truffleruby/issues/2568
+    skip if RUBY_ENGINE == "truffleruby"
+
     assert_error "Command exited with non-zero status:\nexit 1", "--config test/support/bad.yml"
   end
 
