@@ -272,6 +272,8 @@ module PgSync
         destination.transaction do
           if opts[:defer_constraints_v2]
             table_constraints = non_deferrable_constraints(destination)
+            # hopthru discards non-deferrable constraints
+            table_constraints = []
             table_constraints.each do |table, constraints|
               constraints.each do |constraint|
                 destination.execute("ALTER TABLE #{quote_ident_full(table)} ALTER CONSTRAINT #{quote_ident(constraint)} DEFERRABLE")
