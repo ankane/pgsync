@@ -1,3 +1,8 @@
+---
+name: Issue
+about: Create an issue
+---
+
 Hi,
 
 Please use this script to show what you're trying to do when possible. Thanks!
