@@ -27,6 +27,8 @@ You can also install it with Homebrew:
 brew install pgsync
 ```
 
+Or [Docker](#docker).
+
 ## Setup
 
 In your project directory, run:
@@ -369,10 +371,12 @@ Get the [Docker image](https://hub.docker.com/r/ankane/pgsync) with:
 
 ```sh
 docker pull ankane/pgsync
-alias pgsync="docker run -ti ankane/pgsync"
+alias pgsync="docker run -ti --rm -v .:/conf -w /conf ankane/pgsync"
 ```
 
 This will give you the `pgsync` command.
+
+For databases on the host machine, use `host.docker.internal` as the hostname (on Linux, this requires Docker 20.04+ and `--add-host=host.docker.internal:host-gateway`).
 
 ## Dependencies
 
