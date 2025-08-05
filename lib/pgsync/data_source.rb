@@ -14,8 +14,9 @@ module PgSync
       @url && @url.size > 0
     end
 
+    # host can be "/var/run/postgresql,/run/postgresql,/tmp" on Linux with pg 1.6+
     def local?
-      !host || %w(localhost 127.0.0.1).include?(host)
+      !host || %w(localhost 127.0.0.1).include?(host) || host.split(",").all? { |v| v.start_with?("/") }
     end
 
     def host
