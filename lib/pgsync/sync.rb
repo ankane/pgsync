@@ -124,7 +124,7 @@ module PgSync
     end
 
     def print_description(prefix, source)
-      location = " on #{source.host}:#{source.port}" if source.host
+      location = " on #{source.host}:#{source.port}" if !source.socket?
       log "#{prefix}: #{source.dbname}#{location}"
     end
 
