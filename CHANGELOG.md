@@ -1,6 +1,6 @@
 ## 0.8.1 (unreleased)
 
-- Fixed local destination detection with pg 1.6+
+- Fixed local destination detection when no host present with pg 1.6+
 
 ## 0.8.0 (2024-07-10)
 
