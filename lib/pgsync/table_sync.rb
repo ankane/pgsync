@@ -31,30 +31,36 @@ module PgSync
     def add_columns
       source_columns = columns(source)
       destination_columns = columns(destination)
+      mapping = destination.schema_mapping
 
       tasks.each do |task|
+        dest_table = Table.new(mapping[task.table.schema] || task.table.schema, task.table.name)
         task.from_columns = source_columns[task.table] || []
-        task.to_columns = destination_columns[task.table] || []
+        task.to_columns = destination_columns[dest_table] || []
       end
     end
 
     def add_primary_keys
       destination_primary_keys = primary_keys(destination)
 
+      mapping = destination.schema_mapping
       tasks.each do |task|
-        task.to_primary_key = destination_primary_keys[task.table] || []
+        dest_table = Table.new(mapping[task.table.schema] || task.table.schema, task.table.name)
+        task.to_primary_key = destination_primary_keys[dest_table] || []
       end
     end
 
     def add_sequences
       source_sequences = sequences(source)
       destination_sequences = sequences(destination)
+      mapping = destination.schema_mapping
 
       tasks.each do |task|
         shared_columns = Set.new(task.shared_fields)
+        dest_table = Table.new(mapping[task.table.schema] || task.table.schema, task.table.name)
 
         task.from_sequences = (source_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
-        task.to_sequences = (destination_sequences[task.table] || []).select { |s| shared_columns.include?(s.column) }
+        task.to_sequences = (destination_sequences[dest_table] || []).select { |s| shared_columns.include?(s.column) }
       end
     end
 

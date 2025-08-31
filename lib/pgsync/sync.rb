@@ -143,7 +143,7 @@ module PgSync
     end
 
     def data_source(url, name)
-      ds = DataSource.new(url, name: name, debug: @options[:debug])
+      ds = DataSource.new(url, name: name, debug: @options[:debug], schema_mapping: @options[:schema_mapping])
       ObjectSpace.define_finalizer(self, self.class.finalize(ds))
       ds
     end

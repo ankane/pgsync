@@ -15,8 +15,13 @@ module PgSync
       @to_sequences = []
     end
 
-    def quoted_table
+    def quoted_src_table
       quote_ident_full(table)
+    end
+
+    def quoted_dest_table
+      mapping = destination.schema_mapping
+      quote_ident_full(Table.new(mapping[table.schema] || table.schema, table.name))
     end
 
     def perform
@@ -42,7 +47,8 @@ module PgSync
     end
 
     def shared_sequences
-      @shared_sequences ||= to_sequences & from_sequences
+      mapping = @destination.schema_mapping
+      @shared_sequences ||= to_sequences.map { |s| Sequence.new(mapping[s.schema]||s.schema, s.name, column: s.column) } & from_sequences
     end
 
     def notes
@@ -56,10 +62,11 @@ module PgSync
         missing_fields = from_fields - to_fields
         notes << "Missing columns: #{missing_fields.join(", ")}" if missing_fields.any?
 
-        extra_sequences = to_sequences - from_sequences
+        mapping = destination.schema_mapping
+        extra_sequences = to_sequences - from_sequences.map { |s| Sequence.new(mapping[s.schema]||s.schema, s.name, column: s.column) }
         notes << "Extra sequences: #{extra_sequences.join(", ")}" if extra_sequences.any?
 
-        missing_sequences = from_sequences - to_sequences
+        missing_sequences = from_sequences.map { |s| Sequence.new(mapping[s.schema]||s.schema, s.name, column: s.column) } - to_sequences
         notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
 
         from_types = from_columns.map { |c| [c[:name], c[:type]] }.to_h
@@ -83,10 +90,10 @@ module PgSync
 
       bad_fields = opts[:no_rules] ? [] : config["data_rules"]
       primary_key = to_primary_key
-      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_table}.#{quote_ident(f)}" }.join(", ")
+      copy_fields = shared_fields.map { |f| f2 = bad_fields.to_a.find { |bf, _| rule_match?(table, f, bf) }; f2 ? "#{apply_strategy(f2[1], table, f, primary_key)} AS #{quote_ident(f)}" : "#{quoted_src_table}.#{quote_ident(f)}" }.join(", ")
       fields = shared_fields.map { |f| quote_ident(f) }.join(", ")
 
-      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{sql_clause}) TO STDOUT"
+      copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_src_table}#{sql_clause}) TO STDOUT"
       if opts[:in_batches]
         raise Error, "Primary key required for --in-batches" if primary_key.empty?
         primary_key = primary_key.first
@@ -114,7 +121,7 @@ module PgSync
           # TODO be smarter for advance sql clauses
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
-          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
+          batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_src_table}#{batch_sql_clause}) TO STDOUT"
           copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
 
           starting_id += batch_size
@@ -133,7 +140,7 @@ module PgSync
 
         # create a temp table
         temp_table = "pgsync_#{rand(1_000_000_000)}"
-        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_table} WITH NO DATA")
+        destination.execute("CREATE TEMPORARY TABLE #{quote_ident_full(temp_table)} AS TABLE #{quoted_dest_table} WITH NO DATA")
 
         # load data
         copy(copy_to_command, dest_table: temp_table, dest_fields: fields)
@@ -150,11 +157,11 @@ module PgSync
               "NOTHING"
             end
           end
-        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
+        destination.execute("INSERT INTO #{quoted_dest_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
-          destination.execute("DELETE FROM #{quoted_table}")
+          destination.execute("DELETE FROM #{quoted_dest_table}")
         else
           destination.truncate(table)
         end
@@ -277,7 +284,7 @@ module PgSync
 
     def quoted_primary_key(table, primary_key, rule)
       raise Error, "Single column primary key required for this data rule: #{rule}" unless primary_key.size == 1
-      "#{quoted_table}.#{quote_ident(primary_key.first)}"
+      "#{quoted_src_table}.#{quote_ident(primary_key.first)}"
     end
 
     def maybe_disable_triggers
@@ -301,7 +308,7 @@ module PgSync
             destination.execute("SET LOCAL session_replication_role = replica")
           elsif opts[:disable_integrity]
             integrity_triggers.each do |trigger|
-              destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
+              destination.execute("ALTER TABLE #{quoted_dest_table} DISABLE TRIGGER #{quote_ident(trigger["name"])}")
             end
             restore_triggers.concat(integrity_triggers)
           end
@@ -310,7 +317,7 @@ module PgSync
             # important!
             # rely on Postgres to disable user triggers
             # we don't want to accidentally disable non-user triggers if logic above is off
-            destination.execute("ALTER TABLE #{quoted_table} DISABLE TRIGGER USER")
+            destination.execute("ALTER TABLE #{quoted_dest_table} DISABLE TRIGGER USER")
             restore_triggers.concat(user_triggers)
           end
 
@@ -318,7 +325,7 @@ module PgSync
 
           # restore triggers that were previously enabled
           restore_triggers.each do |trigger|
-            destination.execute("ALTER TABLE #{quoted_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
+            destination.execute("ALTER TABLE #{quoted_dest_table} ENABLE TRIGGER #{quote_ident(trigger["name"])}")
           end
 
           result

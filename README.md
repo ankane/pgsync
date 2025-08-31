@@ -1,5 +1,7 @@
 # pgsync
 
+> :warning: this is a HACKED version of pgsync to support schema-mapping. It has only been tested with specific use cases and may not work for all scenarios.
+
 Sync data from one Postgres database to another (like `pg_dump`/`pg_restore`). Designed for:
 
 - **speed** - tables are transferred in parallel
@@ -160,6 +162,13 @@ Sync the schema without data (this wipes out existing data)
 ```sh
 pgsync --schema-only
 ```
+
+Sync to another schema **experimental** 
+
+```sh
+pgsync --schema-mapping "srcschema:destschema"
+```
+this copies data from  `srcschema` in the source database to the `destschema` schema in the destination database.
 
 pgsync does not try to sync Postgres extensions.
 

@@ -2,12 +2,13 @@ module PgSync
   class DataSource
     include Utils
 
-    attr_reader :url
+    attr_reader :url, :schema_mapping
 
-    def initialize(url, name:, debug:)
+    def initialize(url, name:, debug:, schema_mapping:)
       @url = url
       @name = name
       @debug = debug
+      @schema_mapping = schema_mapping
     end
 
     def exists?
@@ -179,6 +180,7 @@ module PgSync
 
     def table_set
       @table_set ||= Set.new(tables)
+      @table_set
     end
 
     def conninfo

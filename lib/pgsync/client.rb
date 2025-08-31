@@ -12,6 +12,7 @@ module PgSync
       arguments = result.arguments
       options = result.to_h
       options[:defer_constraints_v2] ||= options[:defer_constraints]
+      options[:schema_mapping] = Hash[options[:schema_mapping].split(";").map { |pair| pair.split(":") }]
 
       raise Error, "Specify either --db or --config, not both" if options[:db] && options[:config]
       raise Error, "Cannot use --overwrite with --in-batches" if options[:overwrite] && options[:in_batches]
@@ -74,6 +75,7 @@ module PgSync
       o.separator "Schema options:"
       o.boolean "--schema-first", "sync schema first", default: false
       o.boolean "--schema-only", "sync schema only", default: false
+      o.string "--schema-mapping", "schema mapping", default: ""
 
       o.separator ""
       o.separator "Config options:"

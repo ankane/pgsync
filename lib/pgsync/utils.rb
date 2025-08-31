@@ -36,9 +36,17 @@ module PgSync
     end
 
     def confirm_tables_exist(data_source, tasks, description)
+      mapping = tasks.map(&:destination)[0].schema_mapping
       tasks.map(&:table).each do |table|
-        unless data_source.table_exists?(table)
-          raise Error, "Table not found in #{description}: #{table}"
+        if description == "destination"
+          dest_table = Table.new(mapping[table.schema] || table.schema, table.name)
+          unless data_source.table_exists?(dest_table)
+            raise Error, "Table not found in #{description}: #{table}"
+          end
+        else
+          unless data_source.table_exists?(table)
+            raise Error, "Table not found in #{description}: #{table}"
+          end
         end
       end
     end
