@@ -1,4 +1,4 @@
-## 0.8.1 (unreleased)
+## 0.8.1 (2025-09-12)
 
 - Fixed local destination detection when no host present with pg 1.6+
 
