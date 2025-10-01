@@ -217,11 +217,17 @@ module PgSync
 
       source.log_sql(source_command)
       destination.log_sql(destination_command)
+      bytes_count = 0
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       destination.conn.copy_data(destination_command) do
         source.conn.copy_data(source_command) do
           while (row = source.conn.get_copy_data)
+            while opts[:throttle_bytes_per_second] && (bytes_count / (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time)) > opts[:throttle_bytes_per_second]
+              sleep(0.01)
+            end
             destination.conn.put_copy_data(row)
+            bytes_count += row.bytesize
           end
         end
       end
