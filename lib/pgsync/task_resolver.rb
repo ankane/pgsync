@@ -51,7 +51,7 @@ module PgSync
     private
 
     def group_to_tasks(value)
-      group, param = value.split(":", 2)
+      group, params = value.split(":", 2)
       raise Error, "Group not found: #{group}" unless group?(group)
 
       @groups[group].map do |table|
@@ -62,7 +62,7 @@ module PgSync
 
         {
           table: to_table(table),
-          sql: expand_sql(table_sql, param)
+          sql: expand_sql(table_sql, params)
         }
       end
     end
@@ -203,7 +203,7 @@ module PgSync
       args[1]
     end
 
-    def expand_sql(sql, param)
+    def expand_sql(sql, params)
       # command line option takes precedence over group option
       sql = sql_arg if sql_arg
 
@@ -213,9 +213,12 @@ module PgSync
       missing_vars = sql.scan(/{\w+}/).map { |v| v[1..-2] }
 
       vars = {}
-      if param
-        vars["id"] = cast(param)
-        vars["1"] = cast(param)
+      params.split(':').each_with_index do |p,i|
+        if(p == "id") 
+          vars["id"] = cast(p)
+        else
+          vars[(i+1).to_s] = cast(p)
+        end
       end
 
       sql = sql.dup
