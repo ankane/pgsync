@@ -58,11 +58,17 @@ module PgSync
     end
 
     def max_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MAX(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["max"].to_i
+      result = execute("SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(table)}#{sql_clause} ORDER BY #{quote_ident(primary_key)} DESC LIMIT 1").first
+
+      # Result can be nil if table is empty
+      result ? result[primary_key].to_i : 0
     end
 
     def min_id(table, primary_key, sql_clause = nil)
-      execute("SELECT MIN(#{quote_ident(primary_key)}) FROM #{quote_ident_full(table)}#{sql_clause}").first["min"].to_i
+      result = execute("SELECT #{quote_ident(primary_key)} FROM #{quote_ident_full(table)}#{sql_clause} ORDER BY #{quote_ident(primary_key)} ASC LIMIT 1").first
+
+      # Result can be nil if table is empty
+      result ? result[primary_key].to_i : 0
     end
 
     def last_value(seq)
