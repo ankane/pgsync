@@ -9,8 +9,11 @@ def connect(dbname)
   conn = PG::Connection.open(dbname: dbname)
   conn.exec("SET client_min_messages TO WARNING")
   conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
-  conn.exec(File.read("test/support/schema#{dbname[-1]}.sql"))
   conn
+end
+
+def load_schema(conn, name)
+  conn.exec(File.read("test/support/#{name}.sql"))
 end
 
 def conn1
@@ -25,7 +28,9 @@ def conn3
   @conn3 ||= connect("pgsync_test3")
 end
 
-[conn1, conn2, conn3] # setup schema
+load_schema(conn1, "schema1")
+load_schema(conn2, "schema2")
+load_schema(conn3, "schema3")
 
 class Minitest::Test
   def verbose?

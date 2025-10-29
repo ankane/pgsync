@@ -2,7 +2,7 @@ require_relative "test_helper"
 
 class SchemaTest < Minitest::Test
   def setup
-    conn3.exec(File.read("test/support/schema3.sql"))
+    load_schema(conn3, "schema3")
     truncate(conn1, "posts")
   end
 
