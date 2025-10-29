@@ -1,8 +1,6 @@
 require "bundler/setup"
 Bundler.require(:default)
 require "minitest/autorun"
-require "minitest/pride"
-require "pg"
 require "shellwords"
 require "tmpdir"
 require "open3"
