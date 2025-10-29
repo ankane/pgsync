@@ -20,7 +20,6 @@ module PgSync
       # generate commands before starting spinner
       # for better error output if pg_restore not found
       dump_command = dump_command()
-      restore_command = restore_command()
 
       show_spinner = output.tty? && !opts[:debug]
 
@@ -29,18 +28,29 @@ module PgSync
         spinner.auto_spin
       end
 
-      create_schemas if specify_tables?
-
       # if spinner, capture lines to show on error
       lines = []
-      success =
-        run_command(dump_command, restore_command) do |line|
-          if show_spinner
-            lines << line
-          else
-            log line
-          end
+      stdout, stderr, status =
+        begin
+          Open3.capture3(*dump_command)
+        rescue Errno::ENOENT
+          raise Error, "pg_dump not found"
         end
+      success = status.success?
+      stderr.each_line do |line|
+        if show_spinner
+          lines << line
+        else
+          log line
+        end
+      end
+
+      @destination.transaction do
+        create_schemas if specify_tables?
+        @destination.conn.exec(stdout.gsub(/^\\(un)?restrict .+/, "").sub("SET transaction_timeout = 0;", ""))
+      end
+      # reset session variables
+      @destination.send(:reconnect)
 
       if show_spinner
         if success
@@ -56,39 +66,14 @@ module PgSync
 
     private
 
-    def run_command(dump_command, restore_command)
-      err_r, err_w = IO.pipe
-      Open3.pipeline_start(dump_command, restore_command, err: err_w) do |wait_thrs|
-        err_w.close
-        err_r.each do |line|
-          yield line
-        end
-        wait_thrs.all? { |t| t.value.success? }
-      end
-    end
-
-    # --if-exists introduced in Postgres 9.4
-    # not ideal, but simpler than trying to parse version
-    def supports_if_exists?
-      `pg_restore --help`.include?("--if-exists")
-    rescue Errno::ENOENT
-      raise Error, "pg_restore not found"
-    end
-
     def dump_command
-      cmd = ["pg_dump", "-Fc", "--verbose", "--schema-only", "--no-owner", "--no-acl"]
+      cmd = ["pg_dump", "--schema-only", "--no-owner", "--no-acl"]
       if specify_tables?
         @tasks.each do |task|
           cmd.concat(["-t", task.quoted_table])
         end
       end
       cmd.concat(["-d", @source.url])
-    end
-
-    def restore_command
-      cmd = ["pg_restore", "--verbose", "--no-owner", "--no-acl", "--clean"]
-      cmd << "--if-exists" if supports_if_exists?
-      cmd.concat(["-d", @destination.url])
     end
 
     # pg_dump -t won't create schemas (even with -n)
