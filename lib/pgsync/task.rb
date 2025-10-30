@@ -19,11 +19,28 @@ module PgSync
       quote_ident_full(table)
     end
 
+    def staging_table_name
+      "#{table.name}_staging"
+    end
+
+    def staging_table
+      Table.new(table.schema, staging_table_name)
+    end
+
+    def quoted_staging_table
+      quote_ident_full(staging_table)
+    end
+
     def perform
       with_notices do
         handle_errors do
           maybe_disable_triggers do
-            sync_data
+            if opts[:swap] && !opts[:staging_table]
+              # Swap staging to target without syncing
+              swap_staging_to_target
+            else
+              sync_data
+            end
           end
         end
       end
@@ -78,6 +95,15 @@ module PgSync
     def sync_data
       raise Error, "This should never happen. Please file a bug." if shared_fields.empty?
 
+      # Determine target table (staging or actual)
+      target_table = opts[:staging_table] ? staging_table : table
+      quoted_target_table = opts[:staging_table] ? quoted_staging_table : quoted_table
+
+      # Prepare staging table if needed
+      if opts[:staging_table]
+        prepare_staging_table
+      end
+
       sql_clause = String.new("")
       sql_clause << " #{opts[:sql]}" if opts[:sql]
 
@@ -91,10 +117,10 @@ module PgSync
         raise Error, "Primary key required for --in-batches" if primary_key.empty?
         primary_key = primary_key.first
 
-        destination.truncate(table) if opts[:truncate]
+        destination.truncate(target_table) if opts[:truncate]
 
         from_max_id = source.max_id(table, primary_key)
-        to_max_id = destination.max_id(table, primary_key) + 1
+        to_max_id = destination.max_id(target_table, primary_key) + 1
 
         if to_max_id == 1
           from_min_id = source.min_id(table, primary_key)
@@ -115,7 +141,7 @@ module PgSync
           batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
 
           batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
-          copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
+          copy(batch_copy_to_command, dest_table: target_table, dest_fields: fields)
 
           starting_id += batch_size
           i += 1
@@ -150,21 +176,31 @@ module PgSync
               "NOTHING"
             end
           end
-        destination.execute("INSERT INTO #{quoted_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
+        destination.execute("INSERT INTO #{quoted_target_table} (#{fields}) (SELECT #{fields} FROM #{quote_ident_full(temp_table)}) ON CONFLICT (#{on_conflict}) DO #{action}")
       else
         # use delete instead of truncate for foreign keys
         if opts[:defer_constraints_v1] || opts[:defer_constraints_v2]
-          destination.execute("DELETE FROM #{quoted_table}")
+          destination.execute("DELETE FROM #{quoted_target_table}")
         else
-          destination.truncate(table)
+          destination.truncate(target_table)
         end
-        copy(copy_to_command, dest_table: table, dest_fields: fields)
+        copy(copy_to_command, dest_table: target_table, dest_fields: fields)
       end
 
       # update sequences
       shared_sequences.each do |seq|
         value = source.last_value(seq)
         destination.execute("SELECT setval(#{escape(quote_ident_full(seq))}, #{escape(value)})")
+      end
+
+      # Show diff if requested
+      if opts[:staging_table] && opts[:show_diff]
+        show_diff_summary
+      end
+
+      # Swap if requested
+      if opts[:staging_table] && opts[:swap]
+        swap_staging_to_target
       end
 
       {status: "success"}
@@ -330,6 +366,108 @@ module PgSync
 
     def rds?
       destination.execute("SELECT name, setting FROM pg_settings WHERE name LIKE 'rds.%'").any?
+    end
+
+    # Blue-green deployment methods
+
+    def prepare_staging_table
+      # Drop existing staging table if it exists
+      destination.execute("DROP TABLE IF EXISTS #{quoted_staging_table} CASCADE")
+
+      # Create staging table with same schema as target
+      destination.execute("CREATE TABLE #{quoted_staging_table} (LIKE #{quoted_table} INCLUDING ALL)")
+    end
+
+    def show_diff_summary
+      primary_key = to_primary_key
+
+      if primary_key.empty?
+        log colorize("Warning: Cannot show diff without primary key", :yellow)
+        return
+      end
+
+      pk_columns = primary_key.map { |pk| quote_ident(pk) }.join(", ")
+
+      # Count new rows (in staging, not in target)
+      new_rows_query = <<~SQL
+        SELECT COUNT(*) as count
+        FROM #{quoted_staging_table} s
+        WHERE NOT EXISTS (
+          SELECT 1 FROM #{quoted_table} t
+          WHERE (#{primary_key.map { |pk| "t.#{quote_ident(pk)} = s.#{quote_ident(pk)}" }.join(" AND ")})
+        )
+      SQL
+      new_count = destination.execute(new_rows_query).first["count"].to_i
+
+      # Count deleted rows (in target, not in staging)
+      deleted_rows_query = <<~SQL
+        SELECT COUNT(*) as count
+        FROM #{quoted_table} t
+        WHERE NOT EXISTS (
+          SELECT 1 FROM #{quoted_staging_table} s
+          WHERE (#{primary_key.map { |pk| "s.#{quote_ident(pk)} = t.#{quote_ident(pk)}" }.join(" AND ")})
+        )
+      SQL
+      deleted_count = destination.execute(deleted_rows_query).first["count"].to_i
+
+      # Count updated rows (exists in both but data differs)
+      # Simplified: count rows with matching PK but different content
+      comparison_fields = shared_fields.reject { |f| primary_key.include?(f) }
+      if comparison_fields.any?
+        updated_rows_query = <<~SQL
+          SELECT COUNT(*) as count
+          FROM #{quoted_staging_table} s
+          INNER JOIN #{quoted_table} t ON (#{primary_key.map { |pk| "t.#{quote_ident(pk)} = s.#{quote_ident(pk)}" }.join(" AND ")})
+          WHERE (#{comparison_fields.map { |f| "(t.#{quote_ident(f)} IS DISTINCT FROM s.#{quote_ident(f)})" }.join(" OR ")})
+        SQL
+        updated_count = destination.execute(updated_rows_query).first["count"].to_i
+      else
+        updated_count = 0
+      end
+
+      # Display summary
+      log ""
+      log colorize("Diff Summary:", :cyan)
+      log "  New rows:     #{colorize(new_count.to_s, :green)}"
+      log "  Updated rows: #{colorize(updated_count.to_s, :yellow)}"
+      log "  Deleted rows: #{colorize(deleted_count.to_s, :red)}"
+      log ""
+    end
+
+    def swap_staging_to_target
+      # Verify staging table exists
+      staging_exists_query = <<~SQL
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables
+          WHERE table_schema = #{escape(table.schema)}
+          AND table_name = #{escape(staging_table_name)}
+        ) as exists
+      SQL
+
+      unless destination.execute(staging_exists_query).first["exists"]
+        raise Error, "Staging table #{staging_table_name} does not exist. Run with --staging-table first."
+      end
+
+      old_table_name = "#{table.name}_old"
+      old_table = Table.new(table.schema, old_table_name)
+      quoted_old_table = quote_ident_full(old_table)
+
+      # Atomic swap using transaction
+      destination.transaction do
+        # Drop old table if it exists from previous swap
+        destination.execute("DROP TABLE IF EXISTS #{quoted_old_table} CASCADE")
+
+        # Rename current target to old
+        destination.execute("ALTER TABLE #{quoted_table} RENAME TO #{quote_ident(old_table_name)}")
+
+        # Rename staging to target
+        destination.execute("ALTER TABLE #{quoted_staging_table} RENAME TO #{quote_ident(table.name)}")
+
+        # Drop the old table
+        destination.execute("DROP TABLE #{quoted_old_table} CASCADE")
+      end
+
+      log colorize("Successfully swapped #{staging_table_name} to #{table.name}", :green)
     end
   end
 end

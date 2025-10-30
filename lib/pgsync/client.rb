@@ -15,6 +15,7 @@ module PgSync
 
       raise Error, "Specify either --db or --config, not both" if options[:db] && options[:config]
       raise Error, "Cannot use --overwrite with --in-batches" if options[:overwrite] && options[:in_batches]
+      raise Error, "Cannot use --show-diff without --staging-table" if options[:show_diff] && !options[:staging_table]
 
       if options[:version]
         log VERSION
@@ -57,6 +58,12 @@ module PgSync
       o.boolean "--overwrite", "overwrite existing rows", default: false
       o.boolean "--preserve", "preserve existing rows", default: false
       o.boolean "--truncate", "truncate existing rows", default: false
+
+      o.separator ""
+      o.separator "Blue-green deployment options:"
+      o.boolean "--staging-table", "sync to staging table instead of target", default: false
+      o.boolean "--show-diff", "show differences between staging and target (requires --staging-table)", default: false
+      o.boolean "--swap", "atomically swap staging table with target", default: false
 
       o.separator ""
       o.separator "Foreign key options:"

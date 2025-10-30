@@ -258,6 +258,60 @@ Note: This requires the table to have a numeric, increasing primary key
 
 The script will resume where it left off when run again, making it great for backfills.
 
+## Blue-Green Deployments
+
+For safer data migrations, use staging tables to preview changes before committing them.
+
+Sync to a staging table
+
+```sh
+pgsync asset_types --staging-table
+```
+
+This creates a `asset_types_staging` table with the synced data, leaving the original table untouched.
+
+Sync to staging and show diff
+
+```sh
+pgsync asset_types --staging-table --show-diff
+```
+
+Shows a summary of changes:
+- New rows (in staging, not in target)
+- Updated rows (different values)
+- Deleted rows (in target, not in staging)
+
+Sync to staging, show diff, and swap atomically
+
+```sh
+pgsync asset_types --staging-table --show-diff --swap
+```
+
+This performs an atomic swap of the staging table with the target table in a transaction.
+
+Swap staging table without syncing (for manual review workflows)
+
+```sh
+# First sync to staging
+pgsync asset_types --staging-table
+
+# Review data in asset_types_staging...
+
+# Then swap when ready
+pgsync asset_types --swap
+```
+
+**How it works:**
+1. `--staging-table` creates a `<table>_staging` table and syncs data there
+2. `--show-diff` compares staging vs target and displays counts
+3. `--swap` atomically renames tables: `target` → `target_old`, `staging` → `target`, then drops `target_old`
+
+**Use cases:**
+- Preview data changes before applying them
+- Zero-downtime migrations with validation
+- Rollback capability (keep old data temporarily)
+- Compliance review workflows
+
 ## Connection Security
 
 Always make sure your [connection is secure](https://ankane.org/postgres-sslmode-explained) when connecting to a database over a network you don’t fully trust. Your best option is to connect over SSH or a VPN. Another option is to use `sslmode=verify-full`. If you don’t do this, your database credentials can be compromised.
