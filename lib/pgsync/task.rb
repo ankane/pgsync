@@ -62,8 +62,8 @@ module PgSync
         missing_sequences = from_sequences - to_sequences
         notes << "Missing sequences: #{missing_sequences.join(", ")}" if missing_sequences.any?
 
-        from_types = from_columns.map { |c| [c[:name], c[:type]] }.to_h
-        to_types = to_columns.map { |c| [c[:name], c[:type]] }.to_h
+        from_types = from_columns.to_h { |c| [c[:name], c[:type]] }
+        to_types = to_columns.to_h { |c| [c[:name], c[:type]] }
         different_types = []
         shared_fields.each do |field|
           if from_types[field] != to_types[field]
