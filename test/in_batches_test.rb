@@ -12,6 +12,12 @@ class InBatchesTest < Minitest::Test
     assert_result("--in-batches --batch-size 1", source, dest, expected)
   end
 
+  def test_where_clause_with_or
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    expected = [source[0], source[2]]
+    assert_result("where id = 1 OR id = 3 --in-batches --batch-size 1", source, [], expected)
+  end
+
   def test_existing_data
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     dest = [{"id" => 1, "title" => "First Post"}, {"id" => 4, "title" => "Post 4"}]
