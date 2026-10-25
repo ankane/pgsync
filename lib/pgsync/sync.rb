@@ -37,6 +37,8 @@ module PgSync
       print_description("From", source)
       print_description("To", destination)
 
+      raise Error, "Destination must be different from source" if source.url == destination.url
+
       if (opts[:preserve] || opts[:overwrite]) && destination.server_version_num < 90500
         raise Error, "Postgres 9.5+ is required for --preserve and --overwrite"
       end
