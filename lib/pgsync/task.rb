@@ -111,8 +111,14 @@ module PgSync
           where = "#{quote_ident(primary_key)} >= #{starting_id} AND #{quote_ident(primary_key)} < #{starting_id + batch_size}"
           log "    #{i}/#{batch_count}: #{where}"
 
-          # TODO be smarter for advance sql clauses
-          batch_sql_clause = " #{sql_clause.length > 0 ? "#{sql_clause} AND" : "WHERE"} #{where}"
+          # Apply the batch range to the complete filter, not just its last OR term.
+          batch_sql_clause =
+            if sql_clause.length > 0
+              where_clause = sql_clause.sub(/\A\s*where\b/i, "")
+              " WHERE (#{where_clause}) AND (#{where})"
+            else
+              " WHERE #{where}"
+            end
 
           batch_copy_to_command = "COPY (SELECT #{copy_fields} FROM #{quoted_table}#{batch_sql_clause}) TO STDOUT"
           copy(batch_copy_to_command, dest_table: table, dest_fields: fields)
