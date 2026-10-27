@@ -114,7 +114,7 @@ module PgSync
           # Apply the batch range to the complete filter, not just its last OR term.
           batch_sql_clause =
             if sql_clause.length > 0
-              where_clause = sql_clause.sub(/\A\s*where\s+/i, "")
+              where_clause = sql_clause.sub(/\A\s*where\b/i, "")
               " WHERE (#{where_clause}) AND (#{where})"
             else
               " WHERE #{where}"

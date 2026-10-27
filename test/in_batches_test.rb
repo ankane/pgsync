@@ -15,7 +15,13 @@ class InBatchesTest < Minitest::Test
   def test_where_clause_with_or
     source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
     expected = [source[0], source[2]]
-    assert_result("where id = 1 OR id = 3 --in-batches --batch-size 1", source, [], expected)
+    assert_result("\"where id = 1 OR id = 3\" --in-batches --batch-size 1", source, [], expected)
+  end
+
+  def test_where_clause_without_space
+    source = 3.times.map { |i| {"id" => i + 1, "title" => "Post #{i + 1}"} }
+    expected = [source[0], source[2]]
+    assert_result("\"where(id = 1 OR id = 3)\" --in-batches --batch-size 1", source, [], expected)
   end
 
   def test_existing_data
